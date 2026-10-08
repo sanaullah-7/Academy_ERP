@@ -1,0 +1,63 @@
+
+name: Academy ERP CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  client:
+    name: React Client
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Client
+
+    steps:
+      - name: Download Project Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: Client/package-lock.json
+
+      - name: Install React Packages
+        run: npm ci
+
+      - name: Build React
+        run: npm run build
+
+  server:
+    name: Node.js Server
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Server
+
+    steps:
+      - name: Download Project Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: Server/package-lock.json
+
+      - name: Install Backend Packages
+        run: npm ci
+
+      - name: Check Backend Syntax
+        run: node --check index.js

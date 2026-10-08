@@ -1,0 +1,27 @@
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Build files
+client/dist/
+dist/
+
+# Test outputs
+coverage/
+*.log
+server.pid
+student-response.json
+students-response.json
+homepage.html
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,7 @@
+# src/constants
+
+Will contain shared role, permission, navigation, and storage definitions.
+
+Files: the source modules or assets listed for this directory in the master structure. These files will support frontend pages, components, and application setup.
+
+Status: Planned — functionality not implemented.
