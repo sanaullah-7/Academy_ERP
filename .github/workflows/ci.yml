@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   client:
-    name: React Client
+    name: Client
     runs-on: ubuntu-latest
 
     defaults:
@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
   server:
-    name: Node.js Server
+    name: Server
     runs-on: ubuntu-latest
 
     defaults:
@@ -60,4 +60,4 @@ jobs:
         run: npm ci
 
       - name: Check Backend Syntax
-        run: node --check index.js
+        run: node --check server.js
