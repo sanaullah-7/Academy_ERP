@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMockDatabase } from './mockDatabase.js'
 import { createMockApi } from './mockApi.js'
 import { createSeedDatabase } from './seedData.js'
-import { MOCK_DATABASE_KEY } from '../constants/storageKeys.js'
+import { MOCK_DATABASE_KEY, MOCK_SESSION_KEY } from '../constants/storageKeys.js'
 import { admissionService } from '../services/admissionService.js'
 import { authService } from '../services/authService.js'
 
@@ -48,6 +48,7 @@ describe('atomic admission/student sequence and compatibility', () => {
     data.students.push({ id: 'legacy-custom', branchId: north.branchId, name: 'Saved legacy student' })
     data.admissions[0].studentName = 'Saved legacy applicant'
     localStorage.setItem(MOCK_DATABASE_KEY, JSON.stringify(data))
+    localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({ version: 1, userId: 'demo-admin', branchId: north.branchId }))
     createMockDatabase().run('students', 'list', { query: north })
     expect(saved().students.find((s) => s.id === 'legacy-custom').name).toBe('Saved legacy student')
     expect(saved().admissions[0].studentName).toBe('Saved legacy applicant')
