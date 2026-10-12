@@ -3,3 +3,77 @@
  * Module: styles
  * Status: Planned — functionality not implemented.
  */
+
+/* F00-003: PROPOSED neutral shell tokens, not verified client brand values. */
+/* F00-004 supersedes the provisional values above with verified reference styling. */
+:root {
+  --workspace-font: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --workspace-background: #f8f9ff;
+  --workspace-surface: #ffffff;
+  --workspace-foreground: #0b1c30;
+  --workspace-muted: #565e74;
+  --workspace-border: oklch(0.929 0.013 255.508);
+  --workspace-accent: #008378;
+  --workspace-accent-foreground: #ffffff;
+  --workspace-hover: #eff4ff;
+  --workspace-focus: #00685f;
+  --workspace-radius: 12px;
+  --workspace-control-radius: 8px;
+  --workspace-space: 4px;
+  --workspace-sidebar-width: 256px;
+  --workspace-sidebar-compact: 80px;
+  --workspace-topbar-height: 64px;
+  --workspace-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+  --workspace-drawer-shadow: 12px 0 48px rgb(16 24 40 / 14%);
+  --workspace-duration: 150ms;
+  --workspace-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Semantic shadcn tokens reuse the approved shell rather than defining a second palette. */
+:root {
+  --background: var(--workspace-background);
+  --foreground: var(--workspace-foreground);
+  --card: var(--workspace-surface);
+  --card-foreground: var(--workspace-foreground);
+  --primary: var(--workspace-accent);
+  --primary-foreground: var(--workspace-accent-foreground);
+  --primary-hover: #00685f;
+  --secondary: #eff4ff;
+  --secondary-foreground: var(--workspace-foreground);
+  --muted: #eff4ff;
+  --muted-foreground: var(--workspace-muted);
+  --accent: #dce9ff;
+  --accent-foreground: var(--workspace-foreground);
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --border: var(--workspace-border);
+  --input: #6d7a77;
+  --ring: var(--workspace-focus);
+  --radius: var(--workspace-radius);
+}
+
+@theme inline {
+  --font-sans: var(--workspace-font);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-md: var(--workspace-control-radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --shadow-sm: var(--workspace-shadow);
+}

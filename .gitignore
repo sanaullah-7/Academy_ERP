@@ -1,8 +1,8 @@
 
 # Dependencies
 node_modules/
-client/node_modules/
-server/node_modules/
+Client/node_modules/
+Server/node_modules/
 
 # Secrets
 .env
@@ -12,10 +12,19 @@ server/node_modules/
 # Build files
 client/dist/
 dist/
+Server/dist/
+
+# Logs
+*.log
+
+# Private data and backups
+backups/
+private-data/
+*.pem
+*.key
 
 # Test outputs
 coverage/
-*.log
 server.pid
 student-response.json
 students-response.json
@@ -25,3 +34,8 @@ homepage.html
 .vscode/
 .DS_Store
 Thumbs.db
+
+
+# IMPORTANT:
+# Do NOT ignore docs/
+# Do NOT ignore AGENTS.md
