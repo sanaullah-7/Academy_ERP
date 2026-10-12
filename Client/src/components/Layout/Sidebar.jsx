@@ -43,6 +43,7 @@ const modulePermissions = Object.freeze({
   Dashboard: PERMISSIONS.WORKSPACE_VIEW,
   Admissions: PERMISSIONS.ADMISSIONS_VIEW,
   Students: PERMISSIONS.STUDENTS_VIEW,
+  'Courses & Batches': PERMISSIONS.COURSES_VIEW,
 })
 
 export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
@@ -73,7 +74,7 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
             <ul className="space-y-1">
               {group.items.map(({ label, icon: Icon }) => (
                 <li key={label}>
-                  {modulePermissions[label] && can(modulePermissions[label]) ? <NavLink to={ROUTE_PATHS[label.toUpperCase()]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
+                  {modulePermissions[label] && can(modulePermissions[label]) ? <NavLink to={label === 'Courses & Batches' ? ROUTE_PATHS.COURSES_BATCHES : ROUTE_PATHS[label.toUpperCase()]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
                     <Icon size={19} aria-hidden="true" />
                     <span className="workspace-sidebar-label">{label}</span>
                   </NavLink> : <button type="button" disabled className="workspace-nav-placeholder" aria-label={`${label} — coming soon`} title={`${label} — coming soon`}>

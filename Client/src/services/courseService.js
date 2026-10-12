@@ -4,6 +4,11 @@
  * Status: Planned — functionality not implemented.
  */
 
-import { createCollectionService } from '../mock/mockApi.js'
-import { createReferenceService } from './referenceService.js'
-export const courseService = { ...createCollectionService('courses'), ...createReferenceService('courses') }
+import { academicService } from './academicService.js'
+
+export const courseService = {
+  list: async query => (await academicService.overview(query)).courses,
+  getById: academicService.getCourse,
+  create: (record, query) => academicService.saveCourse(undefined, record, query),
+  update: academicService.saveCourse,
+}

@@ -8,7 +8,15 @@
 **Last Updated:** 2026-10-12
 **Project:** Academy Management ERP
 **Development Strategy:** Frontend First
-**Current Stage:** F03-001 through F03-007 Students Module IN_REVIEW
+**Current Stage:** F04-001 through F04-007 Courses & Batches IN_REVIEW
+
+## F04 Courses & Batches delivery (2026-10-12)
+
+**Status: IN_REVIEW; owner acceptance pending.** Added `/courses-batches`, active sidebar navigation, responsive table/mobile-card directories, search/sort/course filtering, accessible View/Add/Edit dialogs, duplicate and cross-branch validation, immutable IDs, persisted branch-scoped Course/Batch writes, actual active Enrollment counts, and loading/empty/error/retry states. Named `courses.view`/`courses.manage` permissions are enforced at route/UI, service and mock-database boundaries. Super Admin manages; Receptionist/Owner view; Teacher and unresolved multi-role assignments fail closed.
+
+Timetable, capacity and assignments are honest read-only operational views: no schedule sessions, maximum capacity or teacher assignments are fabricated. Schedule editing, capacity configuration and teacher assignment workflows remain deferred pending approved schemas/rules. No storage-envelope migration or new dependency was needed; valid version-4 localStorage data and Admission/Enrollment references remain intact.
+
+**Verification:** focused Vitest PASS, 45/45 tests in 5 files; targeted ESLint PASS with zero errors/warnings; final Vite 8.3.3 production build PASS, 3013 modules. Existing large-chunk warning remains (979.58 kB main JavaScript). Manual real-browser viewport testing, full regression suite, CI, deployment, backend and formal accessibility audit were NOT_RUN.
 
 ## F02-007 Admissions Module Final Integration Check (2026-10-12)
 

@@ -6,9 +6,19 @@ import { DEMO_USERS, getAuthorizedBranches } from '../mock/authFixtures.js'
 describe('approved roles and permission definitions', () => {
   it('defines only four roles and the confirmed implemented module permissions', () => {
     expect(Object.values(ROLES)).toEqual(['super_admin', 'owner', 'receptionist', 'teacher'])
-    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit'])
+    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage'])
     expect(isKnownPermission('workspace.view')).toBe(true)
     expect(isKnownPermission('payments.reverse')).toBe(false)
+  })
+
+  it('applies the confirmed Courses & Batches role matrix', () => {
+    const get = id => DEMO_USERS.find(user => user.id === id)
+    expect(canAccess(PERMISSIONS.COURSES_MANAGE, get('demo-admin'), 'demo-north')).toBe(true)
+    expect(canAccess(PERMISSIONS.COURSES_VIEW, get('demo-reception'), 'demo-north')).toBe(true)
+    expect(canAccess(PERMISSIONS.COURSES_MANAGE, get('demo-reception'), 'demo-north')).toBe(false)
+    expect(canAccess(PERMISSIONS.COURSES_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.COURSES_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
+    expect(canAccess(PERMISSIONS.COURSES_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
   })
 
   it('applies confirmed single-role Admissions and Students access without a Super Admin bypass', () => {

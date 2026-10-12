@@ -14,6 +14,7 @@ export const ROUTE_PATHS = Object.freeze({
   ADMISSIONS: '/admissions',
   STUDENTS: '/students',
   STUDENT_PROFILE: '/students/:studentId',
+  COURSES_BATCHES: '/courses-batches',
   NEW_ADMISSION: '/admissions/new',
   UNAUTHORIZED: '/unauthorized',
   NOT_FOUND: '*',

@@ -1363,6 +1363,8 @@ Dependencies: Approved student data model, enrollments and branch scoping.
 
 Dependencies: Course, subject, batch and schedule requirements.
 
+**Implementation status (2026-10-12): F04-001 through F04-007 IN_REVIEW; owner acceptance pending.** Course Catalog, Course Create/Edit, Batch Directory and Batch Create/Edit are functional within confirmed branch/role boundaries. Timetable is intentionally read-only with an explicit empty state because scheduling write rules are unresolved. Capacity shows actual saved active Enrollment counts while maximum/remaining capacity stays unconfigured. Teacher assignments show an honest empty state because assignment records/policy are unresolved. Focused verification and exact limitations are recorded in PROGRESS.md. No F05 work started.
+
 ## F05 — Faculty & Classes
 
 - F05-001 — Faculty Directory
