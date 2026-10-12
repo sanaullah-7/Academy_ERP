@@ -43,6 +43,13 @@ const modulePermissions = Object.freeze({
   Dashboard: PERMISSIONS.WORKSPACE_VIEW,
   Admissions: PERMISSIONS.ADMISSIONS_VIEW,
   Students: PERMISSIONS.STUDENTS_VIEW,
+  'Faculty & Classes': PERMISSIONS.FACULTY_VIEW,
+})
+const modulePaths = Object.freeze({
+  Dashboard: ROUTE_PATHS.DASHBOARD,
+  Admissions: ROUTE_PATHS.ADMISSIONS,
+  Students: ROUTE_PATHS.STUDENTS,
+  'Faculty & Classes': ROUTE_PATHS.FACULTY_CLASSES,
 })
 
 export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
@@ -73,7 +80,7 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
             <ul className="space-y-1">
               {group.items.map(({ label, icon: Icon }) => (
                 <li key={label}>
-                  {modulePermissions[label] && can(modulePermissions[label]) ? <NavLink to={ROUTE_PATHS[label.toUpperCase()]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
+                  {modulePermissions[label] && can(modulePermissions[label]) ? <NavLink to={modulePaths[label]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
                     <Icon size={19} aria-hidden="true" />
                     <span className="workspace-sidebar-label">{label}</span>
                   </NavLink> : <button type="button" disabled className="workspace-nav-placeholder" aria-label={`${label} — coming soon`} title={`${label} — coming soon`}>

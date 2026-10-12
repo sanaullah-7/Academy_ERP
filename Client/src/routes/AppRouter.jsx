@@ -18,6 +18,9 @@ import AdmissionsPage from '../pages/Admissions/AdmissionsPage.jsx'
 import NewAdmissionPage from '../pages/Admissions/NewAdmissionPage.jsx'
 import StudentsPage from '../pages/Students/StudentsPage.jsx'
 import StudentProfilePage from '../pages/Students/StudentProfilePage.jsx'
+import FacultyClassesPage from '../pages/FacultyClasses/FacultyClassesPage.jsx'
+import FacultyProfilePage from '../pages/FacultyClasses/FacultyProfilePage.jsx'
+import ClassDetailsPage from '../pages/FacultyClasses/ClassDetailsPage.jsx'
 import { PERMISSIONS } from '../constants/permissions.js'
 
 export default function AppRouter({ children }) {
@@ -32,6 +35,12 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.ADMISSIONS} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_VIEW}><AdmissionsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENT_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentProfilePage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FACULTY_CLASSES} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FACULTY_SUBJECTS} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage section="subjects" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FACULTY_BATCHES} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage section="batches" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.CLASS_SCHEDULE} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><FacultyClassesPage section="schedule" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.CLASS_STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><ClassDetailsPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FACULTY_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyProfilePage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><NewAdmissionPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />

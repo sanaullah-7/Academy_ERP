@@ -4,11 +4,11 @@
 
 **Document:** TASKS.md
 **Version:** 1.0
-**Status:** ACTIVE - F03 Students Module IN_REVIEW
+**Status:** ACTIVE - F05 Faculty & Classes IN_REVIEW
 **Last Updated:** 2026-10-12
 **Project:** Academy Management ERP
 **Development Strategy:** Frontend First
-**Current Milestone:** F03-001 through F03-007 Students Module IN_REVIEW
+**Current Milestone:** F05-001 through F05-007 Faculty & Classes IN_REVIEW
 
 ## F02-007 Admissions Module Final Integration Check (2026-10-12)
 
@@ -886,3 +886,11 @@ Owner-confirmed implementation is IN_REVIEW: active-branch Super Admin has View/
 Students directory now shows saved selected-branch DEMO students with stable branch serials, linked admission references, search/status/course/batch filters, sorting, counts and clear-filters behavior. Student row/name/actions open the immutable-ID, branch-scoped profile. Profile shows student/guardian/academic/admission data, enrollment history and Active status, plus truthful no-fee/no-attendance-data states. Authorized Super Admin and Receptionist can edit saved name and linked admission details; IDs, status, branch, course, batch and enrollment references remain protected. Owner remains read-only and Teacher denied by the existing permission contract. Empty/loading/error/retry states and responsive mobile/table layouts are present.
 
 Targeted validation: 72/72 tests across 5 files PASS; focused ESLint PASS; one production build PASS (3010 modules). Existing bundle-size warning (>500 kB) remains. Browser viewport/responsive manual QA NOT_RUN. No packages installed. Fee/attendance data views remain empty until approved data services exist. Owner acceptance pending.
+
+## F05-001 through F05-007 Faculty & Classes (2026-10-12)
+
+**Status:** IN_REVIEW; owner acceptance pending. Implemented only in isolated branch `feature/f05-faculty-classes` from baseline `b26c888014c018678f23e2ef6e992bd804211f0b`.
+
+Branch-scoped directory lists explicit Teacher role accounts; profile exposes only saved account identity and honest empty professional/assignment/schedule sections. Subject and teacher-batch writes remain blocked: subject model, assignment granularity and write authority are unresolved. Class schedule awaits the shared F04 timetable contract. Class roster displays only same-branch Active Enrollment → Student → Batch links; Teacher class access remains deny-by-default until verified assignments and record policy exist.
+
+Targeted tests: 34/34 PASS across 5 files (F05 services/UI, permissions, F02 enrollment regression and auth routes). Focused ESLint PASS. One production build PASS (3014 modules); existing >500 kB bundle warning remains. No package manifest changes; locked dependencies restored in this separate worktree. Browser/responsive manual QA NOT_RUN. No commit, merge or push. F04 shared merge surfaces: `Client/src/routes/AppRouter.jsx`, `Client/src/routes/routePaths.js`, `Client/src/components/Layout/Sidebar.jsx`, `Client/src/constants/permissions.js`; `mockDatabase.js` and F04 timetable files were not changed.

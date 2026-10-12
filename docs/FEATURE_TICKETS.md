@@ -1365,15 +1365,19 @@ Dependencies: Course, subject, batch and schedule requirements.
 
 ## F05 — Faculty & Classes
 
-- F05-001 — Faculty Directory
-- F05-002 — Faculty Profiles
-- F05-003 — Teacher Subject Assignments
-- F05-004 — Teacher Batch Assignments
-- F05-005 — Class Scheduling
-- F05-006 — Class Student Views
-- F05-007 — Faculty/Class Module Testing
+- F05-001 — Faculty Directory — IN_REVIEW
+- F05-002 — Faculty Profiles — IN_REVIEW
+- F05-003 — Teacher Subject Assignments — IN_REVIEW (read-only; assignment writes blocked by TBD subject model/policy)
+- F05-004 — Teacher Batch Assignments — IN_REVIEW (read-only; no approved teacher-batch relationship)
+- F05-005 — Class Scheduling — IN_REVIEW (read-only empty state; shared F04 schedule contract pending)
+- F05-006 — Class Student Views — IN_REVIEW
+- F05-007 — Faculty/Class Module Testing — IN_REVIEW
 
 Dependencies: Teacher permissions, batch model and scheduling rules.
+
+## F05-001 through F05-007 Faculty & Classes — IN_REVIEW (2026-10-12)
+
+Implemented branch-scoped faculty directory and identity-only profiles from explicit demo teacher role memberships. Subject and teacher-batch assignment views are honest read-only states because the subject collection, assignment relationships and write policies remain TBD. Class schedule is read-only with no sessions fabricated; it awaits the shared F04 Batch Timetable contract. Class student view uses only same-branch Active Enrollment → Student → Batch references and links to existing Student profiles. Teacher access remains denied until assignment relationships and enforcement are approved. Focused tests and lint pass; one production build passes. Owner acceptance pending.
 
 ## F06 — Fees
 

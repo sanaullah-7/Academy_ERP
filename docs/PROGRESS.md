@@ -8,7 +8,7 @@
 **Last Updated:** 2026-10-12
 **Project:** Academy Management ERP
 **Development Strategy:** Frontend First
-**Current Stage:** F03-001 through F03-007 Students Module IN_REVIEW
+**Current Stage:** F05-001 through F05-007 Faculty & Classes IN_REVIEW
 
 ## F02-007 Admissions Module Final Integration Check (2026-10-12)
 
@@ -2010,3 +2010,15 @@ The Actions menu visibly exposes Approve, Reject and Delete only for an eligible
 **Tests and checks:** Targeted Vitest: 72/72 PASS across 5 files (`StudentsPage`, `StudentsModule`, enrollment, mock database, admission CRUD). Focused ESLint: PASS with no reported issues. One final production build: PASS, Vite 8.3.3, 3010 modules; existing 963.83 kB JS chunk warning (>500 kB) remains. Manual real-browser and viewport validation, complete suite, CI, deployment, backend and formal accessibility certification NOT_RUN. Owner review required; these results do not constitute owner acceptance or production security.
 
 **Known limits:** Fee and attendance details remain honest empty states pending approved mock service/data contracts. Teacher assigned-student access remains deny-by-default. No student creation, status/branch transfer, enrollment edit/cancel, fee/attendance writes, backend or F04 functionality added.
+
+## F05-001 through F05-007 Faculty & Classes (2026-10-12)
+
+**Status: IN_REVIEW; owner acceptance pending.** Implemented in worktree `C:\Users\Admin\Desktop\CLIENTS\Academy-F05`, branch `feature/f05-faculty-classes`, from baseline `b26c888014c018678f23e2ef6e992bd804211f0b`. This worktree remains separate from `dev` and F04.
+
+**Implemented:** Faculty & Classes routes and branch-scoped permission checks. Directory lists explicit enabled single-role Teacher identities from the existing fictional DEMO account registry, with search, status/assignment filters, sorting, count, responsive cards/table and loading/error/retry/empty states. Profile uses the verified teacher ID and active branch, shows available identity/account/branch data and explicitly marks missing contact, qualification, subject, batch and schedule records as unavailable. Subject assignment view stays read-only because no subject collection/assignment rule exists. Batch view lists saved branch batches and course labels but never infers teacher assignments. Class Schedule presents a read-only empty state and disabled filters pending the shared F04 Batch Timetable contract. Class roster uses only saved same-branch Active Enrollment → Student → Batch relationships and links to the existing student profile; missing/foreign batches fail safely. Teacher route access remains denied by default because no verified assignment relationship exists.
+
+**Changed files:** `Client/src/constants/permissions.js` and `.test.js` (named Faculty/Classes view grants for Super Admin, Receptionist and Owner; Teacher denied; ambiguous role sets denied); `Client/src/routes/routePaths.js` and `AppRouter.jsx` (module/profile/subject/batch/schedule/roster routes); `Client/src/components/Layout/Sidebar.jsx` (authorized Faculty & Classes nav); `Client/src/services/facultyService.js` (scoped, validated read projections); `Client/src/pages/FacultyClasses/FacultyClassesPage.jsx`, `FacultyProfilePage.jsx`, `ClassDetailsPage.jsx` (directory, profiles, read-only assignment/schedule surfaces and enrollment-based roster); `Client/src/services/facultyService.test.js`, `Client/src/pages/FacultyClasses/FacultyClasses.test.jsx` (targeted service/UI coverage).
+
+**Validation:** 34/34 targeted tests PASS across 5 files, including role/branch authorization, direct profile behavior, F04 batch/student roster links and F02 enrollment regressions. Focused ESLint PASS. One final production build PASS (Vite 8.3.3, 3014 modules); existing 985.72 kB main chunk warning remains. Manual browser/responsive QA, CI, backend and formal accessibility validation NOT_RUN. No package manifest changes; existing lockfile dependencies installed with `npm ci` in isolated worktree only.
+
+**Integration/blocked decisions:** Shared files potentially overlapping F04 are `AppRouter.jsx`, `routePaths.js`, `Sidebar.jsx` and `permissions.js`; manually reconcile when integrating, do not merge automatically. `mockDatabase.js`, BatchTimetable and F04 page/component files were not modified. Before schedule integration, F04 must expose the agreed read contract for session ID, branchId, batchId, teacherUserId, subjectId, start/end time, status and optional room; conflict rules remain TBD. Subject catalog/assignment granularity, teacher-batch assignment authority, schedule write/cancel policies, contact/qualification fields and teacher-own-class authorization remain unresolved. F05 writes and teacher visibility therefore remain blocked/read-only.
