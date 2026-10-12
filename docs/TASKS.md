@@ -4,11 +4,15 @@
 
 **Document:** TASKS.md
 **Version:** 1.0
-**Status:** ACTIVE - F03 Students Module IN_REVIEW
+**Status:** ACTIVE - F04 Courses & Batches Module IN_REVIEW
 **Last Updated:** 2026-10-12
 **Project:** Academy Management ERP
 **Development Strategy:** Frontend First
-**Current Milestone:** F03-001 through F03-007 Students Module IN_REVIEW
+**Current Milestone:** F04-001 through F04-007 Courses & Batches IN_REVIEW
+
+## F04-001 through F04-007 Courses & Batches (2026-10-12)
+
+**Status:** IN_REVIEW; owner acceptance pending. Isolated implementation on `feature/f04-courses-batches`: branch-scoped responsive course/batch directories, Super Admin Create/Edit, Receptionist/Owner View, Teacher deny-by-default, search/filter/sort/details, actual enrollment counts, and explicit unconfigured capacity/timetable/teacher-assignment states. Focused tests, targeted lint and production build evidence are recorded in PROGRESS.md. No F05 work started.
 
 ## F02-007 Admissions Module Final Integration Check (2026-10-12)
 

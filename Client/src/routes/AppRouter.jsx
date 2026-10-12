@@ -18,6 +18,7 @@ import AdmissionsPage from '../pages/Admissions/AdmissionsPage.jsx'
 import NewAdmissionPage from '../pages/Admissions/NewAdmissionPage.jsx'
 import StudentsPage from '../pages/Students/StudentsPage.jsx'
 import StudentProfilePage from '../pages/Students/StudentProfilePage.jsx'
+import CoursesBatchesPage from '../pages/CoursesBatches/CoursesBatchesPage.jsx'
 import { PERMISSIONS } from '../constants/permissions.js'
 
 export default function AppRouter({ children }) {
@@ -32,6 +33,7 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.ADMISSIONS} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_VIEW}><AdmissionsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENT_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentProfilePage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.COURSES_BATCHES} element={<ProtectedRoute permission={PERMISSIONS.COURSES_VIEW}><CoursesBatchesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><NewAdmissionPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />

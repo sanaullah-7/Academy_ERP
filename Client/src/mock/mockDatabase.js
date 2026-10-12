@@ -337,6 +337,53 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     return session
   }
 
+  function authorizeAcademics(action, query) {
+    const session = readMockSession()
+    const permission = action === 'manage' ? PERMISSIONS.COURSES_MANAGE : PERMISSIONS.COURSES_VIEW
+    if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
+    if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for the requested Courses & Batches action.')
+  }
+
+  function academicOperation(operation, { entity, id, record, query } = {}) {
+    if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    if (!['overview', 'get', 'save'].includes(operation) || (operation !== 'overview' && !['course', 'batch'].includes(entity))) fail('INVALID_REQUEST', 'Unknown Courses & Batches operation.')
+    authorizeAcademics(operation === 'save' ? 'manage' : 'view', query)
+    const data = read(operation !== 'save', operation !== 'save')
+    const branchCourses = data.courses.filter(item => item.branchId === query.branchId)
+    const branchBatches = data.batches.filter(item => item.branchId === query.branchId)
+    const presentCourse = course => ({ ...course, category: 'Not configured', batchCount: branchBatches.filter(batch => batch.courseId === course.id).length, enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').length })
+    const presentBatch = batch => ({ ...batch, courseName: branchCourses.find(course => course.id === batch.courseId)?.name ?? 'Unresolved course', enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').length, capacity: null, remainingSeats: null, teachers: [], timetable: [] })
+    if (operation === 'overview') return { courses: branchCourses.map(presentCourse), batches: branchBatches.map(presentBatch) }
+    const collection = entity === 'course' ? data.courses : data.batches
+    const existing = collection.find(item => item.id === id && item.branchId === query.branchId)
+    if (operation === 'get') {
+      if (!existing) fail('NOT_FOUND', 'Record was not found in the active branch.')
+      return entity === 'course' ? presentCourse(existing) : presentBatch(existing)
+    }
+    if (!object(record) || Object.keys(record).some(key => !['name', 'courseId'].includes(key)) || !validText(record.name) || (entity === 'course' && record.courseId !== undefined) || (entity === 'batch' && !validText(record.courseId))) fail('INVALID_RECORD', `${entity === 'course' ? 'Course' : 'Batch'} name is required.`)
+    const name = record.name.trim()
+    if (collection.some(item => item.branchId === query.branchId && item.id !== id && item.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase())) fail('DUPLICATE_RECORD', `A ${entity} with this name already exists in the branch.`)
+    if (entity === 'batch' && !branchCourses.some(course => course.id === record.courseId)) fail('INVALID_REFERENCE', 'Choose a saved course from the active branch.')
+    if (existing && entity === 'batch' && existing.courseId !== record.courseId) {
+      const linked = data.admissions.some(item => item.branchId === query.branchId && item.preferredBatchId === existing.id) || data.enrollments.some(item => item.branchId === query.branchId && item.batchId === existing.id)
+      if (linked) fail('LINKED_RECORD_PROTECTED', 'A linked batch cannot be moved to another course.')
+    }
+    let saved
+    if (existing) {
+      saved = { ...existing, name, ...(entity === 'batch' ? { courseId: record.courseId } : {}) }
+      collection[collection.indexOf(existing)] = saved
+    } else {
+      let generatedId
+      try { generatedId = makeId() } catch { fail('ID_GENERATION_FAILED', 'A stable record ID could not be generated.') }
+      if (!validText(generatedId) || collections.some(key => data[key].some(item => item.id === generatedId))) fail('ID_CONFLICT', 'Generated record ID conflicts with saved data.')
+      saved = { id: generatedId, branchId: query.branchId, name, ...(entity === 'batch' ? { courseId: record.courseId } : {}) }
+      collection.push(saved)
+    }
+    normalizeAdmissions(data)
+    write(data)
+    return entity === 'course' ? presentCourse(saved) : presentBatch(saved)
+  }
+
   function projectStudent(data, student, project = createDisplayProjector(data)) {
     const admission = data.admissions.find(item => item.id === student.admissionId && item.studentId === student.id && item.branchId === student.branchId)
     const enrollments = data.enrollments.filter(item => item.studentId === student.id && item.branchId === student.branchId)
@@ -555,5 +602,5 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const project = createDisplayProjector(data)
     return { enrollment, admission: project('admissions', admission), student: project('students', student) }
   }
-  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, studentOperation }
+  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, studentOperation, academicOperation }
 }

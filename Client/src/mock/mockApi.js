@@ -56,6 +56,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
         return database.studentOperation(operation, { id, query })
       })
     },
+    async academicOperation(operation, args, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ collection: 'academics', operation }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.academicOperation(operation, args)
+      })
+    },
     async request(collection, operation, args) {
       if (beforeRequest) {
         try { await beforeRequest({ collection, operation }) }
