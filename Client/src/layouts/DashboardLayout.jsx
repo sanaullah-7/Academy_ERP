@@ -6,6 +6,7 @@
 
 // F00-003: Presentation-only shell. Module access and business workflows are deferred.
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import useAcademy from '../hooks/useAcademy.js'
 import Sidebar from '../components/Layout/Sidebar.jsx'
 import Header from '../components/Layout/Header.jsx'
@@ -13,10 +14,28 @@ import PageHeader from '../components/Layout/PageHeader.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/dialog.jsx'
 
 export default function DashboardLayout({ children, academyName, title = 'Workspace', description }) {
+  const { pathname } = useLocation()
   const { branding } = useAcademy()
   const displayName = academyName ?? branding.name
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isNavigationOpen, setIsNavigationOpen] = useState(false)
+  const routeTitle = pathname === '/dashboard' ? 'Dashboard'
+    : pathname === '/admissions/new' ? 'New Admission'
+      : pathname.startsWith('/admissions') ? 'Admissions'
+        : pathname.startsWith('/students/') ? 'Student Profile'
+          : pathname === '/students' ? 'Students'
+            : pathname.startsWith('/courses-batches') ? 'Courses & Batches'
+              : pathname.startsWith('/faculty') ? 'Faculty & Classes'
+                : pathname === '/fees' ? 'Fees'
+                  : pathname === '/finance' ? 'Finance'
+                    : pathname === '/demo-classes' ? 'Demo Classes'
+                      : pathname === '/assets' ? 'Assets'
+                        : pathname === '/reports' ? 'Reports'
+                          : pathname === '/branches' ? 'Branches'
+                            : pathname === '/users' ? 'Users'
+                              : pathname === '/settings' ? 'Settings'
+                                : pathname === '/workspace' ? 'Workspace' : title
+  const displayTitle = title === 'Workspace' ? routeTitle : title
 
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 1024px)')
@@ -44,13 +63,12 @@ export default function DashboardLayout({ children, academyName, title = 'Worksp
         </DialogContent>
         <div className="workspace-body">
           <Header
-            title={title}
             isCollapsed={isCollapsed}
             onToggleSidebar={() => setIsCollapsed((value) => !value)}
             onOpenNavigation={() => setIsNavigationOpen(true)}
           />
           <main id="workspace-content" className="workspace-content" tabIndex={-1}>
-            <PageHeader title={title} description={description} />
+          <PageHeader title={displayTitle} description={description} />
             {children}
           </main>
         </div>

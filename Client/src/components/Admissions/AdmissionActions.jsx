@@ -171,7 +171,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
         }}>
         <DialogTitle className={action === 'Edit' ? 'sr-only' : ''}>{action} DEMO Admission {label}</DialogTitle>
         <DialogDescription className={action === 'Edit' ? 'sr-only' : ''}>
-          {decision ? 'Confirm this DEMO status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its linked Provisional student, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved fictional admission details in the selected branch.'}
+          {decision ? 'Confirm this DEMO status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its verified linked student and enrollment, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved fictional admission details in the selected branch.'}
         </DialogDescription>
         {error && <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
         {pending && !record && <p role="status">Loading saved details...</p>}

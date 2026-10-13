@@ -56,6 +56,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
         return database.studentOperation(operation, { id, query })
       })
     },
+    async updateEnrollmentFeeStatus(id, record, query, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ collection: 'enrollments', operation: 'updateFeeStatus' }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.updateEnrollmentFeeStatus(id, record, query)
+      })
+    },
     async academicOperation(operation, args, validateScope) {
       if (beforeRequest) {
         try { await beforeRequest({ collection: 'academics', operation }) }
@@ -65,6 +75,12 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
         if (validateScope) await validateScope()
         return database.academicOperation(operation, args)
       })
+    },
+    async classScheduleOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.classScheduleOperation(operation, args) })
+    },
+    async financialOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.financialOperation(operation, args) })
     },
     async request(collection, operation, args) {
       if (beforeRequest) {

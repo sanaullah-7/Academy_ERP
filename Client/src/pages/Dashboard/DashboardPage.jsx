@@ -11,6 +11,7 @@ import { ROLES, ROLE_LABELS } from '../../constants/roles.js'
 import { KpiCard } from '../../components/Dashboard/KpiCard.jsx'
 import { studentService } from '../../services/studentService.js'
 import { courseService } from '../../services/courseService.js'
+import SuperAdminDashboard from '../../components/Dashboard/SuperAdminDashboard.jsx'
 
 function PlaceholderSection({ title, icon: Icon, children, className = '' }) {
   return <Card className={`min-w-0 ${className}`}>
@@ -72,164 +73,6 @@ function DemoBarChart({ data = null, dataKey = "value" }) {
     </div>
   )
 }
-function SuperAdminDashboard() {
-  const { branch } = useBranch()
-  const [metrics, setMetrics] = useState({
-    students: { value: 0, isLoading: true, error: null },
-    courses: { value: 0, isLoading: true, error: null }
-  })
-
-  useEffect(() => {
-    if (!branch?.id) return
-    let mounted = true
-    async function loadMetrics() {
-      setMetrics(m => ({
-        students: { ...m.students, isLoading: true, error: null },
-        courses: { ...m.courses, isLoading: true, error: null }
-      }))
-      try {
-        const students = await studentService.list({ branchId: branch.id })
-        if (mounted) setMetrics(m => ({ ...m, students: { value: students.length, isLoading: false, error: null } }))
-      } catch {
-        if (mounted) setMetrics(m => ({ ...m, students: { value: 0, isLoading: false, error: true } }))
-      }
-      try {
-        const courses = await courseService.list({ branchId: branch.id })
-        if (mounted) setMetrics(m => ({ ...m, courses: { value: courses.length, isLoading: false, error: null } }))
-      } catch {
-        if (mounted) setMetrics(m => ({ ...m, courses: { value: 0, isLoading: false, error: true } }))
-      }
-    }
-    loadMetrics()
-    return () => { mounted = false }
-  }, [branch?.id])
-
-  return (
-    <DashboardLayout title="Dashboard" description="Super Admin view for the selected branch.">
-      <div className="grid min-w-0 gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
-            <p className="text-sm text-muted-foreground">Branch: {branch?.name ?? 'None'}</p>
-          </div>
-          <Badge variant="secondary" className="px-3 py-1 font-semibold text-xs tracking-wide bg-primary/10 text-primary hover:bg-primary/20">
-            SUPER ADMIN
-          </Badge>
-        </div>
-
-        <section aria-labelledby="dashboard-kpis">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 id="dashboard-kpis" className="text-base font-semibold">Key Metrics</h2>
-            <span className="text-xs text-muted-foreground">Approved mock data</span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              title="Total Students"
-              icon={Users}
-              value={metrics.students.value}
-              isLoading={metrics.students.isLoading}
-              error={metrics.students.error}
-              description="Active mock students in branch"
-            />
-            <KpiCard
-              title="Active Courses"
-              icon={BookOpen}
-              value={metrics.courses.value}
-              isLoading={metrics.courses.isLoading}
-              error={metrics.courses.error}
-              description="Mock courses configured"
-            />
-            <KpiCard
-              title="Demo Admissions"
-              icon={UserCheck}
-              value={12}
-              isLoading={false}
-              description="Fictional static demo value"
-            />
-            <KpiCard
-              title="Demo Revenue"
-              icon={CreditCard}
-              value="PKR 45,000"
-              isLoading={false}
-              description="Fictional static demo value"
-            />
-          </div>
-        </section>
-
-        <div className="grid min-w-0 gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex-row items-center justify-between gap-3 pb-2 border-b">
-              <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold">
-                <BarChart3 size={18} className="shrink-0 text-primary" aria-hidden="true" />
-                Revenue Trend
-              </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <DemoBarChart />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3 pb-2 border-b">
-              <h2 className="flex min-w-0 items-center gap-2 text-base font-semibold">
-                <Activity size={18} className="shrink-0 text-primary" aria-hidden="true" />
-                Recent Activity
-              </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                {[
-                  { title: 'New admission approved', time: '10 mins ago', type: 'success' },
-                  { title: 'Fee payment collected', time: '1 hour ago', type: 'info' },
-                  { title: 'New course created', time: '2 hours ago', type: 'default' },
-                  { title: 'Staff meeting scheduled', time: '5 hours ago', type: 'default' },
-                ].map((act, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${act.type === 'success' ? 'bg-green-500' : act.type === 'info' ? 'bg-blue-500' : 'bg-primary/40'}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground">{act.title}</p>
-                      <p className="text-[10px] text-muted-foreground">{act.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <section aria-labelledby="quick-operations">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 id="quick-operations" className="text-base font-semibold">Quick Operations</h2>
-            <span className="text-xs text-muted-foreground">Unauthorized actions disabled</span>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { title: 'New Admission', icon: UserPlus },
-              { title: 'Collect Fee', icon: PaymentIcon },
-              { title: 'Generate Report', icon: FileText },
-              { title: 'Settings', icon: Settings }
-            ].map((action, i) => (
-              <Card key={i} className="transition-colors opacity-50 bg-muted/20">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-muted text-muted-foreground">
-                      <action.icon size={20} />
-                    </div>
-                    <span className="font-semibold text-sm text-muted-foreground">{action.title}</span>
-                  </div>
-                  <ArrowRight size={16} className="text-muted-foreground/50" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      </div>
-    </DashboardLayout>
-  )
-}
-
 function DefaultDashboard() {
   const { branch } = useBranch()
   const [metrics, setMetrics] = useState({
@@ -716,7 +559,6 @@ export default function DashboardPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedRole(availableRoles[0])
     } else if (selectedRole && !availableRoles.includes(selectedRole)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedRole(null)
     }
   }, [availableRoles, selectedRole])
@@ -764,8 +606,8 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col h-full">
         {availableRoles.length > 1 && (
-          <div className="px-6 pt-6 -mb-2 z-10 relative">
-            <div className="rounded-lg border border-primary/20 bg-card p-3 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+          <div className="relative z-10 min-w-0 px-3 pt-6 -mb-2 sm:px-6">
+            <div className="flex min-w-0 flex-col justify-between gap-4 rounded-lg border border-primary/20 bg-card p-3 shadow-sm sm:flex-row sm:items-center">
               <div>
                 <p className="sr-only">{branch?.name}</p>
                 <h2 className="text-sm font-semibold">View Dashboard As</h2>
@@ -773,14 +615,14 @@ export default function DashboardPage() {
                   Presentation preview only
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex min-w-0 flex-wrap gap-2">
                 {availableRoles.map(role => (
                   <Button
                     key={role}
                     variant={selectedRole === role ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSelectedRole(role)}
-                    className="text-xs"
+                    className="w-full min-w-0 text-xs sm:w-auto"
                   >
                     {ROLE_LABELS[role] ?? role}
                   </Button>

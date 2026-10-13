@@ -17,6 +17,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import { studentService } from '../../services/studentService.js'
 import { canAccess, PERMISSIONS } from '../../constants/permissions.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
+import { financialService } from '../../services/financialService.js'
 
 function ProfileCard({ title, icon: Icon, children }) {
   return <Card className="min-w-0 shadow-sm"><CardHeader className="border-b border-border/50 bg-muted/20"><CardTitle className="flex items-center gap-2 text-base"><Icon size={18} aria-hidden="true" />{title}</CardTitle></CardHeader><CardContent className="p-5">{children}</CardContent></Card>
@@ -39,8 +40,8 @@ export default function StudentProfilePage() {
   useEffect(() => {
     let active = true
     if (!branchId || !studentId) return () => { active = false }
-    studentService.getProfile(studentId, { branchId }).then(
-      student => { if (active) setResult({ scopeKey, studentId, retry, student }) },
+    Promise.all([studentService.getProfile(studentId, { branchId }), financialService.overview({ branchId })]).then(
+      ([student, financial]) => { if (active) setResult({ scopeKey, studentId, retry, student, financial }) },
       error => { if (active) setResult({ scopeKey, studentId, retry, error }) },
     )
     return () => { active = false }
@@ -51,6 +52,7 @@ export default function StudentProfilePage() {
   const error = current?.error ?? (current?.student && !student ? { code: 'NOT_FOUND' } : null)
   const canEdit = canAccess(PERMISSIONS.STUDENTS_EDIT, user, branchId)
   const sortedEnrollments = [...(student?.enrollments ?? [])].sort((a, b) => Date.parse(b.enrolledAt) - Date.parse(a.enrolledAt))
+  const studentChallans = (current?.financial?.challans ?? []).filter(item => item.studentId === studentId)
 
   function saved(updated) {
     setMessage(`${updated.name} ka profile save ho gaya.`)
@@ -63,9 +65,6 @@ export default function StudentProfilePage() {
       <Button variant="outline" onClick={() => navigate(ROUTE_PATHS.STUDENTS)}><ArrowLeft size={16} aria-hidden="true" />Back to Students</Button>
       {student && canEdit && <Button onClick={() => setEditing(true)}><Pencil size={16} aria-hidden="true" />Edit Student</Button>}
     </div>
-    <header><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold tracking-tight">Student Profile</h1><Badge variant="secondary">DEMO</Badge></div>
-      <p className="mt-2 text-muted-foreground">Saved student record for {branch?.name ?? 'the selected branch'}.</p>
-    </header>
     {message && <p role="status" className="rounded-md bg-primary/10 p-3 text-sm">{message}</p>}
     {!current ? <div role="status" className="flex items-center gap-3 rounded-lg border p-8 text-muted-foreground"><Loader2 size={20} aria-hidden="true" className="animate-spin motion-reduce:animate-none" />Loading student...</div>
       : error ? <div className="flex flex-col items-start gap-3 rounded-lg border p-8"><AlertCircle aria-hidden="true" className="text-destructive" /><p role="alert" className="text-destructive">{error.code === 'NOT_FOUND' ? 'This student was not found in the selected branch.' : `Unable to load student profile. ${error.message}`}</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry</Button></div>
@@ -103,7 +102,7 @@ export default function StudentProfilePage() {
               </article>)}
             </div>}
           </ProfileCard>
-          <ProfileCard title="Fees" icon={CreditCard}><p className="text-sm text-muted-foreground">No fee records available yet.</p></ProfileCard>
+          <ProfileCard title="Fees" icon={CreditCard}>{studentChallans.length === 0 ? <p className="text-sm text-muted-foreground">No saved challans.</p> : <div className="space-y-2">{studentChallans.map(item => <article className="rounded-md border p-3 text-sm" key={item.id}><div className="flex justify-between gap-2"><strong>{item.reference}</strong><Badge variant="secondary">{item.status}</Badge></div><p className="mt-1 text-muted-foreground">{item.description} · PKR {item.amount.toLocaleString('en-PK')}</p><p className="text-muted-foreground">Paid PKR {item.paidAmount.toLocaleString('en-PK')} · Due PKR {item.balance.toLocaleString('en-PK')}</p></article>)}</div>}</ProfileCard>
           <ProfileCard title="Attendance" icon={CalendarCheck}><p className="text-sm text-muted-foreground">No attendance records available yet.</p></ProfileCard>
         </div>}
     {student && editing && <StudentEditDialog open={editing} student={student} branchId={branchId} onOpenChange={setEditing} onSaved={saved} />}

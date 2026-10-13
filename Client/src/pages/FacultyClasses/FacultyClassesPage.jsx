@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertCircle, BookOpen, CalendarDays, GraduationCap, Loader2, Search, UsersRound } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { AlertCircle, BookOpen, GraduationCap, Loader2, Search, UsersRound } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Badge } from '../../components/ui/badge.jsx'
 import { Button } from '../../components/ui/button.jsx'
@@ -17,6 +17,7 @@ import { courseService } from '../../services/courseService.js'
 import { batchService } from '../../services/batchService.js'
 import { facultyService } from '../../services/facultyService.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
+import ClassSchedulePanel from '../../components/FacultyClasses/ClassSchedulePanel.jsx'
 
 const tabs = [
   ['Directory', ROUTE_PATHS.FACULTY_CLASSES],
@@ -43,6 +44,7 @@ function State({ loading, error, retry, children }) {
 }
 
 export default function FacultyClassesPage({ section = 'directory' }) {
+  const location = useLocation()
   const { branchId, branch, scopeKey } = useBranch()
   const [result, setResult] = useState(null)
   const [retryCount, setRetryCount] = useState(0)
@@ -83,14 +85,9 @@ export default function FacultyClassesPage({ section = 'directory' }) {
     return matches.sort((a, b) => (sort === 'name-desc' ? -1 : 1) * a.name.localeCompare(b.name))
   }, [data, search, status, assignment, sort])
 
-  const pageTitle = section === 'subjects' ? 'Teacher Subject Assignments' : section === 'batches' ? 'Teacher Batch Assignments' : section === 'schedule' ? 'Class Schedule' : 'Faculty & Classes'
   const retry = () => setRetryCount(value => value + 1)
 
   return <DashboardLayout><div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-    <header>
-      <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1><Badge variant="secondary">DEMO</Badge></div>
-      <p className="mt-2 text-muted-foreground">Authorized branch view for {branch?.name ?? 'the selected branch'}.</p>
-    </header>
     <ModuleNav section={section} />
     <State loading={!current} error={current?.error} retry={retry}>
       {data && section === 'directory' && <>
@@ -116,14 +113,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
         {data.batchAssignments.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No saved batches are available in this branch.</p> : <div className="grid gap-3 sm:grid-cols-2">{data.batchAssignments.map(batch => <article key={batch.id} className="min-w-0 rounded-lg border p-4"><h2 className="break-words font-semibold">{batch.name}</h2><p className="mt-1 text-sm text-muted-foreground">Course: {batch.courseName}</p><p className="mt-1 text-sm text-muted-foreground">Teacher assignment: {batch.teacherAssignments.length ? batch.teacherAssignments.join(', ') : 'None saved'}</p><Button asChild className="mt-3" variant="outline"><Link to={`/faculty/classes/${encodeURIComponent(batch.id)}`}>View enrolled students</Link></Button></article>)}</div>}
         <p className="mt-4 text-sm text-muted-foreground">Teacher-batch assignment records are not part of the current DEMO data model. No teacher is assumed to belong to a batch.</p>
       </SectionCard>}
-      {data && section === 'schedule' && <SectionCard title="Weekly class timetable" icon={CalendarDays}>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="text-sm">Course<select aria-label="Filter schedule by course" disabled className="mt-1 min-h-11 w-full rounded-md border border-input bg-background px-3"><option>Schedule data unavailable</option></select></label>
-          <label className="text-sm">Batch<select aria-label="Filter schedule by batch" disabled className="mt-1 min-h-11 w-full rounded-md border border-input bg-background px-3"><option>Schedule data unavailable</option></select></label>
-          <label className="text-sm">Teacher<select aria-label="Filter schedule by teacher" disabled className="mt-1 min-h-11 w-full rounded-md border border-input bg-background px-3"><option>Schedule data unavailable</option></select></label>
-        </div>
-        <div className="mt-5 rounded-lg border border-dashed p-8 text-center"><p className="font-medium">No saved class sessions are available.</p><p className="mt-2 text-sm text-muted-foreground">Schedule display and conflict checks are read-only and await the shared F04 Batch Timetable contract. No scheduling rules, sessions or room assignments were invented.</p></div>
-      </SectionCard>}
+      {data && section === 'schedule' && <ClassSchedulePanel branchId={branchId} batches={data.batches} teachers={data.teachers} requestedClassId={location.state?.classId} onReload={retry} />}
     </State>
   </div></DashboardLayout>
 }

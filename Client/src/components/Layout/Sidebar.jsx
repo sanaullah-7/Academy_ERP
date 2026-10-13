@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '../ui/button.jsx'
 import AcademyLogo from './AcademyLogo.jsx'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
@@ -52,11 +52,18 @@ const modulePaths = Object.freeze({
   Students: ROUTE_PATHS.STUDENTS,
   'Courses & Batches': ROUTE_PATHS.COURSES_BATCHES,
   'Faculty & Classes': ROUTE_PATHS.FACULTY_CLASSES,
+  Fees: ROUTE_PATHS.FEES,
+  Finance: ROUTE_PATHS.FINANCE,
+  'Demo Classes': ROUTE_PATHS.DEMO_CLASSES,
+  Assets: ROUTE_PATHS.ASSETS,
+  Reports: ROUTE_PATHS.REPORTS,
+  Branches: ROUTE_PATHS.BRANCHES,
+  Users: ROUTE_PATHS.USERS,
+  Settings: ROUTE_PATHS.SETTINGS,
 })
 
 export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
   const { can } = usePermissions()
-  const { pathname } = useLocation()
   return (
     <div className="workspace-sidebar" data-collapsed={isCollapsed}>
       <div className="workspace-brand">
@@ -72,7 +79,7 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
         )}
       </div>
       <nav className="workspace-navigation" aria-label="Application modules">
-        <div className={pathname === ROUTE_PATHS.DASHBOARD ? 'workspace-nav-placeholder' : 'workspace-current'} aria-current={pathname === ROUTE_PATHS.DASHBOARD ? undefined : 'page'} title="Workspace">
+        <div className="workspace-nav-placeholder" title="Workspace">
           <PanelsTopLeft size={19} aria-hidden="true" />
           <span className="workspace-sidebar-label">Workspace</span>
         </div>
@@ -82,7 +89,7 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
             <ul className="space-y-1">
               {group.items.map(({ label, icon: Icon }) => (
                 <li key={label}>
-                  {modulePermissions[label] && can(modulePermissions[label]) ? <NavLink to={modulePaths[label]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
+                  {(!modulePermissions[label] || can(modulePermissions[label])) ? <NavLink to={modulePaths[label]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
                     <Icon size={19} aria-hidden="true" />
                     <span className="workspace-sidebar-label">{label}</span>
                   </NavLink> : <button type="button" disabled className="workspace-nav-placeholder" aria-label={`${label} — coming soon`} title={`${label} — coming soon`}>

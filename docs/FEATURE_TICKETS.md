@@ -1371,7 +1371,7 @@ Dependencies: Course, subject, batch and schedule requirements.
 - F05-002 — Faculty Profiles — IN_REVIEW
 - F05-003 — Teacher Subject Assignments — IN_REVIEW (read-only; assignment writes blocked by TBD subject model/policy)
 - F05-004 — Teacher Batch Assignments — IN_REVIEW (read-only; no approved teacher-batch relationship)
-- F05-005 — Class Scheduling — IN_REVIEW (read-only empty state; shared F04 schedule contract pending)
+- F05-005 — Class Scheduling — IN_REVIEW (owner-approved single-date DEMO CRUD, overlap validation and Dashboard integration implemented; acceptance pending)
 - F05-006 — Class Student Views — IN_REVIEW
 - F05-007 — Faculty/Class Module Testing — IN_REVIEW
 
@@ -1381,7 +1381,11 @@ Dependencies: Teacher permissions, batch model and scheduling rules.
 
 Implemented branch-scoped faculty directory and identity-only profiles from explicit demo teacher role memberships. Subject and teacher-batch assignment views are honest read-only states because the subject collection, assignment relationships and write policies remain TBD. Class schedule is read-only with no sessions fabricated; it awaits the shared F04 Batch Timetable contract. Class student view uses only same-branch Active Enrollment → Student → Batch references and links to existing Student profiles. Teacher access remains denied until assignment relationships and enforcement are approved. Focused tests and lint pass; one production build passes. Owner acceptance pending.
 
+F05-005 update (2026-10-13): Owner approved branch-scoped single-date class scheduling. Super Admin can create/view/edit/delete; Receptionist and Owner remain view-only; Teacher remains denied until reliable assignment authorization exists. Required subject text, batch, enabled branch Teacher, date, start/end time and location persist in additive mock database version 5. Same-date overlaps for teacher, batch or location are rejected. Dashboard shows saved today/upcoming classes with actual Active Enrollment counts and live minute-based timing labels. Focused 30 tests, targeted ESLint and one production build pass. IN_REVIEW; owner acceptance pending.
+
 ## F06 — Fees
+
+**F06 connected DEMO workflow — IN_REVIEW (2026-10-13):** Owner-approved branch-scoped challans, partial/full verified payments, durable CH/RCPT references, printable views, fee ledger, Finance revenue/expense ledger and Dashboard Recent Payments are implemented with additive mock database version 6. Final QA added safe branch-scoped Fees and Finance CSV downloads; only Verified payments and Posted expenses enter corresponding projections. Refunds, reversals, discounts, waivers, installment schedules and backend/payment-gateway integration remain deferred. Owner acceptance pending.
 
 - F06-001 — Fee Dashboard and Listing
 - F06-002 — Fee Plans and Structures

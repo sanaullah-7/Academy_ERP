@@ -56,15 +56,15 @@ describe('F05 Faculty & Classes screens', () => {
     expect(screen.getByText(admission.admissionId)).toBeInTheDocument()
   })
 
-  it('shows an honest read-only timetable state and disables unsupported schedule filters', async () => {
+  it('shows the approved class schedule controls and empty state for Super Admin', async () => {
     await signIn()
     history.replaceState(null, '', '/faculty/schedule')
     render(<App />)
-    expect(await screen.findByText('No saved class sessions are available.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Filter schedule by course')).toBeDisabled()
-    expect(screen.getByLabelText('Filter schedule by batch')).toBeDisabled()
-    expect(screen.getByLabelText('Filter schedule by teacher')).toBeDisabled()
-    expect(screen.getByText(/await the shared F04 Batch Timetable contract/)).toBeInTheDocument()
+    expect(await screen.findByText('No saved classes match these filters.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add Class' })).toBeEnabled()
+    expect(screen.getByLabelText('Filter classes by date')).toBeEnabled()
+    expect(screen.getByLabelText('Filter classes by batch')).toBeEnabled()
+    expect(screen.getByLabelText('Filter classes by teacher')).toBeEnabled()
   })
 
   it('denies Teacher and ambiguous multi-role accounts direct module access', async () => {

@@ -18,15 +18,9 @@ export default function NewAdmissionPage() {
   return (
     <DashboardLayout>
       <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
-        <header className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(ROUTE_PATHS.ADMISSIONS)} aria-label="Back to admissions">
-            <ArrowLeft size={20} />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">New Admission</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Enter student details to initiate a new admission application.</p>
-          </div>
-        </header>
+        <Button className="w-fit" variant="ghost" onClick={() => navigate(ROUTE_PATHS.ADMISSIONS)}>
+          <ArrowLeft size={20} />Back to admissions
+        </Button>
 
         <Card>
           <NewAdmissionForm

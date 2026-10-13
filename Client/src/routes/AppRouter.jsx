@@ -22,6 +22,9 @@ import CoursesBatchesPage from '../pages/CoursesBatches/CoursesBatchesPage.jsx'
 import FacultyClassesPage from '../pages/FacultyClasses/FacultyClassesPage.jsx'
 import FacultyProfilePage from '../pages/FacultyClasses/FacultyProfilePage.jsx'
 import ClassDetailsPage from '../pages/FacultyClasses/ClassDetailsPage.jsx'
+import ComingSoonPage from '../pages/ComingSoon/ComingSoonPage.jsx'
+import FeesPage from '../pages/Fees/FeesPage.jsx'
+import FinancePage from '../pages/Finance/FinancePage.jsx'
 import { PERMISSIONS } from '../constants/permissions.js'
 
 export default function AppRouter({ children }) {
@@ -44,6 +47,14 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.CLASS_STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><ClassDetailsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FACULTY_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyProfilePage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><NewAdmissionPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FEES} element={<ProtectedRoute permission={PERMISSIONS.FEES_VIEW}><FeesPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.FINANCE} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.DEMO_CLASSES} element={<ProtectedRoute><ComingSoonPage moduleName="Demo Classes" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.ASSETS} element={<ProtectedRoute><ComingSoonPage moduleName="Assets" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.REPORTS} element={<ProtectedRoute><ComingSoonPage moduleName="Reports" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.BRANCHES} element={<ProtectedRoute><ComingSoonPage moduleName="Branches" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.USERS} element={<ProtectedRoute><ComingSoonPage moduleName="Users" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.SETTINGS} element={<ProtectedRoute><ComingSoonPage moduleName="Settings" /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />
       </Routes>

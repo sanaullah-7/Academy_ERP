@@ -1,0 +1,24 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createElement } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { authService } from './authService.js'
+import { admissionService } from './admissionService.js'
+import { financialService } from './financialService.js'
+import { createMockDatabase } from '../mock/mockDatabase.js'
+import RecentPayments from '../components/Dashboard/Shared/RecentPayments.jsx'
+
+const query={branchId:'demo-central'}
+beforeEach(()=>localStorage.clear())
+async function enrollment(){
+ const admission=createMockDatabase().createAdmission({studentName:'DEMO Fee Student',guardianName:'Guardian',contact:'000',dob:'2010-01-01',course:'Demo Course Two',courseId:'course-demo-2'},query)
+ await authService.login({userId:'demo-admin'});await authService.selectBranch('demo-admin',query.branchId)
+ await admissionService.changeStatus(admission.id,{status:'Approved',expectedStatus:'Pending'},query)
+ return (await admissionService.enroll(admission.id,{batchId:'batch-demo-course-demo-2'},query)).enrollment
+}
+describe('financialService',()=>{
+ it('persists a challan, partial/full verified receipts and prevents overpayment',async()=>{const enrolled=await enrollment();const challan=await financialService.createChallan({enrollmentId:enrolled.id,description:'DEMO tuition',amount:10000,issueDate:'2026-10-01',dueDate:'2026-10-31'},query);expect(challan.reference).toBe('CH-1');await financialService.recordPayment({challanId:challan.id,amount:4000,method:'Cash'},query);let view=await financialService.overview(query);expect(view.challans[0]).toMatchObject({paidAmount:4000,balance:6000,status:'Partial'});await expect(financialService.recordPayment({challanId:challan.id,amount:6001,method:'Cash'},query)).rejects.toMatchObject({code:'OVERPAYMENT'});const receipt=await financialService.recordPayment({challanId:challan.id,amount:6000,method:'Bank Transfer'},query);expect(receipt.receiptReference).toBe('RCPT-2');view=await financialService.overview(query);expect(view.challans[0]).toMatchObject({balance:0,status:'Paid'});expect(view.payments).toHaveLength(2)})
+ it('enforces role and branch policies',async()=>{const enrolled=await enrollment();await authService.login({userId:'demo-owner'});await expect(financialService.createChallan({enrollmentId:enrolled.id,description:'Fee',amount:1,issueDate:'2026-10-01',dueDate:'2026-10-01'},query)).rejects.toMatchObject({code:'DEMO_ACTION_DENIED'});await expect(financialService.financeOverview(query)).resolves.toBeTruthy();await authService.login({userId:'demo-teacher'});await expect(financialService.overview(query)).rejects.toMatchObject({code:'DEMO_ACTION_DENIED'})})
+ it('records branch-scoped posted expenses for authorized Owner',async()=>{await authService.login({userId:'demo-owner'});const expense=await financialService.createExpense({amount:2500,category:'Utilities',description:'DEMO power bill',method:'Bank Transfer',entryDate:'2026-10-13'},query);expect(expense.status).toBe('Posted');const finance=await financialService.financeOverview(query);expect(finance.expenses).toHaveLength(1);expect(finance.expenses.reduce((total,item)=>total+item.amount,0)).toBe(2500)})
+ it('shows one saved verified receipt in Fee, Finance and Dashboard data and preserves branch isolation',async()=>{const enrolled=await enrollment();const challan=await financialService.createChallan({enrollmentId:enrolled.id,description:'DEMO tuition',amount:3000,issueDate:'2026-10-01',dueDate:'2026-10-31'},query);const receipt=await financialService.recordPayment({challanId:challan.id,amount:1500,method:'Cash'},query);const feeView=await financialService.overview(query),financeView=await financialService.financeOverview(query);expect(feeView.payments.filter(item=>item.id===receipt.id)).toHaveLength(1);expect(financeView.payments.filter(item=>item.id===receipt.id)).toHaveLength(1);expect(financeView.payments[0]).toMatchObject({id:receipt.id,status:'Verified',receiptReference:receipt.receiptReference});const onOpenReceipt=vi.fn();render(createElement(RecentPayments,{branchId:query.branchId,payments:feeView.payments,onOpenReceipt}));const receiptButton=screen.getByRole('button',{name:`View receipt ${receipt.receiptReference} for DEMO Fee Student`});await userEvent.click(receiptButton);expect(onOpenReceipt).toHaveBeenCalledWith(expect.objectContaining({id:receipt.id,receiptReference:receipt.receiptReference}));await authService.selectBranch('demo-admin','demo-north');await expect(financialService.financeOverview({branchId:'demo-north'})).resolves.toMatchObject({payments:[],expenses:[]});await authService.selectBranch('demo-admin',query.branchId);expect((await financialService.financeOverview(query)).payments.filter(item=>item.id===receipt.id)).toHaveLength(1)})
+})

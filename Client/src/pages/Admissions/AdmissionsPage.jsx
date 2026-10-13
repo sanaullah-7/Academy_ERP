@@ -85,15 +85,7 @@ export default function AdmissionsPage() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">Admissions</h1>
-              <Badge variant="secondary" className="font-mono text-xs uppercase tracking-wider">DEMO</Badge>
-            </div>
-            <p className="text-muted-foreground mt-1">Manage prospective student applications.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Display serials are branch-specific and may change after deletion. Permanent references stay unchanged.</p>
-          </div>
+        <div className="flex justify-end">
           {canCreate && <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!savePending) setIsDialogOpen(open) }}>
             <DialogTrigger asChild>
               <Button ref={newAdmissionTrigger} className="shrink-0 gap-2">
@@ -116,7 +108,7 @@ export default function AdmissionsPage() {
               />
             </DialogContent>
           </Dialog>}
-        </header>
+        </div>
         {successAdmission && <p role="status" className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">DEMO admission {successAdmission.displayAdmissionId ?? successAdmission.admissionId} saved as Pending with a linked Provisional student.</p>}
 
         {actionFeedback && <p role="status" className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">{actionFeedback}</p>}

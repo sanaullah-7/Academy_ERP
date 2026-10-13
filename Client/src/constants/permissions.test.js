@@ -6,7 +6,7 @@ import { DEMO_USERS, getAuthorizedBranches } from '../mock/authFixtures.js'
 describe('approved roles and permission definitions', () => {
   it('defines only four roles and the confirmed implemented module permissions', () => {
     expect(Object.values(ROLES)).toEqual(['super_admin', 'owner', 'receptionist', 'teacher'])
-    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view'])
+    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage'])
     expect(isKnownPermission('workspace.view')).toBe(true)
     expect(isKnownPermission('payments.reverse')).toBe(false)
   })
@@ -34,6 +34,8 @@ describe('approved roles and permission definitions', () => {
     expect(canAccess(PERMISSIONS.FACULTY_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.FACULTY_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
     expect(canAccess(PERMISSIONS.CLASSES_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
+    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-admin'), 'demo-north')).toBe(true)
+    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-owner'), 'demo-central')).toBe(false)
     expect(canAccess('admissions.delete', get('demo-admin'), 'demo-central')).toBe(true)
     expect(canAccess('admissions.delete', get('demo-owner'), 'demo-central')).toBe(false)
     expect(canAccess('admissions.delete', get('demo-reception'), 'demo-north')).toBe(false)
@@ -41,6 +43,20 @@ describe('approved roles and permission definitions', () => {
     expect(canAccess('admissions.decide', get('demo-owner'), 'demo-central')).toBe(false)
     expect(canAccess('admissions.decide', get('demo-reception'), 'demo-north')).toBe(false)
     expect(canAccess(PERMISSIONS.ADMISSIONS_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
+  })
+
+  it('applies the approved Fees and Finance role boundaries', () => {
+    const get = id => DEMO_USERS.find(user => user.id === id)
+    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-admin'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-reception'), 'demo-north')).toBe(true)
+    expect(canAccess(PERMISSIONS.FEES_COLLECT, get('demo-reception'), 'demo-north')).toBe(true)
+    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-reception'), 'demo-north')).toBe(false)
+    expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.EXPENSES_MANAGE, get('demo-owner'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
+    expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
+    expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
   })
 
   it.each([null, {}, { enabled: true, assignments: [null] },

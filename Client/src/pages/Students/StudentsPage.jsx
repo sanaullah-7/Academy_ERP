@@ -20,7 +20,7 @@ import { batchService } from '../../services/batchService.js'
 const emptyFilters = { search: '', status: 'All', courseId: 'All', batchId: 'All', sort: 'name-asc' }
 
 export default function StudentsPage() {
-  const { branchId, branch, scopeKey } = useBranch()
+  const { branchId, scopeKey } = useBranch()
   const [result, setResult] = useState(null)
   const [retry, setRetry] = useState(0)
   const [filters, setFilters] = useState(emptyFilters)
@@ -82,10 +82,6 @@ export default function StudentsPage() {
   }
 
   return <DashboardLayout><div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-    <header><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold tracking-tight">Students</h1><Badge variant="secondary">DEMO</Badge></div>
-      <p className="mt-2 text-muted-foreground">Your student directory for {branch?.name ?? 'the selected branch'}.</p>
-      <p className="mt-2 text-xs text-muted-foreground">Students yahan Admissions se aate hain. Legacy status saved data badle baghair Active dikhaya jata hai.</p>
-    </header>
     {message && <p role="status" className="rounded-md bg-primary/10 p-3 text-sm">{message}</p>}
     <Card className="min-w-0 overflow-hidden shadow-sm">
       <CardHeader className="border-b border-border/50 bg-muted/20">
