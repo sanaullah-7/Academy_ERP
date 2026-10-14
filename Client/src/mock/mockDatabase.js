@@ -7,7 +7,7 @@
 import { MOCK_DATABASE_KEY } from '../constants/storageKeys.js'
 import { DEMO_BRANCHES, DEMO_USERS } from './authFixtures.js'
 import { getBranchRoles, ROLES } from '../constants/roles.js'
-import { createSeedDatabase, createBatchSeeds } from './seedData.js'
+import { createSeedDatabase, createBatchSeeds, createDemoClassSeeds } from './seedData.js'
 import { admissionNumberFromId, formatAdmissionId } from '../lib/admissionIds.js'
 import { createDisplayProjector } from './displaySerials.js'
 import { readMockSession } from './mockAuth.js'
@@ -24,7 +24,7 @@ const validText = (value) => typeof value === 'string' && value.trim().length > 
 const validDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value
 const validContact = (value) => typeof value === 'string' && /^\+?[0-9\s().-]{3,30}$/.test(value.trim()) && value.length <= 200
 const validBranch = (value) => DEMO_BRANCHES.some((branch) => branch.id === value)
-const collections = ['students', 'courses', 'admissions', 'batches', 'enrollments', 'classes', 'challans', 'payments', 'expenses']
+const collections = ['students', 'courses', 'admissions', 'batches', 'enrollments', 'classes', 'challans', 'payments', 'expenses', 'demoClasses']
 
 function validateRecord(record, collection) {
   if (!object(record) || !validText(record.id) || !validBranch(record.branchId)) {
@@ -82,6 +82,37 @@ function validateRecord(record, collection) {
   } else if (collection === 'classes') {
     const keys = ['id', 'branchId', 'subject', 'batchId', 'teacherId', 'classDate', 'startTime', 'endTime', 'location']
     if (Object.keys(record).some(key => !keys.includes(key)) || !['subject', 'batchId', 'teacherId', 'classDate', 'startTime', 'endTime', 'location'].every(key => validText(record[key])) || !validDateOnly(record.classDate) || !/^\d{2}:\d{2}$/.test(record.startTime) || !/^\d{2}:\d{2}$/.test(record.endTime) || record.startTime >= record.endTime) fail('INVALID_RECORD', 'Invalid class schedule record.')
+  } else if (collection === 'demoClasses') {
+    const validKeys = ['id', 'branchId', 'demoNumber', 'demoId', 'studentName', 'studentId', 'guardianName', 'guardianContact', 'courseId', 'courseName', 'preferredBatchId', 'batchName', 'requestedDate', 'requestedTime', 'notes', 'status', 'scheduledSession', 'attendance', 'convertedAdmissionId', 'convertedAdmissionDisplayId', 'convertedAt', 'statusHistory', 'createdAt', 'updatedAt']
+    if (Object.keys(record).some((key) => !validKeys.includes(key))) fail('INVALID_RECORD', 'Demo class record contains unknown fields.')
+    if (!validText(record.studentName) || !validText(record.guardianName) || !validContact(record.guardianContact) || !validText(record.courseId) || !validDateOnly(record.requestedDate)) {
+      fail('INVALID_RECORD', 'Demo class missing required student, guardian, course, or date.')
+    }
+    const validStatuses = ['Registered', 'Scheduled', 'Attended', 'Missed', 'Cancelled', 'Converted']
+    if (!validStatuses.includes(record.status)) fail('INVALID_RECORD', 'Invalid demo status.')
+    if (record.studentId != null && !validText(record.studentId)) fail('INVALID_RECORD', 'Invalid student ID.')
+    if (record.preferredBatchId != null && !validText(record.preferredBatchId)) fail('INVALID_RECORD', 'Invalid preferred batch ID.')
+    if (record.scheduledSession != null) {
+      if (!object(record.scheduledSession)) fail('INVALID_RECORD', 'Invalid scheduled session.')
+      const { classDate, startTime, endTime, teacherId, location } = record.scheduledSession
+      if (!validDateOnly(classDate) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime) || startTime >= endTime || !validText(teacherId) || !validText(location)) {
+        fail('INVALID_RECORD', 'Invalid scheduled session details.')
+      }
+    }
+    if (record.attendance != null) {
+      if (!object(record.attendance)) fail('INVALID_RECORD', 'Invalid attendance record.')
+      if (!['Present', 'Absent'].includes(record.attendance.status) || !validText(record.attendance.markedByUserId) || !validText(record.attendance.markedAt)) {
+        fail('INVALID_RECORD', 'Invalid attendance fields.')
+      }
+    }
+    if (record.statusHistory !== undefined) {
+      if (!Array.isArray(record.statusHistory)) fail('INVALID_RECORD', 'Invalid demo status history.')
+      for (const event of record.statusHistory) {
+        if (!object(event) || !validText(event.id) || !validText(event.demoId) || !validText(event.toStatus) || !validText(event.actorUserId) || !validText(event.occurredAt)) {
+          fail('INVALID_RECORD', 'Invalid status event in demo history.')
+        }
+      }
+    }
   } else if (collection === 'batches') {
     if (Object.keys(record).some(key => !['id', 'branchId', 'courseId', 'name'].includes(key)) || !validText(record.name) || !validText(record.courseId)) fail('INVALID_RECORD', 'Invalid provisional batch record.')
   } else {
@@ -156,9 +187,10 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       if (counter === undefined) {
         if (!migrating) fail('CORRUPTED_STORAGE', 'Missing durable branch counter.')
         // Old global high-water protects deleted legacy numbers whose branch is unknown.
-        counter = { admission: data.admissionCounter ?? 0, student: 0 }
+        counter = { admission: data.admissionCounter ?? 0, student: 0, demo: 0 }
       }
-      if (!object(counter) || Object.keys(counter).some((key) => !['admission', 'student'].includes(key)) || !['admission', 'student'].every((key) => Number.isSafeInteger(counter[key]) && counter[key] >= 0)) fail('CORRUPTED_STORAGE', 'Invalid durable branch counter.')
+      counter.demo = counter.demo ?? 0
+      if (!object(counter) || Object.keys(counter).some((key) => !['admission', 'student', 'demo'].includes(key)) || !['admission', 'student', 'demo'].every((key) => Number.isSafeInteger(counter[key]) && counter[key] >= 0)) fail('CORRUPTED_STORAGE', 'Invalid durable branch counter.')
       counters[branch.id] = counter
       const usedAdmissions = new Set()
       const admissions = data.admissions.filter((record) => record.branchId === branch.id)
@@ -220,7 +252,8 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       initial.payments = []
       initial.expenses = []
       initial.financialCounters = Object.fromEntries(DEMO_BRANCHES.map(branch => [branch.id, { challan: 0, receipt: 0 }]))
-      initial.version = 6
+      initial.demoClasses = createDemoClassSeeds()
+      initial.version = 7
       normalizeAdmissions(initial)
       if (persist) write(initial)
       return initial
@@ -251,7 +284,11 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       data.financialCounters = Object.fromEntries(DEMO_BRANCHES.map(branch => [branch.id, { challan: 0, receipt: 0 }]))
       data.version = 6
     }
-    if (data.version !== 6) fail('UNSUPPORTED_VERSION', 'Saved mock data version is unsupported; data was preserved.')
+    if (data.version === 6) {
+      if (data.demoClasses === undefined) data.demoClasses = createDemoClassSeeds()
+      data.version = 7
+    }
+    if (data.version !== 7) fail('UNSUPPORTED_VERSION', 'Saved mock data version is unsupported; data was preserved.')
     normalizeAdmissions(data)
     if (persist && !preserveExisting && (JSON.stringify(data) !== raw || data.version === 1 || data.version === 2 || data.version === 3)) write(data)
     return data
@@ -694,6 +731,418 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const project = createDisplayProjector(data)
     return { enrollment, admission: project('admissions', admission), student: project('students', student) }
   }
+
+  function demoClassOperation(operation, { id, record, query = {} } = {}) {
+    if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
+
+    const isView = ['list', 'get'].includes(operation)
+    const permission = isView ? PERMISSIONS.DEMO_CLASSES_VIEW : PERMISSIONS.DEMO_CLASSES_MANAGE
+    if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for this Demo Classes action.')
+
+    const mutating = !isView
+    const data = read(!mutating)
+
+    const projectDemo = (item) => {
+      const course = data.courses.find(c => c.id === item.courseId && c.branchId === item.branchId)
+      const batch = item.preferredBatchId ? data.batches.find(b => b.id === item.preferredBatchId && b.branchId === item.branchId) : null
+      let teacherName = item.scheduledSession?.teacherName
+      if (item.scheduledSession?.teacherId && !teacherName) {
+        const teacher = DEMO_USERS.find(u => u.id === item.scheduledSession.teacherId)
+        teacherName = teacher?.name ?? 'Teacher'
+      }
+      return {
+        ...item,
+        courseName: course?.name ?? item.courseName ?? 'Unknown Course',
+        batchName: batch?.name ?? item.batchName ?? null,
+        scheduledSession: item.scheduledSession ? {
+          ...item.scheduledSession,
+          teacherName: teacherName ?? item.scheduledSession.teacherName,
+        } : null,
+      }
+    }
+
+    if (operation === 'list') {
+      return (data.demoClasses || []).filter(d => d.branchId === query.branchId).map(projectDemo).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+    }
+
+    const index = (data.demoClasses || []).findIndex(d => d.id === id && d.branchId === query.branchId)
+    if (operation === 'get') {
+      if (index < 0) fail('NOT_FOUND', 'Demo class inquiry was not found.')
+      return projectDemo(data.demoClasses[index])
+    }
+
+    if (operation === 'register') {
+      if (!object(record)) fail('INVALID_RECORD', 'Demo registration record is required.')
+      const { studentName, guardianName, guardianContact, courseId, preferredBatchId, requestedDate, requestedTime = '', notes = '', studentId } = record
+      if (!validText(studentName) || !validText(guardianName) || !validContact(guardianContact) || !validText(courseId) || !validDateOnly(requestedDate)) {
+        fail('INVALID_RECORD', 'Complete all required registration fields.')
+      }
+      const course = data.courses.find(c => c.id === courseId && c.branchId === query.branchId)
+      if (!course) fail('INVALID_REFERENCE', 'Choose a course in the active branch.')
+      if (preferredBatchId && !data.batches.some(b => b.id === preferredBatchId && b.branchId === query.branchId && b.courseId === courseId)) {
+        fail('INVALID_REFERENCE', 'Choose a batch belonging to the selected course in this branch.')
+      }
+      if (studentId && !data.students.some(s => s.id === studentId && s.branchId === query.branchId)) {
+        fail('INVALID_REFERENCE', 'Referenced student does not exist in this branch.')
+      }
+
+      // Duplicate submission protection
+      const duplicate = (data.demoClasses || []).find(d =>
+        d.branchId === query.branchId &&
+        d.studentName.trim().toLowerCase() === studentName.trim().toLowerCase() &&
+        d.guardianContact.trim() === guardianContact.trim() &&
+        d.courseId === courseId &&
+        d.requestedDate === requestedDate &&
+        d.status !== 'Cancelled'
+      )
+      if (duplicate) fail('DUPLICATE_REGISTRATION', 'A demo registration already exists for this student, course and requested date.')
+
+      data.branchCounters[query.branchId].demo = (data.branchCounters[query.branchId].demo ?? 0) + 1
+      const demoNumber = data.branchCounters[query.branchId].demo
+      const demoId = `DEMO-${String(demoNumber).padStart(4, '0')}`
+      let newId
+      try { newId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Demo record ID could not be generated.') }
+      if (!validText(newId) || collections.some(col => (data[col] || []).some(item => item.id === newId))) {
+        newId = `demo-${makeId()}`
+      }
+      const now = new Date().toISOString()
+      const newDemo = {
+        id: newId,
+        branchId: query.branchId,
+        demoNumber,
+        demoId,
+        studentName: studentName.trim(),
+        studentId: studentId || null,
+        guardianName: guardianName.trim(),
+        guardianContact: guardianContact.trim(),
+        courseId,
+        courseName: course.name,
+        preferredBatchId: preferredBatchId || null,
+        batchName: data.batches.find(b => b.id === preferredBatchId)?.name || null,
+        requestedDate,
+        requestedTime: (requestedTime || '').trim(),
+        notes: (notes || '').trim(),
+        status: 'Registered',
+        scheduledSession: null,
+        attendance: null,
+        convertedAdmissionId: null,
+        convertedAdmissionDisplayId: null,
+        convertedAt: null,
+        statusHistory: [
+          {
+            id: `hist-${makeId()}`,
+            demoId: newId,
+            fromStatus: 'None',
+            toStatus: 'Registered',
+            actorUserId: session.user.id,
+            actorName: session.user.name,
+            occurredAt: now,
+            reason: 'Inquiry registered',
+          }
+        ],
+        createdAt: now.slice(0, 10),
+        updatedAt: now,
+      }
+      validateRecord(newDemo, 'demoClasses')
+      data.demoClasses = data.demoClasses || []
+      data.demoClasses.push(newDemo)
+      write(data)
+      return projectDemo(newDemo)
+    }
+
+    if (index < 0) fail('NOT_FOUND', 'Demo record was not found in active branch.')
+    const existing = data.demoClasses[index]
+
+    if (operation === 'update') {
+      if (existing.status === 'Converted' || existing.status === 'Cancelled') {
+        fail('INVALID_TRANSITION', 'Cannot edit a converted or cancelled demo inquiry.')
+      }
+      const { studentName, guardianName, guardianContact, courseId, preferredBatchId, requestedDate, requestedTime, notes } = record
+      if (studentName !== undefined) {
+        if (!validText(studentName)) fail('INVALID_RECORD', 'Student name is required.')
+        existing.studentName = studentName.trim()
+      }
+      if (guardianName !== undefined) {
+        if (!validText(guardianName)) fail('INVALID_RECORD', 'Guardian name is required.')
+        existing.guardianName = guardianName.trim()
+      }
+      if (guardianContact !== undefined) {
+        if (!validContact(guardianContact)) fail('INVALID_RECORD', 'Valid guardian contact is required.')
+        existing.guardianContact = guardianContact.trim()
+      }
+      if (courseId !== undefined) {
+        const course = data.courses.find(c => c.id === courseId && c.branchId === query.branchId)
+        if (!course) fail('INVALID_REFERENCE', 'Course not found in branch.')
+        existing.courseId = courseId
+        existing.courseName = course.name
+      }
+      if (preferredBatchId !== undefined) {
+        if (preferredBatchId && !data.batches.some(b => b.id === preferredBatchId && b.branchId === query.branchId)) {
+          fail('INVALID_REFERENCE', 'Batch not found in branch.')
+        }
+        existing.preferredBatchId = preferredBatchId || null
+        existing.batchName = data.batches.find(b => b.id === preferredBatchId)?.name || null
+      }
+      if (requestedDate !== undefined) {
+        if (!validDateOnly(requestedDate)) fail('INVALID_RECORD', 'Valid requested date is required.')
+        existing.requestedDate = requestedDate
+      }
+      if (requestedTime !== undefined) existing.requestedTime = (requestedTime || '').trim()
+      if (notes !== undefined) existing.notes = (notes || '').trim()
+      existing.updatedAt = new Date().toISOString()
+      validateRecord(existing, 'demoClasses')
+      write(data)
+      return projectDemo(existing)
+    }
+
+    if (operation === 'schedule') {
+      if (existing.status === 'Converted' || existing.status === 'Cancelled') {
+        fail('INVALID_TRANSITION', 'Cannot schedule a converted or cancelled demo.')
+      }
+      const { classDate, startTime, endTime, teacherId, location, reason = '' } = record
+      if (!validDateOnly(classDate) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime) || startTime >= endTime) {
+        fail('INVALID_RECORD', 'Complete scheduling with a valid date and start time before end time.')
+      }
+      if (!validText(location)) fail('INVALID_RECORD', 'A room or location is required.')
+
+      const teacher = DEMO_USERS.find(u => u.id === teacherId && u.enabled && getBranchRoles(u, query.branchId).length === 1 && getBranchRoles(u, query.branchId)[0] === ROLES.TEACHER)
+      if (!teacher) fail('INVALID_REFERENCE', 'Select an active Teacher assigned to this branch.')
+
+      // Conflict detection 1: Check other scheduled demo classes in the branch
+      const demoConflict = (data.demoClasses || []).find(d =>
+        d.id !== existing.id &&
+        d.branchId === query.branchId &&
+        d.status === 'Scheduled' &&
+        d.scheduledSession &&
+        d.scheduledSession.classDate === classDate &&
+        startTime < d.scheduledSession.endTime &&
+        endTime > d.scheduledSession.startTime &&
+        (d.scheduledSession.teacherId === teacherId || d.scheduledSession.location.trim().toLowerCase() === location.trim().toLowerCase())
+      )
+      if (demoConflict) {
+        const isTeacher = demoConflict.scheduledSession.teacherId === teacherId
+        fail('SCHEDULE_CONFLICT', isTeacher
+          ? `Teacher ${teacher.name} already has another demo class scheduled during this time.`
+          : `Location "${location}" is already booked for another demo class during this time.`
+        )
+      }
+
+      // Conflict detection 2: Check regular classes in the branch
+      const classConflict = (data.classes || []).find(c =>
+        c.branchId === query.branchId &&
+        c.classDate === classDate &&
+        startTime < c.endTime &&
+        endTime > c.startTime &&
+        (c.teacherId === teacherId || c.location.trim().toLowerCase() === location.trim().toLowerCase())
+      )
+      if (classConflict) {
+        const isTeacher = classConflict.teacherId === teacherId
+        fail('SCHEDULE_CONFLICT', isTeacher
+          ? `Teacher ${teacher.name} already has a regular class scheduled during this time.`
+          : `Location "${location}" is already occupied by a regular class during this time.`
+        )
+      }
+
+      const now = new Date().toISOString()
+      const prevStatus = existing.status
+      existing.scheduledSession = {
+        classDate,
+        startTime,
+        endTime,
+        teacherId,
+        teacherName: teacher.name,
+        location: location.trim(),
+        scheduledAt: now,
+        scheduledByUserId: session.user.id,
+        scheduledByName: session.user.name,
+      }
+      existing.status = 'Scheduled'
+      existing.attendance = null // reset any previous attendance on reschedule
+      existing.updatedAt = now
+      existing.statusHistory.push({
+        id: `hist-${makeId()}`,
+        demoId: existing.id,
+        fromStatus: prevStatus,
+        toStatus: 'Scheduled',
+        actorUserId: session.user.id,
+        actorName: session.user.name,
+        occurredAt: now,
+        reason: reason || (prevStatus === 'Scheduled' ? 'Rescheduled demo session' : `Scheduled demo session with ${teacher.name} in ${location}`),
+      })
+      validateRecord(existing, 'demoClasses')
+      write(data)
+      return projectDemo(existing)
+    }
+
+    if (operation === 'attendance') {
+      if (existing.status !== 'Scheduled' && existing.status !== 'Attended' && existing.status !== 'Missed') {
+        fail('INVALID_TRANSITION', 'Attendance can only be marked for a scheduled demo.')
+      }
+      const { status: attStatus, remarks = '' } = record
+      if (!['Present', 'Absent'].includes(attStatus)) fail('INVALID_RECORD', 'Attendance must be Present or Absent.')
+      const targetStatus = attStatus === 'Present' ? 'Attended' : 'Missed'
+      const prevStatus = existing.status
+      const now = new Date().toISOString()
+      existing.attendance = {
+        status: attStatus,
+        markedAt: now,
+        markedByUserId: session.user.id,
+        markedByName: session.user.name,
+        remarks: (remarks || '').trim(),
+      }
+      existing.status = targetStatus
+      existing.updatedAt = now
+      existing.statusHistory.push({
+        id: `hist-${makeId()}`,
+        demoId: existing.id,
+        fromStatus: prevStatus,
+        toStatus: targetStatus,
+        actorUserId: session.user.id,
+        actorName: session.user.name,
+        occurredAt: now,
+        reason: `Marked attendance as ${attStatus}${remarks ? ': ' + remarks : ''}`,
+      })
+      validateRecord(existing, 'demoClasses')
+      write(data)
+      return projectDemo(existing)
+    }
+
+    if (operation === 'cancel') {
+      if (existing.status === 'Converted' || existing.status === 'Cancelled') {
+        fail('INVALID_TRANSITION', 'This demo inquiry is already closed or cancelled.')
+      }
+      const { reason = '' } = record || {}
+      const prevStatus = existing.status
+      const now = new Date().toISOString()
+      existing.status = 'Cancelled'
+      existing.updatedAt = now
+      existing.statusHistory.push({
+        id: `hist-${makeId()}`,
+        demoId: existing.id,
+        fromStatus: prevStatus,
+        toStatus: 'Cancelled',
+        actorUserId: session.user.id,
+        actorName: session.user.name,
+        occurredAt: now,
+        reason: reason || 'Cancelled demo inquiry',
+      })
+      validateRecord(existing, 'demoClasses')
+      write(data)
+      return projectDemo(existing)
+    }
+
+    if (operation === 'convert') {
+      if (existing.status === 'Converted' || existing.convertedAdmissionId) {
+        fail('ALREADY_CONVERTED', 'This demo inquiry has already been converted to an admission.')
+      }
+      if (existing.status !== 'Attended' && existing.status !== 'Scheduled') {
+        fail('INVALID_TRANSITION', 'Only an attended or scheduled demo can be converted to admission.')
+      }
+      const { dob, notes: addNotes = '', previousSchool = '' } = record || {}
+      if (!dob || !validDateOnly(dob)) fail('INVALID_RECORD', 'A valid date of birth (YYYY-MM-DD) is required for admission conversion.')
+
+      const course = data.courses.find(c => c.id === existing.courseId && c.branchId === query.branchId)
+      if (!course) fail('INVALID_REFERENCE', 'Course for this demo is no longer available in this branch.')
+
+      if (data.branchCounters[query.branchId].admission === Number.MAX_SAFE_INTEGER) fail('COUNTER_EXHAUSTED', 'Admission counter is exhausted.')
+      const admNumber = ++data.branchCounters[query.branchId].admission
+      const admDisplayId = formatAdmissionId(admNumber)
+      let admId
+      try { admId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Admission ID could not be generated.') }
+      if (!validText(admId) || collections.some(col => (data[col] || []).some(item => item.id === admId))) {
+        admId = `adm-${makeId()}`
+      }
+
+      if (data.branchCounters[query.branchId].student === Number.MAX_SAFE_INTEGER) fail('COUNTER_EXHAUSTED', 'Student counter is exhausted.')
+      const stNumber = ++data.branchCounters[query.branchId].student
+      let stId = existing.studentId
+      if (!stId) {
+        try { stId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Student ID could not be generated.') }
+        if (!validText(stId) || collections.some(col => (data[col] || []).some(item => item.id === stId))) {
+          stId = `student-${makeId()}`
+        }
+      }
+
+      const now = new Date().toISOString()
+      const createdAdmission = {
+        id: admId,
+        branchId: query.branchId,
+        admissionNumber: admNumber,
+        admissionId: admDisplayId,
+        studentName: existing.studentName,
+        guardianName: existing.guardianName,
+        contact: existing.guardianContact,
+        dob,
+        course: course.name,
+        courseId: course.id,
+        preferredBatchId: existing.preferredBatchId || undefined,
+        previousSchool: (previousSchool || '').trim(),
+        notes: `Converted from Demo Class ${existing.demoId}. ${addNotes || existing.notes || ''}`.trim(),
+        status: 'Pending',
+        createdAt: now.slice(0, 10),
+        studentId: stId,
+        createdByAdmissionFlow: true,
+      }
+      validateRecord(createdAdmission, 'admissions')
+      data.admissions.push(createdAdmission)
+
+      if (!existing.studentId || !data.students.some(s => s.id === existing.studentId)) {
+        const createdStudent = {
+          id: stId,
+          branchId: query.branchId,
+          name: existing.studentName,
+          status: 'Provisional',
+          admissionId: admId,
+          admissionDisplayId: admDisplayId,
+          studentNumber: stNumber,
+          dateOfBirth: dob,
+          guardianName: existing.guardianName,
+          guardianContact: existing.guardianContact,
+          createdByAdmissionFlow: true,
+        }
+        validateRecord(createdStudent, 'students')
+        data.students.push(createdStudent)
+      } else {
+        const student = data.students.find(s => s.id === existing.studentId)
+        if (student) {
+          student.admissionId = admId
+          student.admissionDisplayId = admDisplayId
+        }
+      }
+
+      // Update demo record
+      const prevStatus = existing.status
+      existing.status = 'Converted'
+      existing.convertedAdmissionId = admId
+      existing.convertedAdmissionDisplayId = admDisplayId
+      existing.convertedAt = now
+      existing.updatedAt = now
+      existing.statusHistory.push({
+        id: `hist-${makeId()}`,
+        demoId: existing.id,
+        fromStatus: prevStatus,
+        toStatus: 'Converted',
+        actorUserId: session.user.id,
+        actorName: session.user.name,
+        occurredAt: now,
+        reason: `Converted to Pending Admission ${admDisplayId}`,
+      })
+      validateRecord(existing, 'demoClasses')
+
+      normalizeAdmissions(data)
+      write(data)
+
+      return {
+        demo: projectDemo(existing),
+        admission: createdAdmission,
+      }
+    }
+
+    fail('INVALID_REQUEST', 'Unknown demo class operation.')
+  }
+
   function financialOperation(operation, { id, record, query } = {}) {
     if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
     const session = readMockSession()
@@ -749,5 +1198,5 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
     fail('INVALID_REQUEST', 'Unknown financial operation.')
   }
-  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation }
+  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation }
 }

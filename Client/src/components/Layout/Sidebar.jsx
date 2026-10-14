@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Purpose: Will define Sidebar for the Layout area of the Academy frontend.
  * Module: Layout
  * Status: Planned — functionality not implemented.
@@ -45,6 +45,7 @@ const modulePermissions = Object.freeze({
   Students: PERMISSIONS.STUDENTS_VIEW,
   'Courses & Batches': PERMISSIONS.COURSES_VIEW,
   'Faculty & Classes': PERMISSIONS.FACULTY_VIEW,
+  'Demo Classes': PERMISSIONS.DEMO_CLASSES_VIEW,
 })
 const modulePaths = Object.freeze({
   Dashboard: ROUTE_PATHS.DASHBOARD,

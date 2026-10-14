@@ -1,4 +1,4 @@
-/**Purpose: Will define mock Api for the mock area of the Academy frontend.
+﻿/**Purpose: Will define mock Api for the mock area of the Academy frontend.
  * Module: mock
  * Status: Planned — functionality not implemented.
  */
@@ -78,6 +78,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
     },
     async classScheduleOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.classScheduleOperation(operation, args) })
+    },
+    async demoClassOperation(operation, args, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ collection: 'demoClasses', operation }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.demoClassOperation(operation, args)
+      })
     },
     async financialOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.financialOperation(operation, args) })
