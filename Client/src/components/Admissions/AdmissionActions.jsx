@@ -162,7 +162,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
         onClick={(event) => { event.stopPropagation(); choose(name) }}><Icon size={16} aria-hidden="true" />{name}</button>)}
     </div>, document.body)}
     <Dialog open={!!action} onOpenChange={(open) => { if (!pending && !open) setAction(null) }}>
-      <DialogContent showCloseButton={!pending} className={action === 'Edit' ? 'max-w-3xl p-0 max-h-[90vh] overflow-y-auto' : ''}
+      <DialogContent showCloseButton={!pending} className={action === 'Edit' ? 'max-h-[94vh] max-w-[min(96vw,1280px)] overflow-y-auto p-0' : ''}
         onCloseAutoFocus={(event) => {
           event.preventDefault()
           const target = committed.current ? savedFocusRef?.current : viewFocus.current ?? trigger.current
@@ -171,7 +171,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
         }}>
         <DialogTitle className={action === 'Edit' ? 'sr-only' : ''}>{action} DEMO Admission {label}</DialogTitle>
         <DialogDescription className={action === 'Edit' ? 'sr-only' : ''}>
-          {decision ? 'Confirm this DEMO status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its verified linked student and enrollment, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved fictional admission details in the selected branch.'}
+          {decision ? 'Confirm this DEMO status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its verified linked student, enrollment, challan and receipts, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved fictional admission details in the selected branch.'}
         </DialogDescription>
         {error && <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
         {pending && !record && <p role="status">Loading saved details...</p>}
@@ -182,7 +182,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
           <div className="flex flex-wrap justify-end gap-3"><Button variant="outline" disabled={pending} onClick={() => setAction(null)}>Cancel</Button><Button disabled={pending || record.status === targetStatus} onClick={decide}>{pending ? 'Saving status...' : record.status === targetStatus ? `Already ${record.status}` : `Confirm ${targetStatus}`}</Button></div>
         </div>}
         {record && action === 'View' && <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-          {Object.entries({ 'Admission ID': record.displayAdmissionId, 'Permanent Admission Reference': record.admissionId, 'Student Number': record.student?.displaySerial ?? 'No linked student', 'Student Name': record.studentName, 'Date of Birth': record.dob, Guardian: record.guardianName, Contact: record.contact, Course: record.courseLabel ?? record.course, Batch: record.batchLabel ?? 'Not selected', Status: record.status, 'Created On': record.createdAt, 'Previous School': record.previousSchool || 'Not provided', Notes: record.notes || 'Not provided' }).map(([title, value]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
+          {Object.entries({ 'Admission ID': record.displayAdmissionId, 'Permanent Admission Reference': record.admissionId, 'Student Number': record.student?.displaySerial ?? 'No linked student', 'Student Name': record.studentName, 'Date of Birth': record.dob, Guardian: record.guardianName, 'Student Phone': record.studentPhone || 'Not provided', 'Guardian Phone': record.contact, 'CNIC / B-Form': record.identityNumber || 'Not provided', Gender: record.gender || 'Not provided', Residence: record.residenceType || 'Not provided', Address: record.address || 'Not provided', Course: record.courseLabel ?? record.course, Batch: record.batchLabel ?? 'Not selected', Status: record.status, 'Created On': record.createdAt, 'Previous School': record.previousSchool || 'Not provided', Notes: record.notes || 'Not provided' }).map(([title, value]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
         </dl>}
         {record && action === 'View' && record.statusHistory?.length > 0 && <section aria-label="DEMO status history" className="space-y-2 border-t pt-4"><h3 className="font-semibold">DEMO status history</h3>{record.statusHistory.map(event => <p key={event.id} className="break-words text-sm text-muted-foreground">{event.fromStatus} → {event.toStatus} · {event.actorUserId} · <time dateTime={event.occurredAt}>{event.occurredAt}</time>{event.reason ? ` · ${event.reason}` : ''}</p>)}</section>}
         {record && action === 'Enroll Student' && <div className="space-y-4">

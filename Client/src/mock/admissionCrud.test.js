@@ -37,6 +37,13 @@ describe('approved branch sequences and safe linked CRUD', () => {
     expect(createMockDatabase().getAdmission(a.id, north).student.name).toBe('DEMO Edited')
     expect(saved().branchCounters).toEqual(before)
   })
+  it('persists the expanded student and guardian identity details across refresh and edit', () => {
+    const details = { ...input, studentPhone: '+92 300 1234567', identityNumber: '37405-1234567-1', gender: 'Male', residenceType: 'Day Scholar', address: 'Demo Street, Islamabad' }
+    const created = createMockDatabase().createAdmission(details, north)
+    expect(createMockDatabase().getAdmission(created.id, north)).toMatchObject({ studentPhone: details.studentPhone, identityNumber: details.identityNumber, gender: details.gender, residenceType: details.residenceType, address: details.address })
+    createMockDatabase().updateAdmission(created.id, { ...details, residenceType: 'Hostel', address: 'Demo Hostel, Islamabad' }, north)
+    expect(createMockDatabase().getAdmission(created.id, north)).toMatchObject({ residenceType: 'Hostel', address: 'Demo Hostel, Islamabad' })
+  })
   it('deletes only its owned pair and never reuses either number after refresh', () => {
     empty()
     const db = createMockDatabase()

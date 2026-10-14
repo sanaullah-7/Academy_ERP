@@ -80,6 +80,10 @@ export default function StudentsPage() {
     setMessage(`${student.name} ka record save ho gaya.`)
     setRetry(value => value + 1)
   }
+  function refreshAfterDelete(student) {
+    setMessage(`${student.name} aur us ke linked admission records delete ho gaye.`)
+    setRetry(value => value + 1)
+  }
 
   return <DashboardLayout><div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
     {message && <p role="status" className="rounded-md bg-primary/10 p-3 text-sm">{message}</p>}
@@ -100,7 +104,7 @@ export default function StudentsPage() {
                 <Button variant="outline" className="sm:col-span-2 lg:col-span-5 lg:justify-self-end" onClick={clearFilters}><RotateCcw size={16} aria-hidden="true" />Clear Filters</Button>
               </div>
               {visibleStudents.length === 0 ? <div className="p-10 text-center"><h2 className="font-semibold">{current.students.length ? 'No students match your filters' : 'No students yet'}</h2><p className="mt-2 text-sm text-muted-foreground">{current.students.length ? 'Search ya filters badlein, ya sab clear kar dein.' : 'Students created through Admissions will appear here automatically.'}</p></div>
-                : <StudentsTable students={visibleStudents} branchId={branchId} onUpdated={refreshAfterEdit} />}
+                : <StudentsTable students={visibleStudents} branchId={branchId} onUpdated={refreshAfterEdit} onDeleted={refreshAfterDelete} />}
             </div>}
       </CardContent>
     </Card>

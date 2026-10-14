@@ -15,16 +15,32 @@ describe('RecentPayments', () => {
     const onOpenReceipt = vi.fn()
     const payments = [
       { id: 'older', branchId: 'branch-a', status: 'Verified', paidAt: '2026-01-01T10:00:00Z', studentName: 'Older Student', amount: 1000, method: 'Cash', receiptId: 'receipt-1', receiptReference: 'R-1' },
-      { id: 'newer', branchId: 'branch-a', status: 'Verified', paidAt: '2026-01-02T10:00:00Z', studentName: 'Newer Student', amount: 2000, method: 'Bank', receiptId: 'receipt-2', receiptReference: 'R-2' },
+      { id: 'newer', branchId: 'branch-a', status: 'Verified', paidAt: '2026-01-02T10:00:00Z', studentName: 'Newer Student', amount: 2000, method: 'Bank', courseName: 'MDCAT', batchName: 'Morning A', challanReference: 'CH-2', receiptId: 'receipt-2', receiptReference: 'R-2' },
       { id: 'pending', branchId: 'branch-a', status: 'Pending', paidAt: '2026-01-03T10:00:00Z', studentName: 'Pending Student', amount: 3000, method: 'Cash', receiptReference: 'R-3' },
       { id: 'foreign', branchId: 'branch-b', status: 'Verified', paidAt: '2026-01-04T10:00:00Z', studentName: 'Foreign Student', amount: 4000, method: 'Cash', receiptReference: 'R-4' },
     ]
     render(<RecentPayments branchId="branch-a" payments={payments} onOpenReceipt={onOpenReceipt} />)
     const receiptButtons = screen.getAllByRole('button', { name: /View receipt/ })
     expect(receiptButtons.map(button => button.textContent)).toEqual([expect.stringContaining('Newer Student'), expect.stringContaining('Older Student')])
+    expect(receiptButtons[0]).toHaveTextContent('MDCAT · Morning A')
+    expect(receiptButtons[0]).toHaveTextContent('Bank')
+    expect(receiptButtons[0]).toHaveTextContent('2,000')
+    expect(receiptButtons[0]).toHaveTextContent('Challan CH-2')
+    expect(receiptButtons[0]).toHaveTextContent('Receipt R-2')
     expect(screen.queryByText('Pending Student')).not.toBeInTheDocument()
     expect(screen.queryByText('Foreign Student')).not.toBeInTheDocument()
     await userEvent.setup().click(receiptButtons[0])
     expect(onOpenReceipt).toHaveBeenCalledWith(expect.objectContaining({ id: 'newer' }))
+  })
+
+  it('keeps loading and retryable error states available', async () => {
+    const onRetry = vi.fn()
+    const { rerender } = render(<RecentPayments branchId="branch-a" loading />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading verified payments')
+
+    rerender(<RecentPayments branchId="branch-a" error="Storage unavailable" onRetry={onRetry} />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Storage unavailable')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }))
+    expect(onRetry).toHaveBeenCalledOnce()
   })
 })

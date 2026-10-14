@@ -9,7 +9,7 @@ import { generatePath, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import StudentActions from './StudentActions.jsx'
 
-export default function StudentsTable({ students, branchId, onUpdated }) {
+export default function StudentsTable({ students, branchId, onUpdated, onDeleted }) {
   const navigate = useNavigate()
   const openStudent = (student) => navigate(generatePath(ROUTE_PATHS.STUDENT_PROFILE, { studentId: student.id }))
   const admissionRef = student => student.admission?.displayAdmissionId ?? student.admissionDisplaySerialId ?? student.admissionDisplayId ?? 'Not linked'
@@ -41,7 +41,7 @@ export default function StudentsTable({ students, branchId, onUpdated }) {
       <td className="block min-w-0 break-words p-2 sm:table-cell sm:p-3"><span className="mr-1 text-xs text-muted-foreground sm:hidden">Course:</span>{student.courseName ?? 'Not linked'}</td>
       <td className="block min-w-0 break-words p-2 sm:table-cell sm:p-3"><span className="mr-1 text-xs text-muted-foreground sm:hidden">Batch:</span>{student.batchName ?? 'Not selected'}</td>
       <td className="block min-w-0 break-words p-2 text-muted-foreground sm:table-cell sm:p-3"><span className="mr-1 text-xs sm:hidden">Admission:</span>{admissionRef(student)}</td>
-      <td className="block justify-self-end p-1 sm:table-cell sm:p-1"><StudentActions student={student} branchId={branchId} onUpdated={onUpdated} /></td>
+      <td className="block justify-self-end p-1 sm:table-cell sm:p-1"><StudentActions student={student} branchId={branchId} onUpdated={onUpdated} onDeleted={onDeleted} /></td>
     </tr>)}</tbody>
     </table>
   </div>

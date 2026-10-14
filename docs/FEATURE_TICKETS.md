@@ -1363,7 +1363,7 @@ Dependencies: Approved student data model, enrollments and branch scoping.
 
 Dependencies: Course, subject, batch and schedule requirements.
 
-**Implementation status (2026-10-12): F04-001 through F04-007 IN_REVIEW; owner acceptance pending.** Course Catalog, Course Create/Edit, Batch Directory and Batch Create/Edit are functional within confirmed branch/role boundaries. Timetable is intentionally read-only with an explicit empty state because scheduling write rules are unresolved. Capacity shows actual saved active Enrollment counts while maximum/remaining capacity stays unconfigured. Teacher assignments show an honest empty state because assignment records/policy are unresolved. Focused verification and exact limitations are recorded in PROGRESS.md. No F05 work started.
+**Implementation status (2026-10-12, updated 2026-10-13): F04-001 through F04-007 IN_REVIEW; owner acceptance pending.** Course Catalog, Course Create/Edit, Batch Directory and Batch Create/Edit are functional within confirmed branch/role boundaries. Owner-confirmed branch-scoped Academic Stream and Subject Add/Edit records persist through the academic service; a form button-type defect preventing Add Stream/Add Subject submission was fixed and covered with UI persistence/reload regression tests (8/8 focused tests PASS; scoped lint PASS; browser NOT_RUN). Timetable is intentionally read-only with an explicit empty state because scheduling write rules are unresolved. Capacity shows actual saved active Enrollment counts while maximum/remaining capacity stays unconfigured. Teacher assignments show an honest empty state because assignment records/policy are unresolved. Focused verification and exact limitations are recorded in PROGRESS.md. No F05 work started.
 
 ## F05 — Faculty & Classes
 
@@ -1842,3 +1842,49 @@ The enrollment UI chooses a valid saved preferred Batch when available, automati
 **Executed:** targeted Vitest PASS, 129/129 tests in 13 files. One production build PASS (3008 modules); Vite reports the existing >500 kB main-chunk warning. No new dependencies.
 
 **Not run:** manual real-browser/viewport walkthrough, full suite, CI, deployment, backend authorization and formal accessibility checks. Automated UI integration results are not manual browser evidence or production-security proof. No additional feature ticket started. Owner acceptance is required; do not self-approve.
+
+# Connected Academic Configuration + New Admission Workflow — IN_REVIEW (2026-10-13)
+
+Final owner layout correction supersedes the separate-page entry: `/admissions` now contains the admissions table first and the complete `New Student Admission` workflow directly below it. The header button keeps `/admissions`, scrolls and focuses the inline section, and opens no dialog. The protected legacy `/admissions/new` URL redirects authorized creators to the same inline section; unauthorized access still fails closed. Isolated browser QA passed same-page placement, submission/table refresh, desktop two-column sticky summary, 768px/492px stacking and zero horizontal overflow. Focused tests 7/7 and targeted ESLint PASS.
+
+Urgent entry-point fix: Admissions → New Admission now navigates to the protected `/admissions/new` route and renders the connected wizard as a full page. Isolated browser click-through PASS; unauthorized Owner direct access redirects to `/unauthorized`. Focused tests 24/24 and targeted ESLint PASS. Owner acceptance remains pending.
+
+Owner-approved responsive New Admission layout places Student & Guardian, Academic Field/Course/Batch and Subject Selection in the main column, with a desktop sticky fee-preview summary at right and stacked mobile layout. Streams, courses, batches, subjects and configured fees come from branch-scoped versioned mock storage; Super Admin manages configuration and Receptionist remains read-only. Submitting creates only a Pending admission with linked Provisional student and does not create an official challan or verified payment. Isolated browser QA passed the connected workflow, desktop 1410px and tablet 768px layouts, plus stacked 492px mobile containment; exact 360px was not available in the Edge harness. Two confirmed display defects were fixed: entity-correct save feedback and configured batch capacity labels. Post-fix focused tests 16/16 and targeted ESLint PASS. Owner acceptance remains pending.
+# F02/F04/F06 Connected Academic and Financial Demo Workflow — IN_REVIEW (2026-10-13)
+
+Saved subject/course pricing is now recalculated at admission persistence, snapshotted into enrollment and enforced by F06 challan issuance. Duplicate enrollment challans and mismatched configured amounts are rejected. Admissions shows truthful saved single-date class metadata where a subject/batch match exists and otherwise reports unavailable faculty/schedule data. Concessions, installment rules and SMS remain unapproved. Owner acceptance pending.
+# F02/F04/F06 Owner-Visible QA Demo — IN_REVIEW (2026-10-13)
+
+Final 2026-10-14 review remains **IN_REVIEW**: selected Batch styling was aligned with the approved reference and saved single-date class overlaps are now reported without inventing recurring schedules or assignments. Focused tests 32/32, targeted lint and one build PASS. Fresh browser screenshot NOT_RUN after automated approval rejection; discounts/installment authority and separate faculty-assignment writes remain unapproved.
+
+## F04 Course/Batch action menu — IN_REVIEW (2026-10-14)
+
+Course and Batch tables provide a three-dot View/Edit/Delete menu. Delete is Super Admin-only, confirmation-gated, branch-scoped and blocked for linked records without cascading. Focused tests 10/10 and targeted ESLint PASS; owner acceptance pending.
+
+## F02/F03 enrolled student deletion correction — IN_REVIEW (2026-10-14)
+
+Admission and Students views now share a Super Admin-only confirmed deletion transaction for an admission-owned student. Linked enrollment, challan and receipts are removed atomically to prevent orphan references; unrelated records remain. Focused tests 21/21 and targeted ESLint PASS.
+
+## F04 academic delete-flow correction — IN_REVIEW (2026-10-14)
+
+Academic Stream, Course, Batch and Subject surfaces now use consistent role-aware three-dot View/Edit/Delete menus. Menus dismiss after an action, outside click or Escape; opening a new dialog clears prior delete errors. Unlinked records can be deleted, while verified dependencies refuse deletion without cascade. Focused tests 12/12 and targeted ESLint PASS; browser QA and owner acceptance remain pending.
+
+## F04 academic relationship visibility — IN_REVIEW (2026-10-14)
+
+The Courses & Batches screen now makes the saved hierarchy visible: Stream portfolio cards link to Courses and summarize their Subjects/Batches, the Subject directory names both parent Course and Academic Stream, and Course rows show their Stream plus Subject/Batch counts. Existing CRUD and branch/role behavior remain intact. Focused tests 13/13 and targeted ESLint PASS; browser visual QA and owner acceptance remain pending.
+
+Final owner placement sets Course Subjects as the wide left table and Academic Portfolios as the right card column on desktop, with responsive stacking below desktop. Focused page tests 9/9 and targeted ESLint PASS.
+
+Compact owner polish removes subject-table horizontal scrolling, reduces table/card typography and bounds portfolio lists over four cards with internal vertical scrolling. Focused page tests 9/9 and targeted ESLint PASS.
+
+Courses/Batches now sits below Course Subjects in the left column, uses a no-horizontal-scroll compact table, and shares a smaller unclipped three-dot menu. Focused page tests 9/9 and targeted ESLint PASS.
+
+Both academic directories now paginate with 5/10/25/50 page sizes, ranges and page navigation. The compact 17rem portfolio sidebar gives the left table stack more desktop width. Focused page tests 10/10 and targeted ESLint PASS.
+
+Pagination and Courses/Batches table density were tightened with 28px controls, content-sized fixed columns and single-line ellipsis. Focused page tests 10/10 and targeted ESLint PASS.
+
+## F01/F06 Dashboard daily cashflow correction — IN_REVIEW (2026-10-14)
+
+Super Admin Dashboard cashflow now derives selected-period bars and totals from active-branch verified receipts and posted expenses. Daily data is grouped into four-hour slots, with period-appropriate weekly/monthly/custom/year buckets and a truthful empty state. Focused tests PASS 17/17 and targeted ESLint PASS. Browser QA and owner acceptance remain pending.
+
+Added an explicit Super Admin-only, confirmation-gated and idempotent QA demo action through existing domain services. It creates clearly labeled fictional academic, admission, enrollment, challan and verified-payment examples in the active branch without deleting existing data. Isolated browser acceptance verified Paid and Partial examples, final collection, receipt, Finance, Dashboard and refresh persistence. Owner acceptance pending.

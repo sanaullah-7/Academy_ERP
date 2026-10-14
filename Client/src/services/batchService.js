@@ -13,4 +13,5 @@ export const batchService = {
   getById: academicService.getBatch,
   create: (record, query) => academicService.saveBatch(undefined, record, query),
   update: academicService.saveBatch,
+  delete: academicService.deleteBatch,
 }

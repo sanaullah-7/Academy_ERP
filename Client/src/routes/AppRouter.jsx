@@ -5,7 +5,7 @@
  */
 
 // F00-002A: Basic routing implemented; authentication and layouts remain deferred.
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import NotFoundPage from '../pages/Errors/NotFoundPage.jsx'
 import { ROUTE_PATHS } from './routePaths.js'
 import LoginPage from '../pages/Auth/LoginPage.jsx'
@@ -15,7 +15,6 @@ import UnauthorizedPage from '../pages/Errors/UnauthorizedPage.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
 import DashboardPage from '../pages/Dashboard/DashboardPage.jsx'
 import AdmissionsPage from '../pages/Admissions/AdmissionsPage.jsx'
-import NewAdmissionPage from '../pages/Admissions/NewAdmissionPage.jsx'
 import StudentsPage from '../pages/Students/StudentsPage.jsx'
 import StudentProfilePage from '../pages/Students/StudentProfilePage.jsx'
 import CoursesBatchesPage from '../pages/CoursesBatches/CoursesBatchesPage.jsx'
@@ -47,7 +46,7 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.CLASS_SCHEDULE} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><FacultyClassesPage section="schedule" /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.CLASS_STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><ClassDetailsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FACULTY_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyProfilePage /></ProtectedRoute>} />
-        <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><NewAdmissionPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><Navigate to={ROUTE_PATHS.ADMISSIONS} replace state={{ focusNewAdmission: true }} /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FEES} element={<ProtectedRoute permission={PERMISSIONS.FEES_VIEW}><FeesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FINANCE} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.DEMO_CLASSES} element={<ProtectedRoute permission={PERMISSIONS.DEMO_CLASSES_VIEW}><DemoClassesPage /></ProtectedRoute>} />

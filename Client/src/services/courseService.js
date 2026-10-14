@@ -11,4 +11,5 @@ export const courseService = {
   getById: academicService.getCourse,
   create: (record, query) => academicService.saveCourse(undefined, record, query),
   update: academicService.saveCourse,
+  delete: academicService.deleteCourse,
 }

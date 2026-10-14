@@ -17,7 +17,7 @@ export default function NewAdmissionPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <Button className="w-fit" variant="ghost" onClick={() => navigate(ROUTE_PATHS.ADMISSIONS)}>
           <ArrowLeft size={20} />Back to admissions
         </Button>
