@@ -70,7 +70,7 @@ describe('F03 Students module', () => {
     expect(screen.getByText('Demo Course Two', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.getAllByText('DEMO Batch - Demo Course Two', { selector: 'dd' })).toHaveLength(2)
     expect(screen.getByText('Enrollment history')).toBeInTheDocument()
-    expect(screen.getByText('No fee records available yet.')).toBeInTheDocument()
+    expect(screen.getByText('No saved challans.')).toBeInTheDocument()
     expect(screen.getByText('No attendance records available yet.')).toBeInTheDocument()
   })
 
@@ -111,6 +111,22 @@ describe('F03 Students module', () => {
     }
   })
 
+  it('lets Super Admin delete a student through its verified linked admission', async () => {
+    const admission = createMockDatabase().createAdmission(input, central)
+    await signIn()
+    render(<App />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: `Actions for ${admission.studentName}` }))
+    await user.click(screen.getByRole('menuitem', { name: 'Delete Student' }))
+    const dialog = await screen.findByRole('dialog', { name: `Delete ${admission.studentName}?` })
+    await user.click(within(dialog).getByRole('button', { name: 'Delete Student' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('linked admission records delete')
+    const saved = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    expect(saved.admissions.some(item => item.id === admission.id)).toBe(false)
+    expect(saved.students.some(item => item.id === admission.studentId)).toBe(false)
+    expect(screen.queryByRole('link', { name: `View student ${admission.studentName}` })).not.toBeInTheDocument()
+  })
+
   it('keeps Owner read-only and denies direct Teacher edit, invalid status edits and cross-branch profile reads', async () => {
     const admission = createMockDatabase().createAdmission(input, central)
     await signIn('demo-owner')
@@ -118,6 +134,7 @@ describe('F03 Students module', () => {
     await screen.findByRole('table', { name: 'Saved DEMO students in the selected branch' })
     await userEvent.setup().click(screen.getByRole('button', { name: `Actions for ${admission.studentName}` }))
     expect(screen.queryByRole('menuitem', { name: 'Edit Student' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Delete Student' })).not.toBeInTheDocument()
     await expect(studentService.update(admission.studentId, { name: 'Unauthorized' }, central)).rejects.toMatchObject({ code: 'DEMO_ACTION_DENIED' })
     await authService.login({ userId: 'demo-admin' })
     await authService.selectBranch('demo-admin', 'demo-central')

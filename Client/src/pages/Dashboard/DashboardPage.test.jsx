@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
 import { authService } from '../../services/authService.js'
 import { classScheduleService } from '../../services/classScheduleService.js'
+import { demoWorkflowService } from '../../services/demoWorkflowService.js'
 
 
 beforeEach(() => window.history.replaceState(null, '', '/dashboard'))
@@ -68,7 +69,7 @@ describe('approved shared dashboard skeleton', () => {
     for (const title of ['Monthly Cashflow Performance', 'Recent Student Enrollments', 'Quick Operations', 'Upcoming Classes Today', 'Recent Payments']) expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
     for (const title of ['Active Students', 'New Admissions', 'Fees Collected', 'Outstanding Fees']) expect(screen.getByText(title)).toBeInTheDocument()
     for (const action of [/Collect Fee.*Open Fees/, /Record Expense.*Open Finance/, /Add Demo.*Open Demo Classes/]) expect(screen.getByRole('button', { name: action })).toBeEnabled()
-    expect(screen.getByLabelText('Revenue and expenses chart with no approved financial records')).toBeInTheDocument()
+    expect(screen.getByLabelText('Revenue and expenses chart for All')).toBeInTheDocument()
     expect(screen.getByRole('searchbox', { name: 'Search dashboard records' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Monthly' }))
     expect(screen.getByRole('button', { name: 'Monthly' })).toHaveAttribute('aria-pressed', 'true')
@@ -82,7 +83,19 @@ describe('approved shared dashboard skeleton', () => {
     expect(screen.getByLabelText('End date')).toHaveAttribute('type', 'date')
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
     await user.click(screen.getByRole('button', { name: /New Admission.*Student registration/ }))
-    expect(location.pathname).toBe('/admissions/new')
+    expect(location.pathname).toBe('/admissions')
+  })
+  it('plots today verified payments when Daily is selected', async () => {
+    await authService.login({ userId: 'demo-admin' })
+    await authService.selectBranch('demo-admin', 'demo-north')
+    await demoWorkflowService.setup({ branchId: 'demo-north' })
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: /Super Admin Dashboard/i }))
+    await user.click(await screen.findByRole('button', { name: 'Daily' }))
+    expect(screen.getByLabelText('Revenue and expenses chart for Daily')).toBeInTheDocument()
+    expect(screen.queryByText('No financial records for daily')).not.toBeInTheDocument()
+    expect(screen.getByText('Daily Inflow').nextSibling).not.toHaveTextContent(/PKR\s*0/)
   })
   it('opens the Fees tab from dashboard quick operations', async () => {
     await authService.login({ userId: 'demo-admin' })

@@ -15,19 +15,23 @@ async function fill(user) {
 }
 
 beforeEach(() => history.replaceState(null, '', '/admissions'))
-describe('shared DEMO admission popup workflow', () => {
-  it('opens named dialog, closes on Escape and restores trigger focus', async () => {
+describe('shared DEMO inline admission workflow', () => {
+  it('keeps the table and focuses the connected wizard below it', async () => {
     await authService.login({ userId: 'demo-admin' })
     await authService.selectBranch('demo-admin', 'demo-central')
     render(<App />)
     const user = userEvent.setup()
     const trigger = await screen.findByRole('button', { name: 'New Admission' })
+    const section = screen.getByRole('region', { name: 'New Student Admission' })
+    expect(await screen.findByRole('table')).toBeInTheDocument()
     await user.click(trigger)
-    expect(screen.getByRole('dialog', { name: 'New DEMO Admission' })).toBeInTheDocument()
     expect(location.pathname).toBe('/admissions')
-    await user.keyboard('{Escape}')
+    expect(section).toHaveFocus()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(trigger).toHaveFocus()
+    expect(await screen.findByText('1. Student & Guardian Information')).toBeInTheDocument()
+    expect(screen.getByText('2. Academic Field, Target Course & Batch')).toBeInTheDocument()
+    expect(screen.getByText('3. Subject Selection & Faculty Mapping')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Challan Summary' })).toBeInTheDocument()
   })
   it('creates and lists the formatted ID, preserves linked records after refresh', async () => {
     await authService.login({ userId: 'demo-admin' })
@@ -38,7 +42,7 @@ describe('shared DEMO admission popup workflow', () => {
     await fill(user)
     await user.click(screen.getByRole('button', { name: 'Submit Application' }))
     expect(await screen.findByRole('status')).toHaveTextContent('DEMO admission ADM-3 saved')
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(location.pathname).toBe('/admissions')
     expect(await screen.findByText('ADM-3', { selector: 'td' })).toBeInTheDocument()
     const data = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
     const admission = data.admissions.find((a) => a.admissionId === 'ADM-3' && a.branchId === 'demo-central')
@@ -72,15 +76,14 @@ describe('shared DEMO admission popup workflow', () => {
     fireEvent.submit(form)
     fireEvent.submit(form)
     expect(create).toHaveBeenCalledTimes(1)
-    await user.keyboard('{Escape}')
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(location.pathname).toBe('/admissions')
     reject(new Error('Controlled save failure'))
     expect(await screen.findByRole('alert')).toHaveTextContent('Controlled save failure')
     expect(localStorage.getItem(MOCK_DATABASE_KEY)).not.toContain('DEMO Popup Applicant')
     expect(screen.getByRole('button', { name: 'Submit Application' })).toBeEnabled()
     create.mockRestore()
     await user.click(screen.getByRole('button', { name: 'Submit Application' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() => expect(location.pathname).toBe('/admissions'))
   })
   it('preserves auth and branch-scoped routing during popup use', async () => {
     history.replaceState(null, '', '/admissions/new')

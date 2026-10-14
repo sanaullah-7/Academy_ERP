@@ -14,10 +14,8 @@ import { admissionService } from '../../services/admissionService.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { Input } from '../../components/ui/input.jsx'
 import { useLocation } from 'react-router-dom'
-
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from '../../components/ui/dialog.jsx'
-import NewAdmissionForm from '../../components/Admissions/NewAdmissionForm.jsx'
 import AdmissionActions from '../../components/Admissions/AdmissionActions.jsx'
+import NewAdmissionForm from '../../components/Admissions/NewAdmissionForm.jsx'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
 
@@ -26,6 +24,7 @@ export default function AdmissionsPage() {
   const { can } = usePermissions()
   const canCreate = can(PERMISSIONS.ADMISSIONS_CREATE)
   const newAdmissionTrigger = useRef(null)
+  const newAdmissionSection = useRef(null)
   const { state: routeState } = useLocation()
   const [actionFeedback, setActionFeedback] = useState(null)
   const [successRecordId, setSuccessRecordId] = useState(routeState?.createdBranchId === branchId ? routeState.createdAdmissionInternalId : null)
@@ -33,9 +32,8 @@ export default function AdmissionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [savePending, setSavePending] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [formVersion, setFormVersion] = useState(0)
   const [viewRequest, setViewRequest] = useState({ admissionId: null, request: 0 })
 
   const [search, setSearch] = useState('')
@@ -76,6 +74,18 @@ export default function AdmissionsPage() {
     focusTarget.focus()
     setViewRequest(current => ({ admissionId, request: current.request + 1, focusTarget }))
   }
+  const focusNewAdmission = () => {
+    newAdmissionSection.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    newAdmissionSection.current?.focus({ preventScroll: true })
+  }
+  useEffect(() => {
+    if (!routeState?.focusNewAdmission || !canCreate) return
+    const frame = requestAnimationFrame(() => {
+      newAdmissionSection.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+      newAdmissionSection.current?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [routeState?.focusNewAdmission, canCreate])
 
   const renderStatusBadge = (status) => {
     if (status === 'Approved') return <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border-0">Approved</Badge>
@@ -84,30 +94,12 @@ export default function AdmissionsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <div className="flex justify-end">
-          {canCreate && <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!savePending) setIsDialogOpen(open) }}>
-            <DialogTrigger asChild>
-              <Button ref={newAdmissionTrigger} className="shrink-0 gap-2">
-                <Plus size={16} aria-hidden="true" />
-                New Admission
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl p-0 max-h-[90vh] overflow-y-auto" showCloseButton={false}>
-              <DialogTitle className="sr-only">New DEMO Admission</DialogTitle>
-              <DialogDescription className="sr-only">Enter fictional applicant details to create a Pending admission and linked Provisional student in the selected branch.</DialogDescription>
-              <NewAdmissionForm
-                onPendingChange={setSavePending}
-                onSuccess={(result) => {
-                  setIsDialogOpen(false)
-                  setActionFeedback(null)
-                  setSuccessRecordId(result.id)
-                  setRefreshTrigger(prev => prev + 1)
-                }}
-                onCancel={() => setIsDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>}
+          {canCreate && <Button ref={newAdmissionTrigger} className="shrink-0 gap-2" onClick={focusNewAdmission}>
+            <Plus size={16} aria-hidden="true" />
+            New Admission
+          </Button>}
         </div>
         {successAdmission && <p role="status" className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">DEMO admission {successAdmission.displayAdmissionId ?? successAdmission.admissionId} saved as Pending with a linked Provisional student.</p>}
 
@@ -212,6 +204,15 @@ export default function AdmissionsPage() {
             )}
           </CardContent>
         </Card>
+        {canCreate && <section ref={newAdmissionSection} tabIndex={-1} aria-labelledby="new-student-admission-heading" className="scroll-mt-4 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <h2 id="new-student-admission-heading" className="mb-4 text-xl font-bold sm:text-2xl">New Student Admission</h2>
+          <NewAdmissionForm key={`${branchId}-${formVersion}`} onSuccess={(result) => {
+            setActionFeedback(null)
+            setSuccessRecordId(result.id)
+            setRefreshTrigger(previous => previous + 1)
+            setFormVersion(previous => previous + 1)
+          }} />
+        </section>}
       </div>
     </DashboardLayout>
   )
