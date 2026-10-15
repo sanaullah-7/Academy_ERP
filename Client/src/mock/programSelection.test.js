@@ -25,7 +25,7 @@ describe('F02-004 reference contracts and additive upgrade', () => {
   })
   it('saves valid IDs and canonical course text atomically with the linked student', () => {
     const a = createMockDatabase().createAdmission({ ...input, preferredBatchId: batchId }, query)
-    expect(saved().version).toBe(7)
+    expect(saved().version).toBe(8)
     expect(saved().admissions.find(x => x.id === a.id)).toMatchObject({ courseId: input.courseId, preferredBatchId: batchId, course: 'Demo Course One', studentId: a.studentId })
     expect(createMockDatabase().getAdmission(a.id, query)).toMatchObject({ courseLabel: 'Demo Course One', batchLabel: 'DEMO Batch - Demo Course One' })
   })
@@ -60,7 +60,7 @@ describe('F02-004 reference contracts and additive upgrade', () => {
     data.admissions[0].course = 'Unmatched legacy'; data.students[0].status = 'Active'
     localStorage.setItem(MOCK_DATABASE_KEY, JSON.stringify(data))
     createMockDatabase().run('courses', 'list', { query })
-    expect(saved().version).toBe(7)
+    expect(saved().version).toBe(8)
     expect(saved().admissions[0]).toMatchObject({ id: data.admissions[0].id, course: 'Unmatched legacy' })
     expect(saved().admissions[0].courseId).toBeUndefined()
     expect(saved().students[0]).toMatchObject(data.students[0])

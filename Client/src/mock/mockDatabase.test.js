@@ -94,7 +94,7 @@ describe('provisional student/course service contracts', () => {
       db.run('students', 'list', { query: north })
       throw new Error('Expected localStorage read failure.')
     } catch (error) {
-      expect(error).toMatchObject({ message: expect.stringMatching(/unavailable/) })
+      expect(error).toMatchObject({ message: expect.stringMatching(/disabled|unavailable/) })
     }
   })
 

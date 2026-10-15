@@ -102,7 +102,7 @@ describe('F02-006 mock enrollment', () => {
 
     createMockDatabase().run('admissions', 'getById', { id: admission.id, query: branch })
     const migrated = saved()
-    expect(migrated.version).toBe(6)
+    expect(migrated.version).toBe(8)
     expect(migrated.classes).toEqual([])
     expect(migrated.enrollments).toEqual([])
     expect(migrated.challans).toEqual([])

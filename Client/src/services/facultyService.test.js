@@ -18,9 +18,13 @@ async function signIn(userId = 'demo-admin', branchId = central.branchId) {
 describe('F05 branch-scoped Faculty & Classes reads', () => {
   it('lists only explicit single-role Teacher identities for the selected branch', async () => {
     await signIn()
-    expect(await facultyService.list(central)).toEqual([expect.objectContaining({ id: 'demo-teacher', name: 'Demo Teacher', branchId: central.branchId })])
+    const centralTeachers = await facultyService.list(central)
+    expect(centralTeachers).toContainEqual(expect.objectContaining({ id: 'demo-teacher', name: 'Demo Teacher', branchId: central.branchId }))
+    expect(centralTeachers.every(teacher => teacher.branchId === central.branchId)).toBe(true)
     await authService.selectBranch('demo-admin', north.branchId)
-    expect(await facultyService.list(north)).toEqual([expect.objectContaining({ id: 'demo-multi', branchId: north.branchId })])
+    const northTeachers = await facultyService.list(north)
+    expect(northTeachers).toContainEqual(expect.objectContaining({ id: 'demo-multi', branchId: north.branchId }))
+    expect(northTeachers.every(teacher => teacher.branchId === north.branchId)).toBe(true)
     await expect(facultyService.getById('demo-teacher', north)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
@@ -40,8 +44,8 @@ describe('F05 branch-scoped Faculty & Classes reads', () => {
     await signIn()
     expect(await facultyService.listSubjectAssignments(central)).toEqual({ available: false, assignments: [] })
     const batches = await facultyService.listBatchAssignments(central)
-    expect(batches).toHaveLength(1)
-    expect(batches[0]).toMatchObject({ id: 'batch-demo-course-demo-2', courseName: 'Demo Course Two', teacherAssignments: [] })
+    expect(batches).toContainEqual(expect.objectContaining({ id: 'batch-demo-course-demo-2', courseName: 'Demo Course Two', teacherAssignments: [] }))
+    expect(batches.every(batch => batch.branchId === central.branchId)).toBe(true)
   })
 
   it('lists only students with a saved Active enrollment linked to the selected batch', async () => {

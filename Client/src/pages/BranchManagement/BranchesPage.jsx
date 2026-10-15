@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Building2, CirclePlus, Eye, MapPin, Pencil, Power, Search, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
@@ -13,7 +13,7 @@ const empty = { name: '', code: '', location: '', contact: '' }
 export default function BranchesPage() {
   const { branchId } = useBranch()
   const [data,setData]=useState(null),[search,setSearch]=useState(''),[status,setStatus]=useState('All'),[dialog,setDialog]=useState(false),[viewing,setViewing]=useState(null),[editing,setEditing]=useState(null),[form,setForm]=useState(empty),[message,setMessage]=useState(''),[error,setError]=useState('')
-  const load=()=>Promise.all([organizationService.overview(),reportService.overview({branchId,allBranches:true})]).then(([organization,report])=>setData({...organization,report}),e=>setError(e.message)); useEffect(()=>{void load()},[branchId])
+  const load=useCallback(()=>Promise.all([organizationService.overview(),reportService.overview({branchId,allBranches:true})]).then(([organization,report])=>setData({...organization,report}),e=>setError(e.message)),[branchId]); useEffect(()=>{void load()},[load])
   const rows=useMemo(()=>data?.branches.filter(b=>(status==='All'||(status==='Active')===(b.active!==false))&&`${b.name} ${b.code??''} ${b.location??''}`.toLowerCase().includes(search.toLowerCase()))??[],[data,search,status])
   const staffCount=id=>data?.users.filter(u=>u.enabled&&u.assignments.some(a=>a.branchId===id)).length??0, summary=id=>({courses:data?.report?.courses.filter(x=>x.branchId===id).length??0,batches:data?.report?.batches.filter(x=>x.branchId===id).length??0,students:data?.report?.students.filter(x=>x.branchId===id).length??0})
   const open=item=>{setEditing(item??null);setForm(item?{name:item.name,code:item.code??item.id.replace('demo-','').toUpperCase(),location:item.location??'Demo campus',contact:item.contact??''}:empty);setError('');setDialog(true)}

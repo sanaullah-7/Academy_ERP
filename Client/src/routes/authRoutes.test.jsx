@@ -11,7 +11,7 @@ const mountAt = (path) => { window.history.replaceState(null, '', path); return 
 describe('approved public and protected routes', () => {
   it('preserves the existing public root without a session', async () => {
     mountAt('/')
-    expect(screen.getByText('Academy Managemnt System')).toBeInTheDocument()
+    expect(screen.getByTitle('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Demo login' })).toBeInTheDocument()
     expect(window.location.pathname).toBe('/')
   })
@@ -25,7 +25,7 @@ describe('approved public and protected routes', () => {
   it('keeps existing public content and offers a route back to the signed-in demo workspace', async () => {
     await authService.login({ userId: 'demo-owner' })
     mountAt('/')
-    expect(screen.getByText('Academy Managemnt System')).toBeInTheDocument()
+    expect(screen.getByTitle('The Scholar Coaching Academy')).toBeInTheDocument()
     await userEvent.setup().click(await screen.findByRole('link', { name: 'Open demo workspace' }))
     expect(await screen.findByText('Assigned roles: Owner')).toBeInTheDocument()
   })
@@ -82,7 +82,7 @@ describe('approved public and protected routes', () => {
     mountAt('/missing/nested')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: 'Return home' }))
-    expect(screen.getByText('Academy Managemnt System')).toBeInTheDocument()
+    expect(screen.getByTitle('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(window.location.pathname).toBe('/')
   })
 

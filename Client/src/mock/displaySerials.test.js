@@ -46,6 +46,7 @@ describe('gapless branch display serials with permanent references preserved', (
     const centralBefore = list(db, 'admissions', central)
     authorizedDelete(db, northRecords[1].id, north)
     expect(list(db, 'admissions').map((a) => a.displaySerial)).toEqual([1, 2])
+    localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({ version: 1, userId: 'demo-admin', branchId: central.branchId }))
     expect(list(createMockDatabase(), 'admissions', central)).toEqual(centralBefore)
     expect(list(db, 'students', central).map((s) => s.displaySerial)).toEqual([1, 2, 3])
   })
