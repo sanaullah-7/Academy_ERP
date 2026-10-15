@@ -23,7 +23,7 @@ export default function DemoStats({ demos = [] }) {
               TOTAL REGISTERED
               <span className="sr-only"> Total Inquiries</span>
             </span>
-            <div className="size-9 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+            <div className="size-9 rounded-xl bg-[#F9EBEE] flex items-center justify-center text-[#940016]">
               <Users className="size-4" />
             </div>
           </div>
@@ -35,7 +35,7 @@ export default function DemoStats({ demos = [] }) {
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-slate-500">Current cycle (October)</span>
-            <span className="bg-teal-50 text-teal-700 font-medium text-[11px] px-2 py-0.5 rounded-full">
+            <span className="bg-[#F9EBEE] text-[#940016] font-medium text-[11px] px-2 py-0.5 rounded-full">
               +14 this week
             </span>
           </div>
@@ -50,7 +50,7 @@ export default function DemoStats({ demos = [] }) {
               ATTENDED TRIAL
               <span className="sr-only"> Attended / Completed</span>
             </span>
-            <div className="size-9 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+            <div className="size-9 rounded-xl bg-[#F9EBEE] flex items-center justify-center text-[#940016]">
               <Tv className="size-4" />
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function DemoStats({ demos = [] }) {
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               CONVERTED TO ADMISSION
             </span>
-            <div className="size-9 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+            <div className="size-9 rounded-xl bg-[#F9EBEE] flex items-center justify-center text-[#940016]">
               <ShieldCheck className="size-4" />
             </div>
           </div>

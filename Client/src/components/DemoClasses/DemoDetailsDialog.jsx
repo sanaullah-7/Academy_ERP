@@ -1,4 +1,4 @@
-﻿import { Button } from '../ui/button.jsx'
+import { Button } from '../ui/button.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import DemoStatusBadge from './DemoStatusBadge.jsx'
 import { Calendar, Clock, MapPin, Sparkles, User, UserCheck, Phone, History, FileText, ArrowRight } from 'lucide-react'
@@ -34,7 +34,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
               </p>
               <p className="text-base font-semibold text-foreground mt-1">{demo.studentName}</p>
               {demo.studentId && (
-                <span className="inline-block text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded mt-1">
+                <span className="inline-block text-xs text-primary bg-[#F9EBEE] px-2 py-0.5 rounded mt-1 font-medium">
                   Existing Student Link
                 </span>
               )}
@@ -75,7 +75,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
           {/* Scheduled Session Info */}
           <div className="rounded-xl border border-border/70 bg-card p-4 shadow-xs space-y-2">
             <h4 className="text-xs uppercase font-semibold text-muted-foreground tracking-wider flex items-center gap-1.5">
-              <Calendar size={15} className="text-teal-600" />
+              <Calendar size={15} className="text-primary" />
               Scheduled Trial Class Session
             </h4>
 
@@ -94,7 +94,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
                 <div>
                   <p className="text-xs text-muted-foreground">Room / Location</p>
                   <p className="font-semibold text-foreground flex items-center gap-1">
-                    <MapPin size={15} className="text-teal-600" />
+                    <MapPin size={15} className="text-primary" />
                     {demo.scheduledSession.location}
                   </p>
                 </div>

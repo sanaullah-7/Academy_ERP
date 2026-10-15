@@ -1,6 +1,7 @@
 import { MOCK_BRANDING_KEY } from '../constants/storageKeys.js'
 
-export const DEFAULT_BRANDING = Object.freeze({ name: 'Academy Management System', logo: null, primaryColor: '#008378' })
+export const DEFAULT_BRANDING = Object.freeze({ name: 'The Scholar Coaching Academy', logo: null, primaryColor: '#940016' })
+export const COMPACT_ACADEMY_NAME = 'TSA'
 
 export class BrandingError extends Error {
   constructor(code, message) { super(message); this.name = 'BrandingError'; this.code = code }
@@ -37,7 +38,12 @@ export const mockBranding = {
       throw new BrandingError('CORRUPTED_BRANDING', 'Saved branding has an invalid envelope; saved data was preserved.')
     }
     if (stored.version !== 1) throw new BrandingError('UNSUPPORTED_VERSION', 'Saved branding version is unsupported; saved data was preserved.')
-    return validateBranding(stored.branding)
+    const normalized = { ...stored.branding }
+    if (normalized.primaryColor === '#008378') normalized.primaryColor = '#940016'
+    if (normalized.name === 'Academy Management System' || normalized.name === 'Academy Managemnt System') {
+      normalized.name = 'The Scholar Coaching Academy'
+    }
+    return validateBranding(normalized)
   },
   write(value) {
     const branding = validateBranding(value)

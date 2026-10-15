@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Purpose: Demo Classes Management Page for prospective student trial sessions.
  * Module: DemoClasses (F08)
  * Status: Implemented — branch-scoped Demo Classes complete module.
@@ -202,11 +202,12 @@ export default function DemoClassesPage() {
 
     const handleExportCsv = () => {
     const headers = [
-      'Demo ID', 'Candidate Name', 'Guardian Contact',
+      'Academy', 'Demo ID', 'Candidate Name', 'Guardian Contact',
       'Target Program', 'Trial Schedule', 'Hall / Venue', 'Faculty',
       'Remarks', 'Status', 'Admission ID'
     ]
     const rows = demos.map(d => [
+      'The Scholar Coaching Academy',
       d.demoId,
       d.studentName,
       d.guardianContact,
@@ -229,10 +230,10 @@ export default function DemoClassesPage() {
           <div>
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
               <span>STUDENT ONBOARDING</span>
-              <span className="text-teal-600 font-bold">•</span>
-              <span className="text-teal-700 font-medium">{branch?.name || 'Main Campus'}</span>
-              <span className="text-teal-600 font-bold">•</span>
-              <span className="text-teal-700 font-medium">Session 2025–26</span>
+              <span className="text-primary font-bold">•</span>
+              <span className="text-primary font-medium">{branch?.name || 'Main Campus'}</span>
+              <span className="text-primary font-bold">•</span>
+              <span className="text-primary font-medium">Session 2025–26</span>
             </div>
             <h1
               aria-label="Demo Classes Management — Demo Classes & Trial Sessions"
@@ -259,7 +260,7 @@ export default function DemoClassesPage() {
             {canManage && (
               <Button
                 onClick={openRegisterDialog}
-                className="bg-[#005f56] hover:bg-[#004e46] text-white text-xs font-medium h-9 px-4 rounded-lg flex items-center gap-1.5 shadow-xs"
+                className="bg-[#940016] hover:bg-[#72000E] text-white text-xs font-medium h-9 px-4 rounded-lg flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus size={15} />
                 <span>+ Register Demo Student</span>
@@ -302,7 +303,7 @@ export default function DemoClassesPage() {
         {/* Loading State */}
         {loading && demos.length === 0 ? (
           <div role="status" className="flex items-center justify-center gap-3 p-16 text-muted-foreground">
-            <Loader2 size={24} className="animate-spin text-teal-600" />
+            <Loader2 size={24} className="animate-spin text-primary" />
             <span className="text-sm font-medium">Loading branch demo registry...</span>
           </div>
         ) : (

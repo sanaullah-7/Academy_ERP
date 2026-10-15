@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Purpose: Will define Sidebar for the Layout area of the Academy frontend.
  * Module: Layout
  * Status: Planned — functionality not implemented.
@@ -63,6 +63,28 @@ const modulePaths = Object.freeze({
   Settings: ROUTE_PATHS.SETTINGS,
 })
 
+function formatAcademyName(name) {
+  if (!name || name === 'The Scholar Coaching Academy') {
+    return (
+      <>
+        <span className="font-extrabold text-[16px] text-[#940016]">The Scholar</span>{' '}
+        <span className="font-bold text-[16px] text-slate-800">Coaching Academy</span>
+      </>
+    )
+  }
+  const words = name.split(' ')
+  if (words.length > 1) {
+    const half = Math.ceil(words.length / 2)
+    return (
+      <>
+        <span className="font-extrabold text-[#940016]">{words.slice(0, half).join(' ')}</span>{' '}
+        <span className="font-bold text-slate-800">{words.slice(half).join(' ')}</span>
+      </>
+    )
+  }
+  return <span className="font-extrabold text-[#940016]">{name}</span>
+}
+
 export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
   const { can } = usePermissions()
   return (
@@ -70,12 +92,11 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
       <div className="workspace-brand">
         <span className="workspace-brand-mark shrink-0"><AcademyLogo /></span>
         <div className="workspace-sidebar-label min-w-0">
-          <p className="workspace-brand-name truncate" title={academyName}>{academyName}</p>
-          <p className="workspace-brand-caption">Management workspace</p>
+          <p className="workspace-brand-name truncate" title={academyName}>{formatAcademyName(academyName)}</p>
         </div>
         {onClose && (
-          <Button variant="outline" size="icon" className="workspace-icon-button ml-auto" onClick={onClose} aria-label="Close navigation">
-            <X size={20} aria-hidden="true" />
+          <Button variant="outline" size="icon" className="workspace-icon-button workspace-mobile-close" onClick={onClose} aria-label="Close navigation">
+            <X size={18} aria-hidden="true" />
           </Button>
         )}
       </div>

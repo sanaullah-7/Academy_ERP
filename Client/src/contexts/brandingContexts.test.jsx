@@ -32,12 +32,12 @@ describe('shared academy and theme providers', () => {
     expect(screen.getByText('Batched Academy')).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem(MOCK_BRANDING_KEY)).branding).toMatchObject({ name: 'Batched Academy', primaryColor: '#123ABC' })
   })
-  it('provides defaults, decorative fallback and unchanged teal', () => {
+  it('provides defaults, decorative fallback and primary maroon brand', () => {
     const { container } = render(tree)
-    expect(screen.getByText('Academy Management System')).toBeInTheDocument()
+    expect(screen.getByText('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(container.querySelector('[data-academy-logo="fallback"]')).toBeInTheDocument()
-    expect(document.documentElement.style.getPropertyValue('--workspace-accent')).toBe('#008378')
-    expect(document.documentElement.style.getPropertyValue('--workspace-focus')).toBe('#00685f')
+    expect(document.documentElement.style.getPropertyValue('--workspace-accent')).toBe('#940016')
+    expect(document.documentElement.style.getPropertyValue('--workspace-focus')).toBe('#72000E')
   })
   it('shares updates, restores persisted branding on remount, and handles broken logos', () => {
     const view = render(tree)
@@ -56,7 +56,7 @@ describe('shared academy and theme providers', () => {
   it('falls back without deleting corrupted branding', () => {
     localStorage.setItem(MOCK_BRANDING_KEY, 'broken')
     render(tree)
-    expect(screen.getByText('Academy Management System')).toBeInTheDocument()
+    expect(screen.getByText('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(screen.getByText('CORRUPTED_BRANDING')).toBeInTheDocument()
     expect(localStorage.getItem(MOCK_BRANDING_KEY)).toBe('broken')
   })
@@ -64,13 +64,13 @@ describe('shared academy and theme providers', () => {
     render(tree)
     fireEvent.click(screen.getByText('Invalid color'))
     expect(screen.getByText('INVALID_BRANDING')).toBeInTheDocument()
-    expect(screen.getByText('#008378')).toBeInTheDocument()
+    expect(screen.getByText('#940016')).toBeInTheDocument()
   })
   it('retains current branding when persistence fails', () => {
     render(tree)
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota') })
     fireEvent.click(screen.getByText('Brand'))
-    expect(screen.getByText('Academy Management System')).toBeInTheDocument()
+    expect(screen.getByText('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(screen.getByText('STORAGE_WRITE_FAILED')).toBeInTheDocument()
   })
   it('restores previous inline theme tokens on unmount', () => {

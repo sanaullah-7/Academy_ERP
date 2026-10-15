@@ -64,9 +64,9 @@ function localDateKey(date) {
 }
 const money = value => new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(value)
 
-function DashboardKpi({ title, value, note, periodLabel, icon: Icon, tone = 'teal', unavailable = false }) {
+function DashboardKpi({ title, value, note, periodLabel, icon: Icon, tone = 'maroon', unavailable = false }) {
   const palette = {
-    teal: { icon: 'bg-teal-100 text-teal-700', card: 'border-teal-100 bg-teal-50/35', bar: 'bg-teal-500' },
+    maroon: { icon: 'bg-primary/10 text-primary', card: 'border-primary/15 bg-[#F9EBEE]/40', bar: 'bg-primary' },
     blue: { icon: 'bg-blue-100 text-blue-700', card: 'border-blue-100 bg-blue-50/35', bar: 'bg-blue-500' },
     violet: { icon: 'bg-violet-100 text-violet-700', card: 'border-violet-100 bg-violet-50/35', bar: 'bg-violet-500' },
     red: { icon: 'bg-rose-100 text-rose-700', card: 'border-rose-100 bg-rose-50/35', bar: 'bg-rose-500' },
@@ -256,14 +256,14 @@ export default function SuperAdminDashboard() {
 
               <aside className="grid min-w-0 content-start gap-4">
                 <Card className="border-border/70 shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><CardHeader><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Quick Operations</h2><span className="text-xs text-muted-foreground">Fast desk</span></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="secondary" className="h-auto min-h-20 justify-start rounded-xl border border-teal-100 bg-teal-50/70 px-4 text-left hover:bg-teal-100/70" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-10 place-items-center rounded-lg bg-teal-600 text-white"><UserPlus size={19} aria-hidden="true" /></span><span><strong className="block">New Admission</strong><small className="font-normal text-muted-foreground">Student registration</small></span></Button>
+                  <Button variant="secondary" className="h-auto min-h-20 justify-start rounded-xl border border-primary/20 bg-primary/5 px-4 text-left hover:bg-primary/10" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-10 place-items-center rounded-lg bg-primary text-white shadow-xs"><UserPlus size={19} aria-hidden="true" /></span><span><strong className="block">New Admission</strong><small className="font-normal text-muted-foreground">Student registration</small></span></Button>
                   {[{ title: 'Collect Fee', note: 'Open Fees', icon: ReceiptText, path: ROUTE_PATHS.FEES, style: 'border-blue-100 bg-blue-50/70 hover:bg-blue-100/70', iconStyle: 'bg-blue-100 text-blue-700' }, { title: 'Record Expense', note: 'Open Finance', icon: CreditCard, path: ROUTE_PATHS.FINANCE, style: 'border-amber-100 bg-amber-50/70 hover:bg-amber-100/70', iconStyle: 'bg-amber-100 text-amber-700' }, { title: 'Add Demo', note: 'Open Demo Classes', icon: DoorOpen, path: ROUTE_PATHS.DEMO_CLASSES, style: 'border-violet-100 bg-violet-50/70 hover:bg-violet-100/70', iconStyle: 'bg-violet-100 text-violet-700' }].map(item => <Button key={item.title} variant="secondary" className={`h-auto min-h-20 justify-start rounded-xl border px-4 text-left ${item.style}`} onClick={() => navigate(item.path)}><span className={`grid size-10 place-items-center rounded-lg ${item.iconStyle}`}><item.icon size={19} aria-hidden="true" /></span><span><strong className="block">{item.title}</strong><small className="font-normal text-muted-foreground">{item.note}</small></span></Button>)}
                 </CardContent></Card>
 
                 <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
                   <CardHeader className="flex flex-nowrap items-center justify-start gap-12.5 px-3 py-5 sm:px-5">
                     <h2 className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-md font-bold tracking-tight text-slate-950 sm:text-base">
-                      <span className="size-2.5 shrink-0 rounded-full bg-teal-100 ring-2 ring-teal-50" aria-hidden="true" />
+                      <span className="size-2.5 shrink-0 rounded-full bg-primary/20 ring-2 ring-primary/10" aria-hidden="true" />
                       Upcoming Classes Today
                     </h2>
                     <Badge className="h-5 w-fit shrink-0 self-center whitespace-nowrap rounded-full border-0 bg-blue-100 px-1.5 py-0 text-[9px] font-bold leading-none text-blue-950 hover:bg-blue-100 sm:text-[11px]" variant="secondary">{upcomingClasses.length} Active {upcomingClasses.length === 1 ? 'Slot' : 'Slots'}</Badge>
@@ -281,18 +281,18 @@ export default function SuperAdminDashboard() {
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <strong className="text-sm font-bold text-slate-950 sm:text-base">{item.subject}</strong>
-                                <Badge className="max-w-full truncate border-0 bg-cyan-100 px-2 py-0.5 text-[11px] font-semibold text-teal-800 hover:bg-cyan-100" variant="secondary">{item.batchName}</Badge>
+                                <Badge className="max-w-full truncate border-0 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/15" variant="secondary">{item.batchName}</Badge>
                               </div>
                               <span className="mt-2.5 flex min-w-0 items-center gap-2 text-xs text-slate-500 sm:text-sm"><UserRound className="shrink-0" size={17} aria-hidden="true" /><span className="truncate">{item.teacherName}</span></span>
                             </div>
                             <div className="text-left sm:text-right">
-                              <strong className="whitespace-nowrap text-sm font-bold text-teal-700">{item.startTime} – {item.endTime}</strong>
+                              <strong className="whitespace-nowrap text-sm font-bold text-primary">{item.startTime} – {item.endTime}</strong>
                               <span className="mt-1 block text-xs font-medium text-slate-500">{classTiming(item)}</span>
                             </div>
                           </div>
                           <div className="mt-4 grid gap-2 text-xs sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                            <span className="flex min-w-0 items-center gap-1.5 text-slate-600"><MapPin className="shrink-0 text-teal-700" size={18} aria-hidden="true" /><span className="truncate">{item.location}</span></span>
-                            <span className="flex items-center gap-1.5 font-semibold text-slate-800 sm:justify-end"><Users className="shrink-0 text-teal-700" size={18} aria-hidden="true" />{item.enrolledCount} Students Enrolled</span>
+                            <span className="flex min-w-0 items-center gap-1.5 text-slate-600"><MapPin className="shrink-0 text-primary" size={18} aria-hidden="true" /><span className="truncate">{item.location}</span></span>
+                            <span className="flex items-center gap-1.5 font-semibold text-slate-800 sm:justify-end"><Users className="shrink-0 text-primary" size={18} aria-hidden="true" />{item.enrolledCount} Students Enrolled</span>
                           </div>
                         </button>)}
                   </CardContent>

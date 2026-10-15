@@ -12,8 +12,8 @@ export default function DemoStatusBadge({ status, className = '' }) {
 
   if (status === 'Attended') {
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200/60 whitespace-nowrap ${className}`}>
-        <span className="size-1.5 rounded-full bg-teal-600 shrink-0"></span>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap ${className}`}>
+        <span className="size-1.5 rounded-full bg-emerald-600 shrink-0"></span>
         <span>Attended</span>
       </span>
     )
@@ -21,8 +21,8 @@ export default function DemoStatusBadge({ status, className = '' }) {
 
   if (status === 'Converted') {
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-300/60 whitespace-nowrap ${className}`}>
-        <Check className="size-3 text-teal-700 shrink-0" />
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-300/60 whitespace-nowrap ${className}`}>
+        <Check className="size-3 text-emerald-700 shrink-0" />
         <span>Converted</span>
       </span>
     )

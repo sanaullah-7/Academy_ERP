@@ -143,13 +143,13 @@ export default function DemoStudentsTable({
             onClick={() => { setActiveTab('All'); setPage(1) }}
             className={`rounded-lg px-2.5 py-1 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'All'
-                ? 'bg-[#005f56] text-white shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#940016] text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
             }`}
           >
             <span>All Candidates</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-              activeTab === 'All' ? 'bg-teal-900/60 text-white' : 'bg-slate-200/70 text-slate-700'
+              activeTab === 'All' ? 'bg-[#72000E] text-white' : 'bg-slate-200/70 text-slate-700'
             }`}>
               {tabCounts.All}
             </span>
@@ -160,13 +160,13 @@ export default function DemoStudentsTable({
             onClick={() => { setActiveTab('Upcoming'); setPage(1) }}
             className={`rounded-lg px-2.5 py-1 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Upcoming'
-                ? 'bg-[#005f56] text-white shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#940016] text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
             }`}
           >
             <span>Upcoming / Registered</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-              activeTab === 'Upcoming' ? 'bg-teal-900/60 text-white' : 'bg-blue-50 text-blue-700'
+              activeTab === 'Upcoming' ? 'bg-[#72000E] text-white' : 'bg-blue-50 text-blue-700'
             }`}>
               {tabCounts.Upcoming}
             </span>
@@ -177,13 +177,13 @@ export default function DemoStudentsTable({
             onClick={() => { setActiveTab('Attended'); setPage(1) }}
             className={`rounded-lg px-2.5 py-1 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Attended'
-                ? 'bg-[#005f56] text-white shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#940016] text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
             }`}
           >
             <span>Attended</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-              activeTab === 'Attended' ? 'bg-teal-900/60 text-white' : 'bg-slate-200/70 text-slate-700'
+              activeTab === 'Attended' ? 'bg-[#72000E] text-white' : 'bg-slate-200/70 text-slate-700'
             }`}>
               {tabCounts.Attended}
             </span>
@@ -194,13 +194,13 @@ export default function DemoStudentsTable({
             onClick={() => { setActiveTab('Converted'); setPage(1) }}
             className={`rounded-lg px-2.5 py-1 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Converted'
-                ? 'bg-[#005f56] text-white shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#940016] text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
             }`}
           >
             <span>Converted</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-              activeTab === 'Converted' ? 'bg-teal-900/60 text-white' : 'bg-slate-200/70 text-slate-700'
+              activeTab === 'Converted' ? 'bg-[#72000E] text-white' : 'bg-slate-200/70 text-slate-700'
             }`}>
               {tabCounts.Converted}
             </span>
@@ -211,13 +211,13 @@ export default function DemoStudentsTable({
             onClick={() => { setActiveTab('NoShow'); setPage(1) }}
             className={`rounded-lg px-2.5 py-1 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'NoShow'
-                ? 'bg-[#005f56] text-white shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#940016] text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
             }`}
           >
             <span>No Show</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-              activeTab === 'NoShow' ? 'bg-teal-900/60 text-white' : 'bg-slate-200/70 text-slate-700'
+              activeTab === 'NoShow' ? 'bg-[#72000E] text-white' : 'bg-slate-200/70 text-slate-700'
             }`}>
               {tabCounts.NoShow}
             </span>
@@ -234,7 +234,7 @@ export default function DemoStudentsTable({
               placeholder="Search student name or phone..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="pl-8 pr-2.5 h-8 w-52 sm:w-60 rounded-lg border border-slate-200/90 bg-slate-100/70 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+              className="pl-8 pr-2.5 h-8 w-52 sm:w-60 rounded-lg border border-slate-200/90 bg-slate-100/70 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#940016]"
             />
           </div>
 
@@ -242,7 +242,7 @@ export default function DemoStudentsTable({
             aria-label="Filter by stream"
             value={streamFilter}
             onChange={(e) => { setStreamFilter(e.target.value); setPage(1) }}
-            className="h-8 rounded-lg border border-slate-200/90 bg-white px-2.5 text-xs font-medium text-slate-700 shadow-2xs focus:outline-none focus:ring-1 focus:ring-teal-600 cursor-pointer"
+            className="h-8 rounded-lg border border-slate-200/90 bg-white px-2.5 text-xs font-medium text-slate-700 shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#940016] cursor-pointer"
           >
             <option value="All">All Streams</option>
             <option value="Pre-Medical">Pre-Medical</option>
@@ -300,7 +300,7 @@ export default function DemoStudentsTable({
                         <button
                           type="button"
                           onClick={() => onViewDetails(item)}
-                          className="text-xs font-semibold text-slate-900 hover:text-teal-700 text-left truncate block w-full leading-tight cursor-pointer"
+                          className="text-xs font-semibold text-slate-900 hover:text-primary text-left truncate block w-full leading-tight cursor-pointer"
                           title={item.studentName}
                         >
                           {item.studentName}
@@ -322,7 +322,7 @@ export default function DemoStudentsTable({
                         <button
                           type="button"
                           onClick={() => onViewDetails(item)}
-                          className="text-xs font-semibold text-teal-700 hover:text-teal-800 hover:underline text-left truncate block w-full cursor-pointer"
+                          className="text-xs font-semibold text-primary hover:text-[#72000E] hover:underline text-left truncate block w-full cursor-pointer"
                           title={item.courseName}
                         >
                           {item.courseName}
@@ -342,7 +342,7 @@ export default function DemoStudentsTable({
                       {/* TRIAL FACULTY */}
                       <td className="px-2.5 py-2 min-w-0">
                         <div className="flex items-center gap-1 text-[11px] text-slate-700 font-medium truncate" title={item.scheduledSession?.teacherName || 'TBD (Faculty)'}>
-                          <User className="size-3 text-teal-700 shrink-0" />
+                          <User className="size-3 text-primary shrink-0" />
                           <span className="truncate">
                             {item.scheduledSession?.teacherName || 'TBD (Faculty)'}
                           </span>
@@ -376,7 +376,7 @@ export default function DemoStudentsTable({
                               <button
                                 type="button"
                                 onClick={() => onConvert(item)}
-                                className="bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-0.5 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+                                className="bg-[#940016] hover:bg-[#72000E] text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-0.5 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
                               >
                                 <span>Convert</span>
                                 <ArrowRight className="size-2.5" />
@@ -396,7 +396,7 @@ export default function DemoStudentsTable({
                               <button
                                 type="button"
                                 onClick={() => onConvert(item)}
-                                className="bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-0.5 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+                                className="bg-[#940016] hover:bg-[#72000E] text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-0.5 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
                               >
                                 <span>Convert</span>
                                 <ArrowRight className="size-2.5" />
@@ -408,7 +408,7 @@ export default function DemoStudentsTable({
                             <button
                               type="button"
                               onClick={() => onConvert(item)}
-                              className="bg-[#005f56] hover:bg-[#004d46] text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shadow-2xs transition-colors whitespace-nowrap cursor-pointer"
+                              className="bg-[#940016] hover:bg-[#72000E] text-white text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shadow-2xs transition-colors whitespace-nowrap cursor-pointer"
                             >
                               <GraduationCap className="size-3" />
                               <span>Convert to Admission</span>
@@ -419,10 +419,10 @@ export default function DemoStudentsTable({
                             <button
                               type="button"
                               onClick={() => onViewDetails(item)}
-                              className="text-teal-700 hover:text-teal-800 hover:underline text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap cursor-pointer"
+                              className="text-primary hover:text-[#72000E] hover:underline text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap cursor-pointer"
                             >
                               <span>Roll • {item.convertedAdmissionDisplayId || 'ICS-2519'}</span>
-                              <ExternalLink className="size-2.5 text-teal-600" />
+                              <ExternalLink className="size-2.5 text-primary" />
                             </button>
                           )}
 
@@ -478,7 +478,7 @@ export default function DemoStudentsTable({
                     <button
                       type="button"
                       onClick={() => onConvert(item)}
-                      className="w-full bg-[#005f56] text-white text-[11px] font-medium py-1 rounded flex items-center justify-center gap-1 shadow-2xs"
+                      className="w-full bg-[#940016] hover:bg-[#72000E] text-white text-[11px] font-medium py-1 rounded flex items-center justify-center gap-1 shadow-2xs transition-colors"
                     >
                       <GraduationCap className="size-3" />
                       <span>Convert to Admission</span>
@@ -488,14 +488,14 @@ export default function DemoStudentsTable({
                       <button
                         type="button"
                         onClick={() => onAttendance(item)}
-                        className="flex-1 bg-slate-100 text-slate-700 text-[11px] font-medium py-1 rounded text-center"
+                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium py-1 rounded text-center transition-colors"
                       >
                         Mark Attended
                       </button>
                       <button
                         type="button"
                         onClick={() => onConvert(item)}
-                        className="flex-1 bg-teal-700 text-white text-[11px] font-medium py-1 rounded text-center"
+                        className="flex-1 bg-[#940016] hover:bg-[#72000E] text-white text-[11px] font-medium py-1 rounded text-center transition-colors shadow-2xs"
                       >
                         Convert →
                       </button>
@@ -526,7 +526,7 @@ export default function DemoStudentsTable({
                 setPageSize(Number(e.target.value))
                 setPage(1)
               }}
-              className="h-7 rounded-md border border-teal-600 bg-white px-2 text-xs font-medium text-slate-800 shadow-2xs focus:ring-1 focus:ring-teal-600 focus:outline-none cursor-pointer"
+              className="h-7 rounded-md border border-[#940016]/30 bg-white px-2 text-xs font-medium text-slate-800 shadow-2xs focus:ring-1 focus:ring-[#940016] focus:outline-none cursor-pointer"
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -557,8 +557,8 @@ export default function DemoStudentsTable({
                 onClick={() => setPage(pageNum)}
                 className={`size-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer ${
                   pageNum === currentPage
-                    ? 'bg-[#005f56] text-white shadow-2xs'
-                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    ? 'bg-[#940016] text-white shadow-2xs'
+                    : 'border border-slate-200 bg-white text-slate-700 hover:bg-[#F9EBEE]/50'
                 }`}
               >
                 {pageNum}

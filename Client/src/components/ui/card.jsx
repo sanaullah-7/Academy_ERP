@@ -2,7 +2,7 @@
 import { cn } from '@/lib/utils'
 
 export function Card({ className, ...props }) {
-  return <div data-slot="card" className={cn('flex min-w-0 flex-col gap-6 rounded-xl border border-border bg-card py-6 text-card-foreground shadow-sm', className)} {...props} />
+  return <div data-slot="card" className={cn('flex min-w-0 flex-col gap-6 rounded-xl border border-border bg-card py-6 text-card-foreground shadow-sm transition-all duration-200', className)} {...props} />
 }
 export function CardHeader({ className, ...props }) {
   return <div data-slot="card-header" className={cn('grid gap-2 px-6', className)} {...props} />

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import { AlertCircle, CheckCircle2, UserCheck, XCircle } from 'lucide-react'
@@ -35,7 +35,7 @@ export default function DemoAttendanceDialog({
       <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <UserCheck className="text-teal-600" size={22} aria-hidden="true" />
+            <UserCheck className="text-primary" size={22} aria-hidden="true" />
             Record Demo Attendance
           </DialogTitle>
           <DialogDescription>
@@ -119,7 +119,7 @@ export default function DemoAttendanceDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
-            <Button type="submit" disabled={busy} className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button type="submit" disabled={busy} className="bg-[#940016] hover:bg-[#72000E] text-white">
               {busy ? 'Saving Attendance...' : 'Save Attendance'}
             </Button>
           </DialogFooter>

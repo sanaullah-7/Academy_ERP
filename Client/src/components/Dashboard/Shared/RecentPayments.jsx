@@ -34,7 +34,7 @@ export default function RecentPayments({ payments = [], branchId, loading = fals
     <CardContent className="grid min-w-0 gap-3 px-2 pb-5 pt-0 sm:px-2 sm:pb-6">
       {loading && <div role="status" className="space-y-3"><span className="sr-only">Loading verified payments...</span>{[0, 1, 2].map(item => <span key={item} className="flex animate-pulse items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 sm:p-4 motion-reduce:animate-none"><span className="size-11 rounded-xl bg-slate-200 sm:size-12" /><span className="flex-1 space-y-2"><span className="block h-3 w-2/5 rounded bg-slate-200" /><span className="block h-2.5 w-3/5 rounded bg-slate-100" /></span><span className="h-3 w-20 rounded bg-slate-200" /></span>)}</div>}
       {!loading && error && <div className="rounded-2xl border border-red-100 bg-red-50/80 p-4 text-center"><span className="mx-auto grid size-10 place-items-center rounded-xl bg-white text-red-600 shadow-sm ring-1 ring-red-100"><AlertCircle size={18} aria-hidden="true" /></span><p role="alert" className="mt-2 text-sm font-medium text-red-700">Unable to load verified payments. {error}</p>{onRetry && <Button className="mt-3" size="sm" variant="outline" onClick={onRetry}><RefreshCw size={15} aria-hidden="true" />Retry</Button>}</div>}
-      {!loading && !error && verified.length === 0 && <div className="rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50/80 to-slate-50 px-4 py-7 text-center"><span className="mx-auto grid size-11 place-items-center rounded-xl bg-white text-teal-700 shadow-sm ring-1 ring-blue-100"><ReceiptText size={19} aria-hidden="true" /></span><p className="mt-3 text-sm font-semibold text-slate-900">No verified payments</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-slate-500">No approved payment or receipt records are available for this branch yet.</p></div>}
+      {!loading && !error && verified.length === 0 && <div className="rounded-2xl border border-dashed border-blue-200 bg-gradient-to-br from-blue-50/80 to-slate-50 px-4 py-7 text-center"><span className="mx-auto grid size-11 place-items-center rounded-xl bg-white text-primary shadow-sm ring-1 ring-blue-100"><ReceiptText size={19} aria-hidden="true" /></span><p className="mt-3 text-sm font-semibold text-slate-900">No verified payments</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-slate-500">No approved payment or receipt records are available for this branch yet.</p></div>}
       {!loading && !error && verified.map(payment => {
         const MethodIcon = methodIcons[payment.method] ?? ReceiptText
         const iconStyle = methodStyles[payment.method] ?? 'bg-slate-50 text-slate-700 ring-slate-200/80'
@@ -55,11 +55,11 @@ export default function RecentPayments({ payments = [], branchId, loading = fals
           </span>
           <span className="flex min-w-0 flex-col items-end gap-1 text-right">
             <span className="flex items-center gap-1.5">
-              <strong className="whitespace-nowrap text-[13px] font-bold leading-4 tracking-tight text-teal-800 sm:text-sm">{formatAmount(payment.amount)}</strong>
+              <strong className="whitespace-nowrap text-[13px] font-bold leading-4 tracking-tight text-slate-900 sm:text-sm">{formatAmount(payment.amount)}</strong>
               <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/80" title="Verified" aria-hidden="true"><Check size={13} strokeWidth={2.5} /></span>
             </span>
             <span className="sr-only">Verified</span>
-            <span className="flex max-w-full flex-col items-end text-[9px] font-semibold leading-3.5 text-teal-800 sm:text-[10px]" title={referenceText.join(' · ')}>
+            <span className="flex max-w-full flex-col items-end text-[9px] font-semibold leading-3.5 text-slate-600 sm:text-[10px]" title={referenceText.join(' · ')}>
               {referenceText.length ? referenceText.map(reference => <span key={reference} className="max-w-full truncate">{reference}</span>) : <span>Reference unavailable</span>}
             </span>
           </span>

@@ -1,4 +1,4 @@
-﻿import { useState, useId } from 'react'
+import { useState, useId } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
@@ -90,7 +90,7 @@ export default function DemoRegistrationForm({
       <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <User className="text-teal-600" size={22} aria-hidden="true" />
+            <User className="text-primary" size={22} aria-hidden="true" />
             Register Demo Class Inquiry
           </DialogTitle>
           <DialogDescription>
@@ -107,13 +107,13 @@ export default function DemoRegistrationForm({
 
         <form onSubmit={handleSubmit} id={formId} className="space-y-4">
           {students.length > 0 && (
-            <div className="rounded-lg border border-teal-100 bg-teal-50/50 p-3">
-              <label htmlFor="existingStudent" className="block text-xs font-semibold text-teal-800 uppercase tracking-wider mb-1">
+            <div className="rounded-lg border border-[#f0d5d9] bg-[#F9EBEE]/50 p-3">
+              <label htmlFor="existingStudent" className="block text-xs font-semibold text-primary uppercase tracking-wider mb-1">
                 Link Existing Student (Optional)
               </label>
               <select
                 id="existingStudent"
-                className="w-full min-h-10 rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full min-h-10 rounded-md border border-border bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 value={selectedStudentId}
                 onChange={(e) => handleStudentSelect(e.target.value)}
               >
@@ -124,7 +124,7 @@ export default function DemoRegistrationForm({
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-teal-700/80">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Selecting an existing student reuses contact info and prevents duplicate student profiles.
               </p>
             </div>
@@ -251,7 +251,7 @@ export default function DemoRegistrationForm({
             <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
-            <Button type="submit" disabled={busy} className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button type="submit" disabled={busy} className="bg-[#940016] hover:bg-[#72000E] text-white">
               {busy ? 'Registering...' : 'Register Demo Inquiry'}
             </Button>
           </DialogFooter>

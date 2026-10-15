@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
@@ -158,7 +158,7 @@ function ScheduleForm({ demo, teachers, onSubmit, onClose, busy }) {
         <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
           Cancel
         </Button>
-        <Button type="submit" disabled={busy} className="bg-teal-600 hover:bg-teal-700 text-white">
+        <Button type="submit" disabled={busy} className="bg-[#940016] hover:bg-[#72000E] text-white">
           {busy ? 'Saving Schedule...' : isReschedule ? 'Update Schedule' : 'Confirm Schedule'}
         </Button>
       </DialogFooter>
@@ -182,7 +182,7 @@ export default function DemoScheduleDialog({
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <Calendar className="text-teal-600" size={22} aria-hidden="true" />
+            <Calendar className="text-primary" size={22} aria-hidden="true" />
             {isReschedule ? 'Reschedule Demo Session' : 'Schedule Demo Class'}
           </DialogTitle>
           <DialogDescription>

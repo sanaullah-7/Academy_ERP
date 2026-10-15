@@ -11,7 +11,7 @@ function App() {
   return (
     <AcademyProvider><ThemeProvider><AuthProvider><BranchProvider><AppRouter>
       <DashboardLayout>
-        <Card className="workspace-home">Academy Managemnt System</Card>
+        <Card className="workspace-home">The Scholar Coaching Academy</Card>
       </DashboardLayout>
     </AppRouter></BranchProvider></AuthProvider></ThemeProvider></AcademyProvider>
   )
