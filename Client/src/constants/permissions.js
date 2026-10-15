@@ -29,6 +29,13 @@ export const PERMISSIONS = Object.freeze({
   EXPENSES_MANAGE: 'expenses.manage',
   DEMO_CLASSES_VIEW: 'demoClasses.view',
   DEMO_CLASSES_MANAGE: 'demoClasses.manage',
+  ASSETS_VIEW: 'assets.view',
+  ASSETS_MANAGE: 'assets.manage',
+  REPORTS_VIEW: 'reports.view',
+  REPORTS_COMPARE_BRANCHES: 'reports.compareBranches',
+  BRANCHES_MANAGE: 'branches.manage',
+  USERS_MANAGE: 'users.manage',
+  SETTINGS_MANAGE: 'settings.manage',
 })
 export const isKnownPermission = (permission) => Object.values(PERMISSIONS).includes(permission)
 
@@ -54,6 +61,13 @@ const SINGLE_ROLE_GRANTS = Object.freeze({
     PERMISSIONS.EXPENSES_MANAGE,
     PERMISSIONS.DEMO_CLASSES_VIEW,
     PERMISSIONS.DEMO_CLASSES_MANAGE,
+    PERMISSIONS.ASSETS_VIEW,
+    PERMISSIONS.ASSETS_MANAGE,
+    PERMISSIONS.REPORTS_VIEW,
+    PERMISSIONS.REPORTS_COMPARE_BRANCHES,
+    PERMISSIONS.BRANCHES_MANAGE,
+    PERMISSIONS.USERS_MANAGE,
+    PERMISSIONS.SETTINGS_MANAGE,
   ]),
   [ROLES.RECEPTIONIST]: Object.freeze([
     PERMISSIONS.ADMISSIONS_VIEW,

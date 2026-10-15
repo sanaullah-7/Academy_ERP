@@ -1,4 +1,5 @@
 import { ROLES, getBranchRoles } from '../constants/roles.js'
+import { readOrganization } from './mockOrganization.js'
 
 // Fictional demo identities and assignments. These are not production permissions.
 export const DEMO_BRANCHES = Object.freeze([
@@ -23,7 +24,15 @@ export const DEMO_USERS = Object.freeze([
   user('demo-disabled', 'Demo Disabled Account', [], false),
 ])
 
+export const getDemoBranches = () => [...DEMO_BRANCHES, ...readOrganization().branches]
+export const getDemoUsers = () => {
+  const store = readOrganization()
+  const base = DEMO_USERS.map(user => store.assignmentOverrides[user.id]?.length ? { ...user, assignments: [...user.assignments, ...store.assignmentOverrides[user.id]] } : user)
+  return [...base, ...store.users]
+}
+export const findDemoUser = id => getDemoUsers().find(user => user.id === id)
+
 export function getAuthorizedBranches(user) {
   if (!user?.enabled || !Array.isArray(user.assignments)) return []
-  return DEMO_BRANCHES.filter((branch) => getBranchRoles(user, branch.id).length > 0)
+  return getDemoBranches().filter((branch) => getBranchRoles(user, branch.id).length > 0 && branch.active !== false)
 }

@@ -22,6 +22,10 @@
   --workspace-space: 4px;
   --workspace-sidebar-width: 256px;
   --workspace-sidebar-compact: 80px;
+  --workspace-sidebar-background: #ffffff;
+  --workspace-sidebar-text: #111827;
+  --workspace-sidebar-icon: #111827;
+  --workspace-sidebar-active: #7f1d1d;
   --workspace-topbar-height: 64px;
   --workspace-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
   --workspace-drawer-shadow: 12px 0 48px rgb(16 24 40 / 14%);

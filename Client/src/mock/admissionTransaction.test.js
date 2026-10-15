@@ -52,7 +52,7 @@ describe('atomic admission/student sequence and compatibility', () => {
     createMockDatabase().run('students', 'list', { query: north })
     expect(saved().students.find((s) => s.id === 'legacy-custom').name).toBe('Saved legacy student')
     expect(saved().admissions[0].studentName).toBe('Saved legacy applicant')
-    expect(saved().version).toBe(4)
+    expect(saved().version).toBe(8)
   })
   it('migrates an opaque legacy admission/student pair without changing internal IDs or optional statuses', () => {
     const data = createSeedDatabase()

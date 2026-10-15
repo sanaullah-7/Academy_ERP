@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useBranch } from '../../hooks/useBranch.js'
-import { DEMO_USERS } from '../../mock/authFixtures.js'
+import { getDemoUsers } from '../../mock/authFixtures.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card.jsx'
@@ -30,7 +30,7 @@ export default function LoginPage() {
             <label className="grid gap-2" htmlFor="demo-account">Demo account
               <select id="demo-account" className="demo-select" value={userId} onChange={(event) => setUserId(event.target.value)} required>
                 <option value="" disabled>Select a demo account</option>
-                {DEMO_USERS.filter((candidate) => candidate.enabled).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+                {getDemoUsers().filter((candidate) => candidate.enabled).map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
               </select>
             </label>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

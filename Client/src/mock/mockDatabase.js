@@ -5,7 +5,7 @@
  */
 
 import { MOCK_DATABASE_KEY } from '../constants/storageKeys.js'
-import { DEMO_BRANCHES, DEMO_USERS } from './authFixtures.js'
+import { getDemoBranches, getDemoUsers } from './authFixtures.js'
 import { getBranchRoles, ROLES } from '../constants/roles.js'
 import { createSeedDatabase, createBatchSeeds, createDemoClassSeeds } from './seedData.js'
 import { admissionNumberFromId, formatAdmissionId } from '../lib/admissionIds.js'
@@ -23,8 +23,8 @@ const object = (value) => value !== null && typeof value === 'object' && !Array.
 const validText = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 200
 const validDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value
 const validContact = (value) => typeof value === 'string' && /^\+?[0-9\s().-]{3,30}$/.test(value.trim()) && value.length <= 200
-const validBranch = (value) => DEMO_BRANCHES.some((branch) => branch.id === value)
-const collections = ['students', 'courses', 'admissions', 'batches', 'academicStreams', 'subjects', 'enrollments', 'classes', 'challans', 'payments', 'expenses', 'demoClasses']
+const validBranch = (value) => getDemoBranches().some((branch) => branch.id === value)
+const collections = ['students', 'courses', 'admissions', 'batches', 'academicStreams', 'subjects', 'enrollments', 'classes', 'challans', 'payments', 'expenses', 'demoClasses', 'assets']
 
 function validateRecord(record, collection) {
   if (!object(record) || !validText(record.id) || !validBranch(record.branchId)) {
@@ -118,6 +118,14 @@ function validateRecord(record, collection) {
         }
       }
     }
+  } else if (collection === 'assets') {
+    const keys = ['id', 'branchId', 'assetCode', 'name', 'category', 'description', 'trackingType', 'quantity', 'purchaseDate', 'purchaseCost', 'bookValue', 'serialNumber', 'location', 'supplier', 'notes', 'condition', 'status', 'assignedToId', 'createdAt', 'updatedAt', 'history', 'maintenanceHistory']
+    if (Object.keys(record).some(key => !keys.includes(key)) || !['assetCode', 'name', 'category', 'trackingType', 'condition', 'status', 'createdAt', 'updatedAt'].every(key => validText(record[key]))) fail('INVALID_RECORD', 'Asset is missing required saved fields.')
+    if (!['Individual', 'Bulk'].includes(record.trackingType) || !['Excellent', 'Working', 'Needs Maintenance', 'Out of Service'].includes(record.condition) || !['Available', 'Assigned', 'Maintenance', 'Retired'].includes(record.status)) fail('INVALID_RECORD', 'Asset tracking, condition or status is invalid.')
+    if (!Number.isSafeInteger(record.quantity) || record.quantity <= 0 || !Number.isFinite(record.purchaseCost) || record.purchaseCost < 0 || (record.bookValue != null && (!Number.isFinite(record.bookValue) || record.bookValue < 0))) fail('INVALID_RECORD', 'Asset quantity or stored values are invalid.')
+    if (record.purchaseDate && !validDateOnly(record.purchaseDate)) fail('INVALID_RECORD', 'Asset purchase date is invalid.')
+    if (!Array.isArray(record.history) || !Array.isArray(record.maintenanceHistory)) fail('INVALID_RECORD', 'Asset history is invalid.')
+    if (record.assignedToId != null && !validText(record.assignedToId)) fail('INVALID_RECORD', 'Asset assignment is invalid.')
   } else if (collection === 'batches') {
     if (Object.keys(record).some(key => !['id', 'branchId', 'courseId', 'name', 'active', 'capacity', 'startTime', 'endTime'].includes(key)) || !validText(record.name) || !validText(record.courseId) || (record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime !== undefined && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime !== undefined && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime)) fail('INVALID_RECORD', 'Invalid provisional batch record.')
   } else if (collection === 'academicStreams') {
@@ -147,7 +155,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       }
     }
     if (!object(data.financialCounters) || Object.keys(data.financialCounters).some(id => !validBranch(id))) fail('CORRUPTED_STORAGE', 'Invalid financial counters.')
-    for (const branch of DEMO_BRANCHES) {
+    for (const branch of getDemoBranches()) {
       const counters = data.financialCounters[branch.id]
       if (!object(counters) || !['challan', 'receipt'].every(key => Number.isSafeInteger(counters[key]) && counters[key] >= 0)) fail('CORRUPTED_STORAGE', 'Invalid branch financial counter.')
     }
@@ -195,7 +203,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (!migrating && !object(data.branchCounters)) fail('CORRUPTED_STORAGE', 'Invalid branch sequence envelope.')
     const counters = data.branchCounters ?? {}
     if (Object.keys(counters).some((id) => !validBranch(id))) fail('CORRUPTED_STORAGE', 'Unknown branch sequence.')
-    for (const branch of DEMO_BRANCHES) {
+    for (const branch of getDemoBranches()) {
       let counter = counters[branch.id]
       if (counter === undefined) {
         if (!migrating) fail('CORRUPTED_STORAGE', 'Missing durable branch counter.')
@@ -266,9 +274,10 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       initial.challans = []
       initial.payments = []
       initial.expenses = []
-      initial.financialCounters = Object.fromEntries(DEMO_BRANCHES.map(branch => [branch.id, { challan: 0, receipt: 0 }]))
+      initial.financialCounters = Object.fromEntries(getDemoBranches().map(branch => [branch.id, { challan: 0, receipt: 0 }]))
       initial.demoClasses = createDemoClassSeeds()
-      initial.version = 7
+      initial.assets = []
+      initial.version = 8
       normalizeAdmissions(initial)
       if (persist) write(initial)
       return initial
@@ -296,7 +305,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       data.challans = []
       data.payments = []
       data.expenses = []
-      data.financialCounters = Object.fromEntries(DEMO_BRANCHES.map(branch => [branch.id, { challan: 0, receipt: 0 }]))
+      data.financialCounters = Object.fromEntries(getDemoBranches().map(branch => [branch.id, { challan: 0, receipt: 0 }]))
       data.version = 6
     }
     if (data.version === 6) {
@@ -309,8 +318,15 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       if (data.academicStreams === undefined) data.academicStreams = []
       if (data.subjects === undefined) data.subjects = []
       if (data.demoClasses === undefined) data.demoClasses = createDemoClassSeeds()
+      if (data.assets === undefined) data.assets = []
+      data.version = 8
     }
-    if (data.version !== 7) fail('UNSUPPORTED_VERSION', 'Saved mock data version is unsupported; data was preserved.')
+    if (data.version !== 8) fail('UNSUPPORTED_VERSION', 'Saved mock data version is unsupported; data was preserved.')
+    data.financialCounters ??= {}
+    for (const branch of getDemoBranches()) {
+      data.financialCounters[branch.id] ??= { challan: 0, receipt: 0 }
+      if (data.branchCounters && branch.id.startsWith('branch-')) data.branchCounters[branch.id] ??= { admission: 0, student: 0, demo: 0 }
+    }
     normalizeAdmissions(data)
     if (persist && !preserveExisting && (JSON.stringify(data) !== raw || data.version === 1 || data.version === 2 || data.version === 3)) write(data)
     return data
@@ -470,8 +486,8 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const branchCourses = data.courses.filter(item => item.branchId === query.branchId)
     const branchBatches = data.batches.filter(item => item.branchId === query.branchId)
     const branchSubjects = data.subjects.filter(item => item.branchId === query.branchId)
-    const presentCourse = course => ({ ...course, active: course.active ?? true, streamName: branchStreams.find(stream => stream.id === course.streamId)?.name ?? 'Unassigned', batchCount: branchBatches.filter(batch => batch.courseId === course.id).length, subjectCount: branchSubjects.filter(subject => subject.courseId === course.id).length, enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').length })
-    const presentBatch = batch => { const enrolledCount = data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').length; return { ...batch, active: batch.active ?? true, courseName: branchCourses.find(course => course.id === batch.courseId)?.name ?? 'Unresolved course', enrolledCount, remainingSeats: batch.capacity == null ? null : Math.max(0, batch.capacity - enrolledCount), teachers: [], timetable: [] } }
+    const presentCourse = course => ({ ...course, active: course.active ?? true, category: course.category ?? 'Not configured', streamName: branchStreams.find(stream => stream.id === course.streamId)?.name ?? 'Unassigned', batchCount: branchBatches.filter(batch => batch.courseId === course.id).length, subjectCount: branchSubjects.filter(subject => subject.courseId === course.id).length, enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').length })
+    const presentBatch = batch => { const enrolledCount = data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').length; return { ...batch, active: batch.active ?? true, capacity: batch.capacity ?? null, courseName: branchCourses.find(course => course.id === batch.courseId)?.name ?? 'Unresolved course', enrolledCount, remainingSeats: batch.capacity == null ? null : Math.max(0, batch.capacity - enrolledCount), teachers: [], timetable: [] } }
     const presentSubject = subject => ({ ...subject, courseName: branchCourses.find(course => course.id === subject.courseId)?.name ?? 'Unresolved course' })
     if (operation === 'overview') return { streams: branchStreams, courses: branchCourses.map(presentCourse), batches: branchBatches.map(presentBatch), subjects: branchSubjects.map(presentSubject) }
     const collection = entity === 'stream' ? data.academicStreams : entity === 'course' ? data.courses : entity === 'batch' ? data.batches : data.subjects
@@ -506,7 +522,8 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (!object(record) || Object.keys(record).some(key => !allowed.includes(key)) || !validText(record.name)) fail('INVALID_RECORD', 'A valid academic record name is required.')
     if (entity === 'stream' && typeof record.active !== 'boolean') fail('INVALID_RECORD', 'Stream status is required.')
     if (entity === 'course' && ((record.active !== undefined && typeof record.active !== 'boolean') || (record.streamId != null && !branchStreams.some(stream => stream.id === record.streamId)) || (record.pricingMode !== undefined && !['course', 'subjects'].includes(record.pricingMode)) || (record.feeAmount !== undefined && (!Number.isFinite(record.feeAmount) || record.feeAmount < 0)))) fail('INVALID_RECORD', 'Course configuration is invalid.')
-    if (entity === 'batch' && (!branchCourses.some(course => course.id === record.courseId) || (record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime))) fail('INVALID_RECORD', 'Batch configuration is invalid.')
+    if (entity === 'batch' && !branchCourses.some(course => course.id === record.courseId)) fail('INVALID_REFERENCE', 'Choose a Course from the active branch.')
+    if (entity === 'batch' && ((record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime))) fail('INVALID_RECORD', 'Batch configuration is invalid.')
     if (entity === 'subject' && (!branchCourses.some(course => course.id === record.courseId) || typeof record.active !== 'boolean' || (record.feeAmount !== undefined && (!Number.isFinite(record.feeAmount) || record.feeAmount < 0)))) fail('INVALID_RECORD', 'Subject configuration is invalid.')
     const name = record.name.trim()
     if (collection.some(item => item.branchId === query.branchId && item.id !== id && item.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase() && (entity !== 'subject' || item.courseId === record.courseId))) fail('DUPLICATE_RECORD', `A ${entity} with this name already exists in the branch.`)
@@ -615,7 +632,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for this class schedule action.')
     const data = read(false)
-    const project = item => ({ ...item, batchName: data.batches.find(batch => batch.id === item.batchId)?.name ?? 'Unresolved batch', teacherName: DEMO_USERS.find(user => user.id === item.teacherId)?.name ?? 'Unresolved teacher', enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === item.branchId && enrollment.batchId === item.batchId && enrollment.status === 'Active').length })
+    const project = item => ({ ...item, batchName: data.batches.find(batch => batch.id === item.batchId)?.name ?? 'Unresolved batch', teacherName: getDemoUsers().find(user => user.id === item.teacherId)?.name ?? 'Unresolved teacher', enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === item.branchId && enrollment.batchId === item.batchId && enrollment.status === 'Active').length })
     if (operation === 'list') return data.classes.filter(item => item.branchId === query.branchId).map(project)
     const index = data.classes.findIndex(item => item.id === id && item.branchId === query.branchId)
     if (operation === 'get') { if (index < 0) fail('NOT_FOUND', 'Class was not found.'); return project(data.classes[index]) }
@@ -623,7 +640,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const candidate = { ...(index >= 0 ? data.classes[index] : {}), ...record, id: index >= 0 ? data.classes[index].id : makeId(), branchId: query.branchId }
     validateRecord(candidate, 'classes')
     if (!data.batches.some(batch => batch.id === candidate.batchId && batch.branchId === query.branchId)) fail('INVALID_REFERENCE', 'Choose a batch from the active branch.')
-    const teacher = DEMO_USERS.find(user => user.id === candidate.teacherId && user.enabled && getBranchRoles(user, query.branchId).length === 1 && getBranchRoles(user, query.branchId)[0] === ROLES.TEACHER)
+    const teacher = getDemoUsers().find(user => user.id === candidate.teacherId && user.enabled && getBranchRoles(user, query.branchId).length === 1 && getBranchRoles(user, query.branchId)[0] === ROLES.TEACHER)
     if (!teacher) fail('INVALID_REFERENCE', 'Choose an enabled Teacher from the active branch.')
     const conflict = data.classes.find(item => item.id !== candidate.id && item.branchId === query.branchId && item.classDate === candidate.classDate && candidate.startTime < item.endTime && candidate.endTime > item.startTime && (item.teacherId === candidate.teacherId || item.batchId === candidate.batchId || item.location.trim().toLowerCase() === candidate.location.trim().toLowerCase()))
     if (conflict) fail('SCHEDULE_CONFLICT', 'Teacher, batch or location already has an overlapping class.')
@@ -826,7 +843,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       const batch = item.preferredBatchId ? data.batches.find(b => b.id === item.preferredBatchId && b.branchId === item.branchId) : null
       let teacherName = item.scheduledSession?.teacherName
       if (item.scheduledSession?.teacherId && !teacherName) {
-        const teacher = DEMO_USERS.find(u => u.id === item.scheduledSession.teacherId)
+        const teacher = getDemoUsers().find(u => u.id === item.scheduledSession.teacherId)
         teacherName = teacher?.name ?? 'Teacher'
       }
       return {
@@ -984,7 +1001,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       }
       if (!validText(location)) fail('INVALID_RECORD', 'A room or location is required.')
 
-      const teacher = DEMO_USERS.find(u => u.id === teacherId && u.enabled && getBranchRoles(u, query.branchId).length === 1 && getBranchRoles(u, query.branchId)[0] === ROLES.TEACHER)
+      const teacher = getDemoUsers().find(u => u.id === teacherId && u.enabled && getBranchRoles(u, query.branchId).length === 1 && getBranchRoles(u, query.branchId)[0] === ROLES.TEACHER)
       if (!teacher) fail('INVALID_REFERENCE', 'Select an active Teacher assigned to this branch.')
 
       // Conflict detection 1: Check other scheduled demo classes in the branch
@@ -1220,6 +1237,80 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     fail('INVALID_REQUEST', 'Unknown demo class operation.')
   }
 
+  function assetOperation(operation, { id, record, query = {} } = {}) {
+    if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
+    const readOnly = ['list', 'get'].includes(operation)
+    if (!canAccess(readOnly ? PERMISSIONS.ASSETS_VIEW : PERMISSIONS.ASSETS_MANAGE, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This role is not authorized for the requested asset action.')
+    const data = read(readOnly)
+    const branchAssets = data.assets.filter(item => item.branchId === query.branchId)
+    const present = item => ({ ...item, assignedToName: item.assignedToId ? getDemoUsers().find(user => user.id === item.assignedToId)?.name ?? 'Unresolved staff' : null })
+    if (operation === 'list') return branchAssets.map(present).sort((a, b) => a.assetCode.localeCompare(b.assetCode))
+    const existing = branchAssets.find(item => item.id === id)
+    if (operation === 'get') { if (!existing) fail('NOT_FOUND', 'Asset was not found in the active branch.'); return present(existing) }
+    const cleanText = (value, max = 200) => typeof value === 'string' ? value.trim().slice(0, max) : ''
+    const now = new Date().toISOString()
+    if (operation === 'create' || operation === 'update') {
+      if (!object(record)) fail('INVALID_RECORD', 'Complete the asset form.')
+      const assetCode = cleanText(record.assetCode).toUpperCase()
+      if (!validText(assetCode) || !validText(cleanText(record.name)) || !validText(cleanText(record.category))) fail('INVALID_RECORD', 'Asset code, name and category are required.')
+      if (data.assets.some(item => item.branchId === query.branchId && item.assetCode.toLowerCase() === assetCode.toLowerCase() && item.id !== id)) fail('DUPLICATE_ASSET_CODE', 'Asset code already exists in this branch.')
+      if (operation === 'update' && !existing) fail('NOT_FOUND', 'Asset was not found in the active branch.')
+      if (existing && assetCode !== existing.assetCode) fail('IMMUTABLE_ASSET_CODE', 'Asset code cannot be changed after registration.')
+      const purchaseCost = Number(record.purchaseCost ?? 0), bookValue = record.bookValue === '' || record.bookValue == null ? null : Number(record.bookValue), quantity = Number(record.quantity ?? 1)
+      const trackingType = record.trackingType === 'Bulk' ? 'Bulk' : 'Individual'
+      if (!Number.isSafeInteger(quantity) || quantity < 1 || (trackingType === 'Individual' && quantity !== 1) || !Number.isFinite(purchaseCost) || purchaseCost < 0 || (bookValue != null && (!Number.isFinite(bookValue) || bookValue < 0))) fail('INVALID_RECORD', 'Enter valid quantity and stored purchase/book values.')
+      const base = existing ?? { id: makeId(), branchId: query.branchId, assetCode, createdAt: now, history: [], maintenanceHistory: [], condition: 'Working', status: 'Available', assignedToId: null }
+      if (!existing && collections.some(key => data[key].some(item => item.id === base.id))) fail('ID_CONFLICT', 'Generated asset ID conflicts with saved data.')
+      const next = { ...base, assetCode, name: cleanText(record.name), category: cleanText(record.category), description: cleanText(record.description, 500), trackingType, quantity, purchaseDate: cleanText(record.purchaseDate), purchaseCost, bookValue, serialNumber: cleanText(record.serialNumber), location: cleanText(record.location), supplier: cleanText(record.supplier), notes: cleanText(record.notes, 500), updatedAt: now }
+      next.history = [...base.history, { id: makeId(), type: operation === 'create' ? 'Registered' : 'Details Updated', actorUserId: session.user.id, occurredAt: now }]
+      validateRecord(next, 'assets')
+      if (existing) data.assets[data.assets.indexOf(existing)] = next; else data.assets.push(next)
+      write(data)
+      return present(next)
+    }
+    if (!existing) fail('NOT_FOUND', 'Asset was not found in the active branch.')
+    if (existing.status === 'Retired') fail('ASSET_RETIRED', 'Retired assets are read-only pending an approved disposal policy.')
+    if (operation === 'assign') {
+      const assignedToId = cleanText(record?.assignedToId), location = cleanText(record?.location)
+      const assignee = getDemoUsers().find(user => user.id === assignedToId && user.assignments.some(item => item.branchId === query.branchId))
+      if (!assignee) fail('INVALID_REFERENCE', 'Choose staff assigned to this branch.')
+      if (existing.status === 'Maintenance') fail('INVALID_TRANSITION', 'An asset in maintenance cannot be assigned.')
+      existing.assignedToId = assignedToId; existing.location = location || existing.location; existing.status = 'Assigned'; existing.updatedAt = now
+      existing.history.push({ id: makeId(), type: 'Assigned', actorUserId: session.user.id, occurredAt: now, assignedToId, location: existing.location })
+    } else if (operation === 'unassign') {
+      if (!existing.assignedToId) fail('INVALID_TRANSITION', 'Asset is not assigned.')
+      existing.assignedToId = null; existing.status = 'Available'; existing.updatedAt = now
+      existing.history.push({ id: makeId(), type: 'Unassigned', actorUserId: session.user.id, occurredAt: now })
+    } else if (operation === 'inspect') {
+      if (!['Excellent', 'Working', 'Needs Maintenance', 'Out of Service'].includes(record?.condition) || !validText(cleanText(record?.remarks, 500))) fail('INVALID_RECORD', 'Choose a condition and add inspection remarks.')
+      existing.condition = record.condition; existing.status = ['Needs Maintenance', 'Out of Service'].includes(record.condition) ? 'Maintenance' : existing.assignedToId ? 'Assigned' : 'Available'; existing.updatedAt = now
+      existing.history.push({ id: makeId(), type: 'Inspection', condition: record.condition, remarks: cleanText(record.remarks, 500), actorUserId: session.user.id, occurredAt: now })
+    } else if (operation === 'maintenance') {
+      if (!validText(cleanText(record?.description, 500)) || !validDateOnly(record?.date) || !['Excellent', 'Working', 'Needs Maintenance', 'Out of Service'].includes(record?.condition)) fail('INVALID_RECORD', 'Complete the maintenance log with a valid date and condition.')
+      const cost = record.cost === '' || record.cost == null ? null : Number(record.cost)
+      if (cost != null && (!Number.isFinite(cost) || cost < 0)) fail('INVALID_RECORD', 'Maintenance cost must be a positive stored value.')
+      if (record.nextServiceDate && !validDateOnly(record.nextServiceDate)) fail('INVALID_RECORD', 'Next service date is invalid.')
+      const log = { id: makeId(), date: record.date, description: cleanText(record.description, 500), condition: record.condition, cost, nextServiceDate: record.nextServiceDate || null, actorUserId: session.user.id, createdAt: now }
+      existing.maintenanceHistory.push(log); existing.condition = record.condition; existing.status = ['Needs Maintenance', 'Out of Service'].includes(record.condition) ? 'Maintenance' : existing.assignedToId ? 'Assigned' : 'Available'; existing.updatedAt = now
+      existing.history.push({ id: makeId(), type: 'Maintenance Logged', actorUserId: session.user.id, occurredAt: now, maintenanceId: log.id })
+    } else fail('INVALID_REQUEST', 'Unknown asset operation.')
+    validateRecord(existing, 'assets'); write(data); return present(existing)
+  }
+
+  function reportOperation(operation, { query = {} } = {}) {
+    if (operation !== 'overview' || !object(query) || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId || !canAccess(PERMISSIONS.REPORTS_VIEW, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This role is not authorized to view reports.')
+    const allBranches = query.allBranches === true
+    if (allBranches && !canAccess(PERMISSIONS.REPORTS_COMPARE_BRANCHES, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'Cross-branch comparison requires authorized Super Admin access.')
+    const data = read()
+    const branchIds = allBranches ? getDemoBranches().filter(branch => session.user.assignments.some(item => item.branchId === branch.id)).map(branch => branch.id) : [query.branchId]
+    const selected = collection => data[collection].filter(item => branchIds.includes(item.branchId))
+    return { branchIds, branches: getDemoBranches().filter(branch => branchIds.includes(branch.id)), admissions: selected('admissions'), students: selected('students'), enrollments: selected('enrollments'), courses: selected('courses'), batches: selected('batches'), challans: selected('challans'), payments: selected('payments').filter(item => item.status === 'Verified') }
+  }
+
   function financialOperation(operation, { id, record, query } = {}) {
     if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
     const session = readMockSession()
@@ -1277,5 +1368,5 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
     fail('INVALID_REQUEST', 'Unknown financial operation.')
   }
-  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation }
+  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation, assetOperation, reportOperation }
 }

@@ -92,6 +92,12 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
     async financialOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.financialOperation(operation, args) })
     },
+    async assetOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.assetOperation(operation, args) })
+    },
+    async reportOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.reportOperation(operation, args) })
+    },
     async request(collection, operation, args) {
       if (beforeRequest) {
         try { await beforeRequest({ collection, operation }) }

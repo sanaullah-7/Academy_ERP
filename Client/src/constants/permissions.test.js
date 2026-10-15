@@ -6,9 +6,19 @@ import { DEMO_USERS, getAuthorizedBranches } from '../mock/authFixtures.js'
 describe('approved roles and permission definitions', () => {
   it('defines only four roles and the confirmed implemented module permissions', () => {
     expect(Object.values(ROLES)).toEqual(['super_admin', 'owner', 'receptionist', 'teacher'])
-    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage'])
+    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage', 'demoClasses.view', 'demoClasses.manage', 'assets.view', 'assets.manage', 'reports.view', 'reports.compareBranches', 'branches.manage', 'users.manage', 'settings.manage'])
     expect(isKnownPermission('workspace.view')).toBe(true)
     expect(isKnownPermission('payments.reverse')).toBe(false)
+  })
+
+  it('fails closed outside the approved F09-F13 Super Admin demo authority', () => {
+    const get = id => DEMO_USERS.find(user => user.id === id)
+    expect(canAccess(PERMISSIONS.ASSETS_MANAGE, get('demo-admin'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.REPORTS_COMPARE_BRANCHES, get('demo-admin'), 'demo-central')).toBe(true)
+    for (const userId of ['demo-owner', 'demo-reception', 'demo-teacher', 'demo-multi']) {
+      expect(canAccess(PERMISSIONS.ASSETS_VIEW, get(userId), userId === 'demo-reception' ? 'demo-north' : 'demo-central')).toBe(false)
+      expect(canAccess(PERMISSIONS.REPORTS_VIEW, get(userId), userId === 'demo-reception' ? 'demo-north' : 'demo-central')).toBe(false)
+    }
   })
 
   it('applies the confirmed Courses & Batches role matrix', () => {
