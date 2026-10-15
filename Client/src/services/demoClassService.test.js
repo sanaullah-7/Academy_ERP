@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { authService } from './authService.js'
 import { demoClassService } from './demoClassService.js'
 import { classScheduleService } from './classScheduleService.js'
@@ -512,7 +512,7 @@ describe('F08 Demo Classes Module — Service & Workflow Tests', () => {
       expect(Array.isArray(list)).toBe(true)
 
       const saved = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
-      expect(saved.version).toBe(7)
+      expect(saved.version).toBe(8)
       expect(saved.students[0].name).toBe('Legacy Student')
     })
   })

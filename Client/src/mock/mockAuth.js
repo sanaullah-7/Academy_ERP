@@ -6,11 +6,12 @@
 
 // F00-005: Approved frontend demo implementation; not production authentication.
 import { MOCK_SESSION_KEY } from '../constants/storageKeys.js'
-import { DEMO_USERS, getAuthorizedBranches } from './authFixtures.js'
+import { findDemoUser, getAuthorizedBranches } from './authFixtures.js'
 
 export function validateMockSession(value) {
   if (!value || value.version !== 1 || typeof value.userId !== 'string') return null
-  const user = DEMO_USERS.find((candidate) => candidate.id === value.userId && candidate.enabled)
+  const user = findDemoUser(value.userId)
+  if (!user?.enabled) return null
   if (!user) return null
   const branches = getAuthorizedBranches(user)
   const branchId = branches.length === 1 ? branches[0].id : branches.some((branch) => branch.id === value.branchId) ? value.branchId : null

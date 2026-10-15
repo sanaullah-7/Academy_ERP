@@ -1,7 +1,7 @@
 /**
  * Purpose: Will define Sidebar for the Layout area of the Academy frontend.
  * Module: Layout
- * Status: Planned — functionality not implemented.
+ * Status: Planned � functionality not implemented.
  */
 
 // F00-003: Placeholder labels have no destinations or permission policy.
@@ -10,6 +10,7 @@ import {
   ClipboardList, CreditCard, GraduationCap, LayoutDashboard,
   PanelsTopLeft, Settings2, Users, UsersRound, Wallet, X,
 } from 'lucide-react'
+import { useLayoutEffect, useRef } from 'react'
 import { Button } from '../ui/button.jsx'
 import AcademyLogo from './AcademyLogo.jsx'
 import { NavLink } from 'react-router-dom'
@@ -46,6 +47,11 @@ const modulePermissions = Object.freeze({
   'Courses & Batches': PERMISSIONS.COURSES_VIEW,
   'Faculty & Classes': PERMISSIONS.FACULTY_VIEW,
   'Demo Classes': PERMISSIONS.DEMO_CLASSES_VIEW,
+  Assets: PERMISSIONS.ASSETS_VIEW,
+  Reports: PERMISSIONS.REPORTS_VIEW,
+  Branches: PERMISSIONS.BRANCHES_MANAGE,
+  Users: PERMISSIONS.USERS_MANAGE,
+  Settings: PERMISSIONS.SETTINGS_MANAGE,
 })
 const modulePaths = Object.freeze({
   Dashboard: ROUTE_PATHS.DASHBOARD,
@@ -84,9 +90,14 @@ function formatAcademyName(name) {
   }
   return <span className="font-extrabold text-[#940016]">{name}</span>
 }
+let preservedSidebarScrollTop = 0
 
 export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
   const { can } = usePermissions()
+  const navigationRef = useRef(null)
+  useLayoutEffect(() => {
+    if (navigationRef.current) navigationRef.current.scrollTop = preservedSidebarScrollTop
+  }, [])
   return (
     <div className="workspace-sidebar" data-collapsed={isCollapsed}>
       <div className="workspace-brand">
@@ -100,7 +111,7 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
           </Button>
         )}
       </div>
-      <nav className="workspace-navigation" aria-label="Application modules">
+      <nav ref={navigationRef} onScroll={(event) => { preservedSidebarScrollTop = event.currentTarget.scrollTop }} className="workspace-navigation" aria-label="Application modules">
         <div className="workspace-nav-placeholder" title="Workspace">
           <PanelsTopLeft size={19} aria-hidden="true" />
           <span className="workspace-sidebar-label">Workspace</span>
@@ -111,10 +122,10 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
             <ul className="space-y-1">
               {group.items.map(({ label, icon: Icon }) => (
                 <li key={label}>
-                  {(!modulePermissions[label] || can(modulePermissions[label])) ? <NavLink to={modulePaths[label]} onClick={onClose} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
+                  {(!modulePermissions[label] || can(modulePermissions[label])) ? <NavLink to={modulePaths[label]} onClick={(event) => { if (event.currentTarget.getAttribute('aria-current') === 'page') event.preventDefault(); onClose?.() }} aria-label={label} title={label} className={({ isActive }) => isActive ? 'workspace-current' : 'workspace-nav-placeholder'}>
                     <Icon size={19} aria-hidden="true" />
                     <span className="workspace-sidebar-label">{label}</span>
-                  </NavLink> : <button type="button" disabled className="workspace-nav-placeholder" aria-label={`${label} — coming soon`} title={`${label} — coming soon`}>
+                  </NavLink> : <button type="button" disabled className="workspace-nav-placeholder" aria-label={`${label} � coming soon`} title={`${label} � coming soon`}>
                     <Icon size={19} aria-hidden="true" />
                     <span className="workspace-sidebar-label">{label}</span>
                   </button>}
@@ -124,13 +135,6 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
           </section>
         ))}
       </nav>
-      <div className="workspace-sidebar-footer">
-        <span className="workspace-footer-mark" aria-hidden="true"><PanelsTopLeft size={17} /></span>
-        <div className="workspace-sidebar-label">
-          <p className="font-medium">One connected workspace</p>
-          <p className="workspace-muted mt-1">Modules coming soon</p>
-        </div>
-      </div>
     </div>
   )
 }

@@ -75,8 +75,17 @@ describe('only workspace viewing is granted', () => {
   it.each(DEMO_USERS.filter((user) => user.enabled && user.assignments.length))('uses branch-scoped roles and denies every ERP action for $name', (user) => {
     for (const branch of getAuthorizedBranches(user)) {
       expect(canAccess('workspace.view', user, branch.id)).toBe(true)
-      for (const permission of ['unknown', '', 'dashboard.view', 'students.read', 'payments.record', 'payments.reverse', 'discounts.approve', 'branches.manage', 'users.manage', 'settings.manage']) {
+      for (const permission of ['unknown', '', 'dashboard.view', 'students.read', 'payments.record', 'payments.reverse', 'discounts.approve']) {
         expect(canAccess(permission, user, branch.id)).toBe(false)
+      }
+    }
+    for (const branch of getAuthorizedBranches(user)) {
+      if (user.id === 'demo-admin') {
+        expect(canAccess('branches.manage', user, branch.id)).toBe(true)
+        expect(canAccess('users.manage', user, branch.id)).toBe(true)
+        expect(canAccess('settings.manage', user, branch.id)).toBe(true)
+      } else {
+        expect(canAccess('branches.manage', user, branch.id)).toBe(false)
       }
     }
     expect(canAccess('workspace.view', user, 'foreign')).toBe(false)

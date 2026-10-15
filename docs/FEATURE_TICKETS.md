@@ -1888,3 +1888,23 @@ Pagination and Courses/Batches table density were tightened with 28px controls, 
 Super Admin Dashboard cashflow now derives selected-period bars and totals from active-branch verified receipts and posted expenses. Daily data is grouped into four-hour slots, with period-appropriate weekly/monthly/custom/year buckets and a truthful empty state. Focused tests PASS 17/17 and targeted ESLint PASS. Browser QA and owner acceptance remain pending.
 
 Added an explicit Super Admin-only, confirmation-gated and idempotent QA demo action through existing domain services. It creates clearly labeled fictional academic, admission, enrollment, challan and verified-payment examples in the active branch without deleting existing data. Isolated browser acceptance verified Paid and Partial examples, final collection, receipt, Finance, Dashboard and refresh persistence. Owner acceptance pending.
+
+## F09/F10 Owner-approved delivery update (2026-10-14)
+
+**F09-001 through F09-006: IN_REVIEW.** Implemented branch-scoped directory/KPIs/filters/pagination, registration, immutable-code editing/details, condition inspection, same-branch assignment/unassignment, maintenance history, persistence, permissions and focused tests. Stored book value is displayed; automatic depreciation, deletion/disposal and finance posting remain blocked pending approved rules.
+
+**F10-001 through F10-008: IN_REVIEW.** Implemented authoritative saved Admissions, Enrollment, Verified Fee Collection and authorized Super Admin Branch Comparison reports, including working filters, search, pagination, dynamic KPIs, safe CSV and browser print. Unsupported attendance, recovery-rate and deadline metrics are omitted. Browser owner acceptance remains pending.
+
+## F11-001 through F11-006 Branch Management — IN_REVIEW (2026-10-14)
+
+Implemented authorized tenant branch listing/search/status, real staff and saved-data summaries, create/edit, five-branch license/duplicate validation, safe lifecycle controls and branch-selector integration. Core seed branches remain read-only in the frontend demo; backend tenant authorization and lifecycle review for production remain required.
+
+## F12-001 through F12-008 User Management — IN_REVIEW (2026-10-14)
+
+Implemented searchable/filterable/paginated staff accounts, validated creation/editing, unique login identity, explicit multi-branch assignments, different approved roles per branch, permission-constant matrix, safe activation/deactivation and supported mock login. Self-deactivation, last-admin removal, disabled sessions and cross-branch access fail closed. Password delivery/reset is not fabricated.
+
+## F13-001 through F13-011 Settings and Integrated Frontend QA — IN_REVIEW (2026-10-14)
+
+Implemented a cohesive screenshot-aligned Settings page using shared branding/theme, authoritative F04 academic/price records, real staff/role and campus records, and honest disabled notification states. Logo configuration supports the existing local-raster mechanism; browser file uploads and SMS gateway delivery remain unavailable. Mock-demo readiness is not production readiness; backend authorization, audit, gateway, CI and owner acceptance remain pending.
+F11-F13 continuation evidence (2026-10-15): focused connected regression suite PASS 92/92 across seven files; targeted ESLint PASS. Remaining ticket state is IN_REVIEW pending interactive browser and owner acceptance.
+F09-F13 functional QA evidence (2026-10-15): Assets/Reports, organization access, branding, Demo/Admission, Fees/Finance/Dashboard and migration checks PASS 107/107. Settings fee/logo integration, branch refresh/deactivation safety, academic projections and UI encoding defects were corrected. Targeted lint/build pass; interactive browser acceptance remains pending. All tickets remain IN_REVIEW.

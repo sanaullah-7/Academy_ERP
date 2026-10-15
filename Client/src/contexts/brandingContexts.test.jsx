@@ -32,12 +32,14 @@ describe('shared academy and theme providers', () => {
     expect(screen.getByText('Batched Academy')).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem(MOCK_BRANDING_KEY)).branding).toMatchObject({ name: 'Batched Academy', primaryColor: '#123ABC' })
   })
-  it('provides defaults, decorative fallback and primary maroon brand', () => {
+  it('provides TSA defaults, decorative fallback and sidebar colors', () => {
     const { container } = render(tree)
     expect(screen.getByText('The Scholar Coaching Academy')).toBeInTheDocument()
     expect(container.querySelector('[data-academy-logo="fallback"]')).toBeInTheDocument()
     expect(document.documentElement.style.getPropertyValue('--workspace-accent')).toBe('#940016')
     expect(document.documentElement.style.getPropertyValue('--workspace-focus')).toBe('#72000E')
+    expect(document.documentElement.style.getPropertyValue('--workspace-sidebar-text')).toBe('#111827')
+    expect(document.documentElement.style.getPropertyValue('--workspace-sidebar-icon')).toBe('#111827')
   })
   it('shares updates, restores persisted branding on remount, and handles broken logos', () => {
     const view = render(tree)

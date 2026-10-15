@@ -12,9 +12,14 @@ describe('isolated mock branding service', () => {
     expect(localStorage.getItem(MOCK_SESSION_KEY)).toBe('session')
     expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe('database')
   })
+  it('persists a bounded raster data URL for uploaded logo previews', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgo='
+    expect(brandingService.save({ ...DEFAULT_BRANDING, logo }).logo).toBe(logo)
+    expect(brandingService.get().logo).toBe(logo)
+  })
   it('persists normalized branding in a versioned independent key', () => {
     const saved = brandingService.save({ name: ' Fictional Academy ', logo: '/images/demo-logo.png', primaryColor: '#123abc' })
-    expect(saved).toEqual({ name: 'Fictional Academy', logo: '/images/demo-logo.png', primaryColor: '#123ABC' })
+    expect(saved).toEqual({ ...DEFAULT_BRANDING, name: 'Fictional Academy', logo: '/images/demo-logo.png', primaryColor: '#123ABC' })
     expect(brandingService.get()).toEqual(saved)
     expect(JSON.parse(localStorage.getItem(MOCK_BRANDING_KEY)).version).toBe(1)
   })

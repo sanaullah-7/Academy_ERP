@@ -10,6 +10,10 @@
 **Development Strategy:** Frontend First
 **Current Milestone:** F04-001 through F04-007 and F05-001 through F05-007 IN_REVIEW
 
+## F09 Assets/Inventory + F10 Reports (2026-10-14)
+
+**Status:** IN_REVIEW; owner browser acceptance pending. Dedicated `feature/f09-f10-assets-reports` worktree implements branch-scoped asset registration/editing, condition inspection, assignment, maintenance history, stored-value KPIs/export and authoritative Admissions, Enrollment, Fee Collection and Super Admin branch-comparison reports with filters, pagination, CSV and browser print. Automatic depreciation, disposal/deletion, attendance, recovery-rate and defaulter-deadline rules remain blocked because no approved policy or authoritative records exist. Super Admin is the only F09/F10 demo role; other roles fail closed pending an approved matrix. Focused tests 52/52, targeted ESLint and one production build PASS; browser QA NOT_RUN.
+
 ## F04-001 through F04-007 Courses & Batches (2026-10-12)
 
 **Status:** IN_REVIEW; owner acceptance pending. Isolated implementation on `feature/f04-courses-batches`: branch-scoped responsive course/batch directories, Super Admin Create/Edit, Receptionist/Owner View, Teacher deny-by-default, search/filter/sort/details, actual enrollment counts, and explicit unconfigured capacity/timetable/teacher-assignment states. Owner-confirmed Add/Edit Stream and Subject dialogs save branch-scoped records; their form-submit buttons are fixed and covered by persistence/reload regression tests (8/8 focused tests PASS, scoped lint PASS; browser NOT_RUN). Focused tests, targeted lint and production build evidence are recorded in PROGRESS.md. No F05 work started.
@@ -950,3 +954,9 @@ The Super Admin cashflow chart now plots active-branch verified receipts and pos
 # F02/F04/F06 Connected Demo Workflow (2026-10-13)
 
 **Status:** IN_REVIEW; configured academic fee selection now reaches enrollment and official F06 challan validation without creating financial records before approval/enrollment. Focused verification and isolated responsive browser layout evidence are recorded in PROGRESS.md. Owner acceptance pending.
+
+# F11/F12/F13 Branches, Users, Settings and Frontend QA (2026-10-14)
+
+**Status:** IN_REVIEW; owner acceptance pending. F11 branch directory/create/edit/lifecycle/license/staff summaries and F12 staff listing/create/edit/multi-branch roles/status/permission matrix are connected to mock authentication and active-branch selection. F13 exposes one responsive Settings surface backed by shared branding, F04 academic sources, real users/branches and explicit unavailable notification states. Backend authorization, file upload storage, SMS delivery and production authentication remain blocked.
+F11-F13 continuation verification (2026-10-15): focused F04/F02/F09-F13 regressions PASS 92/92 and targeted ESLint PASS after resolving three legacy contract assertions. Status remains IN_REVIEW.
+F09-F13 one-shot functional QA (2026-10-15): confirmed integration defects fixed; focused cross-module tests PASS 107/107, targeted ESLint PASS, production build PASS, HTTP smoke PASS. Interactive browser automation and owner acceptance remain pending; tickets stay IN_REVIEW.

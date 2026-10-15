@@ -23,10 +23,14 @@ export function ThemeProvider({ children }) {
       '--primary-hover': darker,
       '--primary': activeColor,
       '--ring': activeColor,
+      '--workspace-sidebar-background': branding.sidebarBackground,
+      '--workspace-sidebar-text': branding.sidebarText,
+      '--workspace-sidebar-icon': branding.sidebarIcon,
+      '--workspace-sidebar-active': branding.sidebarActive,
     }
     const previous = Object.keys(tokens).map((key) => [key, style.getPropertyValue(key), style.getPropertyPriority(key)])
     Object.entries(tokens).forEach(([key, value]) => style.setProperty(key, value))
     return () => previous.forEach(([key, value, priority]) => value ? style.setProperty(key, value, priority) : style.removeProperty(key))
-  }, [primaryColor])
+  }, [branding.sidebarActive, branding.sidebarBackground, branding.sidebarIcon, branding.sidebarText, primaryColor])
   return <ThemeContext.Provider value={{ primaryColor, updatePrimaryColor: (color) => updateBranding({ primaryColor: color }) }}>{children}</ThemeContext.Provider>
 }
