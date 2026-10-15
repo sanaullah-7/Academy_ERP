@@ -27,12 +27,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.22.2"
           cache: npm
           cache-dependency-path: Client/package-lock.json
 
       - name: Install React Packages
         run: npm ci
+
+      - name: Lint React
+        run: npm run lint
+
+      - name: Test React
+        run: npm test
 
       - name: Build React
         run: npm run build
