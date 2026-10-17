@@ -8,7 +8,7 @@
 import {
   Archive, BookOpen, Building2, CalendarDays, ChartNoAxesCombined,
   ClipboardList, CreditCard, GraduationCap, LayoutDashboard,
-  PanelsTopLeft, Settings2, Users, UsersRound, Wallet, X,
+  Settings2, Users, UsersRound, Wallet, X,
 } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { Button } from '../ui/button.jsx'
@@ -73,8 +73,8 @@ function formatAcademyName(name) {
   if (!name || name === 'The Scholar Coaching Academy') {
     return (
       <>
-        <span className="font-extrabold text-[16px] text-[#940016]">The Scholar</span>{' '}
-        <span className="font-bold text-[16px] text-slate-800">Coaching Academy</span>
+        <span className="font-extrabold" style={{ color: 'var(--workspace-sidebar-active)' }}>The Scholar</span>{' '}
+        <span className="font-bold">Coaching Academy</span>
       </>
     )
   }
@@ -83,12 +83,12 @@ function formatAcademyName(name) {
     const half = Math.ceil(words.length / 2)
     return (
       <>
-        <span className="font-extrabold text-[#940016]">{words.slice(0, half).join(' ')}</span>{' '}
-        <span className="font-bold text-slate-800">{words.slice(half).join(' ')}</span>
+        <span className="font-extrabold" style={{ color: 'var(--workspace-sidebar-active)' }}>{words.slice(0, half).join(' ')}</span>{' '}
+        <span className="font-bold">{words.slice(half).join(' ')}</span>
       </>
     )
   }
-  return <span className="font-extrabold text-[#940016]">{name}</span>
+  return <span className="font-extrabold" style={{ color: 'var(--workspace-sidebar-active)' }}>{name}</span>
 }
 let preservedSidebarScrollTop = 0
 
@@ -112,10 +112,6 @@ export default function Sidebar({ academyName, isCollapsed = false, onClose }) {
         )}
       </div>
       <nav ref={navigationRef} onScroll={(event) => { preservedSidebarScrollTop = event.currentTarget.scrollTop }} className="workspace-navigation" aria-label="Application modules">
-        <div className="workspace-nav-placeholder" title="Workspace">
-          <PanelsTopLeft size={19} aria-hidden="true" />
-          <span className="workspace-sidebar-label">Workspace</span>
-        </div>
         {navigationGroups.map((group) => (
           <section key={group.label} aria-label={group.label} className="workspace-nav-group">
             <p className="workspace-group-label">{group.label}</p>

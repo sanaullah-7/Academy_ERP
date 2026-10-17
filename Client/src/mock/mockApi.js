@@ -1,4 +1,4 @@
-﻿/**Purpose: Will define mock Api for the mock area of the Academy frontend.
+/**Purpose: Will define mock Api for the mock area of the Academy frontend.
  * Module: mock
  * Status: Planned — functionality not implemented.
  */
@@ -20,6 +20,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
       return serialize(async () => {
         if (validateScope) await validateScope()
         return database.createAdmission(record, query)
+      })
+    },
+    async completeAdmission(record, query, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ operation: 'completeAdmission' }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.completeInstantAdmission(record, query)
       })
     },
     async admissionOperation(operation, { id, record, query }, validateScope) {
@@ -56,6 +66,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
         return database.studentOperation(operation, { id, query })
       })
     },
+    async deleteStudent(id, query, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ collection: 'students', operation: 'delete' }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.deleteStudent(id, query)
+      })
+    },
     async updateEnrollmentFeeStatus(id, record, query, validateScope) {
       if (beforeRequest) {
         try { await beforeRequest({ collection: 'enrollments', operation: 'updateFeeStatus' }) }
@@ -78,6 +98,16 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
     },
     async classScheduleOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.classScheduleOperation(operation, args) })
+    },
+    async facultyAssignmentOperation(operation, args, validateScope) {
+      if (beforeRequest) {
+        try { await beforeRequest({ collection: 'facultyAssignments', operation }) }
+        catch { throw new MockDataError('SIMULATED_FAILURE', 'Test-only mock request failed.') }
+      }
+      return serialize(async () => {
+        if (validateScope) await validateScope()
+        return database.facultyAssignmentOperation(operation, args)
+      })
     },
     async demoClassOperation(operation, args, validateScope) {
       if (beforeRequest) {
@@ -123,5 +153,6 @@ export function createCollectionService(collection, adapter = mockApi) {
     getById: async (id, query) => adapter.request(collection, 'getById', { id, query }),
     create: async (record, query) => adapter.request(collection, 'create', { record, query }),
     update: async (id, record, query) => adapter.request(collection, 'update', { id, record, query }),
+    delete: async (id, query) => adapter.deleteStudent && collection === 'students' ? adapter.deleteStudent(id, query) : adapter.request(collection, 'delete', { id, query }),
   }
 }

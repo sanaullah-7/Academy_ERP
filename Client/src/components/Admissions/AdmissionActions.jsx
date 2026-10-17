@@ -32,10 +32,21 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
   const label = admission.displayAdmissionId ?? admission.admissionId ?? admission.id
   const decision = action === 'Approve' || action === 'Pending'
   const targetStatus = action === 'Approve' ? 'Approved' : 'Pending'
+  const isEnrolled = Boolean(admission.isEnrolled ?? record?.isEnrolled)
   const decisionItems = admission.status === 'Approved'
-    ? [['Pending', Clock3, false]]
+    ? (!isEnrolled ? [['Pending', Clock3, false]] : [])
     : [['Approve', Check, false]]
-  const items = [['View', Eye, false], ...(canEditAdmissions(user, branchId) ? [['Edit', Pencil, false]] : []), ...(canDeleteAdmission(user, branchId) ? [['Delete', Trash2, false]] : []), ...(canDecideAdmission(user, branchId) ? [...decisionItems, ...(admission.status === 'Approved' ? [['Enroll Student', UserPlus, false]] : [])] : [])]
+  const items = [
+    ['View', Eye, false],
+    ...(canEditAdmissions(user, branchId) && !isEnrolled ? [['Edit', Pencil, false]] : []),
+    ...(canDeleteAdmission(user, branchId) ? [['Delete', Trash2, false]] : []),
+    ...(canDecideAdmission(user, branchId)
+      ? [
+          ...decisionItems,
+          ...(admission.status === 'Approved' && !isEnrolled ? [['Enroll Student', UserPlus, false]] : []),
+        ]
+      : []),
+  ]
 
   useEffect(() => {
     mounted.current = true

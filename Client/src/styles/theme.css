@@ -20,8 +20,8 @@
   --workspace-radius: 12px;
   --workspace-control-radius: 8px;
   --workspace-space: 4px;
-  --workspace-sidebar-width: 256px;
-  --workspace-sidebar-compact: 80px;
+  --workspace-sidebar-width: 220px;
+  --workspace-sidebar-compact: 68px;
   --workspace-sidebar-background: #ffffff;
   --workspace-sidebar-text: #111827;
   --workspace-sidebar-icon: #111827;
@@ -42,6 +42,7 @@
   --primary: var(--workspace-accent);
   --primary-foreground: var(--workspace-accent-foreground);
   --primary-hover: #72000E;
+  --dashboard-revenue: var(--workspace-accent);
   --secondary: #F9EBEE;
   --secondary-foreground: #940016;
   --muted: #f8fafc;

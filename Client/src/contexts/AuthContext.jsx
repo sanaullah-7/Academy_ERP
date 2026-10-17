@@ -59,6 +59,12 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function refreshSession() {
+    const session = await authService.getSession()
+    setState((previous) => ({ ...previous, status: 'ready', session, error: '', revision: previous.revision + 1 }))
+    return session
+  }
+
   const user = state.session?.user ?? null
-  return <AuthContext.Provider value={{ user, status: state.status, error: state.error, branchId: state.session?.branchId ?? null, revision: state.revision, login, logout, selectBranch }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, status: state.status, error: state.error, branchId: state.session?.branchId ?? null, revision: state.revision, login, logout, selectBranch, refreshSession }}>{children}</AuthContext.Provider>
 }

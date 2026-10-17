@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BarChart3, Download, FileText, Loader2, Printer, Search, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
@@ -7,6 +7,8 @@ import { Input } from '../../components/ui/input.jsx'
 import { reportService } from '../../services/reportService.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
+import { exportTablePdf } from '../../utils/pdfHelpers.js'
+import { TableToolbarActions } from '../../components/Shared/TableUtilities.jsx'
 
 const money = value => new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(value)
 const control = 'min-h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring'
@@ -40,18 +42,187 @@ export default function ReportsPage() {
   const totalAmount = rows.reduce((sum, item) => sum + (item.amount ?? 0), 0), activeCount = rows.filter(item => ['Approved', 'Active', 'Verified', 'Authorized'].includes(item.status)).length
   const kpis = type === 'fees' ? [['Verified Receipts', rows.length], ['Collected Revenue', money(totalAmount)], ['Students Represented', new Set(rows.map(item => item.primary)).size], ['Pending/Unpaid Included', 0]] : type === 'branches' ? [['Authorized Branches', rows.length], ['Admissions', rows.reduce((sum, item) => sum + item.admissions, 0)], ['Active Enrollments', rows.reduce((sum, item) => sum + item.enrollments, 0)], ['Verified Collections', money(totalAmount)]] : [['Report Records', rows.length], ['Current Status Match', activeCount], ['Courses Represented', new Set(rows.map(item => item.courseId).filter(Boolean)).size], ['Batches Represented', new Set(rows.map(item => item.batchId).filter(Boolean)).size]]
   const reset = () => { setSearch(''); setFrom(''); setTo(''); setBranchFilter('All'); setCourseId('All'); setBatchId('All'); setStatus('All'); setPage(1) }
-  function exportReport() { const headers = ['Date', 'Branch', type === 'branches' ? 'Branch Name' : 'Student', 'Reference', 'Course / Metric', 'Batch / Metric', 'Status', 'Method', 'Amount PKR']; downloadCsv(`${branch?.name ?? 'academy'}-${type}-report.csv`, headers, rows.map(item => [item.date?.slice(0, 10) ?? '', item.branch, item.primary, item.secondary, item.course, item.batch, item.status, item.method ?? '', item.amount ?? ''])); setMessage('Filtered CSV export started.') }
+  function exportReport() {
+    const headers = ['Date', 'Branch', type === 'branches' ? 'Branch Name' : 'Student', 'Reference', 'Course / Metric', 'Batch / Metric', 'Status', 'Method', 'Amount PKR']
+    downloadCsv(`tsa-${branch?.name ?? 'academy'}-${type}-report-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows.map(item => [item.date?.slice(0, 10) ?? '', item.branch, item.primary, item.secondary, item.course, item.batch, item.status, item.method ?? '', item.amount ?? '']))
+    setMessage('Filtered CSV export completed.')
+  }
 
-  if (!current) return <DashboardLayout><div role="status" className="flex items-center gap-2 p-8"><Loader2 className="animate-spin" />Preparing authorized report...</div></DashboardLayout>
-  if (current.error) return <DashboardLayout><div role="alert" className="p-8 text-destructive">{current.error} <Button onClick={() => setRefresh(x => x + 1)}>Retry</Button></div></DashboardLayout>
-  return <DashboardLayout><div className="space-y-5 print:space-y-3">
-    <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Management Intelligence Â· {type === 'branches' ? 'Authorized Academy Scope' : branch?.name}</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Reports &amp; Ledgers</h1><p className="mt-1 text-sm text-muted-foreground">Operational reports derived from saved authoritative DEMO records.</p></div><div className="flex gap-2 print:hidden"><Button variant="outline" onClick={() => window.print()}><Printer size={16} />Print Report</Button><Button onClick={exportReport}><Download size={16} />Export CSV</Button></div></header>
-    {message && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-2 text-sm print:hidden">{message}</p>}
-    <nav aria-label="Report categories" className="flex gap-2 overflow-x-auto rounded-xl border bg-card p-2 print:hidden">{Object.entries(definitions).map(([key, item]) => <button key={key} onClick={() => setType(key)} className={`min-w-max rounded-lg px-4 py-2 text-sm font-semibold transition ${type === key ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}>{item.label}</button>)}</nav>
-    <Card className="py-0 print:hidden"><CardContent className="p-4"><div className="mb-3"><h2 className="font-semibold">{definitions[type].label}</h2><p className="text-xs text-muted-foreground">{definitions[type].description}</p></div><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-7"><label className="relative xl:col-span-2"><Search size={16} className="absolute left-3 top-3" /><Input className="pl-9" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search report rows..." /></label><Input aria-label="From date" type="date" value={from} onChange={e => setFrom(e.target.value)} /><Input aria-label="To date" type="date" value={to} onChange={e => setTo(e.target.value)} />{type === 'branches' && <select aria-label="Branch" className={control} value={branchFilter} onChange={e=>{setBranchFilter(e.target.value);setPage(1)}}><option value="All">All authorized branches</option>{data.branches.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>}<select aria-label="Course" className={control} disabled={type === 'branches'} value={courseId} onChange={e => { setCourseId(e.target.value); setBatchId('All') }}><option value="All">All courses</option>{courses.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><select aria-label="Batch" className={control} disabled={type === 'branches'} value={batchId} onChange={e => setBatchId(e.target.value)}><option value="All">All batches</option>{filteredBatches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><select aria-label="Status" className={control} value={status} onChange={e => setStatus(e.target.value)}><option value="All">All statuses</option>{statuses.map(item => <option key={item}>{item}</option>)}</select></div><Button className="mt-3" size="sm" variant="ghost" onClick={reset}>Reset filters</Button></CardContent></Card>
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{kpis.map(([label, value], index) => { const Icon = index === 0 ? FileText : index === 1 ? BarChart3 : Users; return <Card key={label} className="py-0"><CardContent className="flex items-center justify-between p-4"><div><p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></div><span className="rounded-xl bg-primary/10 p-2 text-primary"><Icon size={20} /></span></CardContent></Card> })}</section>
-    <section className="overflow-hidden rounded-xl border bg-card"><div className="border-b px-4 py-3"><h2 className="font-semibold">{definitions[type].label} Report</h2><p className="text-xs text-muted-foreground">{rows.length} authorized filtered records</p></div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-muted/60"><tr>{['Date', type === 'branches' ? 'Branch' : 'Student / Record', 'Reference', 'Course / Metric', 'Batch / Metric', 'Status', 'Amount'].map(item => <th className="px-3 py-3 font-semibold" key={item}>{item}</th>)}</tr></thead><tbody className="divide-y">{visible.map(item => <tr key={item.id} className="hover:bg-muted/30"><td className="px-3 py-3">{item.date ? new Date(item.date).toLocaleDateString('en-PK') : 'Current'}</td><td className="px-3 py-3"><b>{item.primary}</b><span className="block text-muted-foreground">{item.branch}</span></td><td className="px-3 py-3">{item.secondary}</td><td className="px-3 py-3">{item.course}</td><td className="px-3 py-3">{item.batch}</td><td className="px-3 py-3"><span className="rounded-full bg-primary/10 px-2 py-1 font-medium text-primary">{item.status}</span></td><td className="px-3 py-3 font-semibold">{item.amount == null ? 'â€”' : money(item.amount)}</td></tr>)}</tbody></table></div>{visible.length === 0 && <p className="p-10 text-center text-sm text-muted-foreground">No authoritative saved records match these filters.</p>}</section>
-    <div className="flex items-center justify-between text-xs text-muted-foreground print:hidden"><span>{rows.length ? (activePage - 1) * pageSize + 1 : 0}â€“{Math.min(activePage * pageSize, rows.length)} of {rows.length}</span><div className="flex gap-1"><Button size="sm" variant="outline" disabled={activePage <= 1} onClick={() => setPage(x => x - 1)}>Previous</Button>{Array.from({ length: pages }, (_, index) => index + 1).slice(Math.max(0, activePage - 3), activePage + 2).map(number => <Button size="sm" key={number} variant={number === activePage ? 'default' : 'outline'} onClick={() => setPage(number)}>{number}</Button>)}<Button size="sm" variant="outline" disabled={activePage >= pages} onClick={() => setPage(x => x + 1)}>Next</Button></div></div>
-    <p className="text-xs text-muted-foreground">Attendance, recovery-rate, defaulter-deadline and depreciation metrics are omitted because no approved authoritative policy/records support them.</p>
+  function exportReportPdf() {
+    const headers = ['Date', 'Branch', type === 'branches' ? 'Branch Name' : 'Student / Record', 'Reference', 'Course / Metric', 'Status', 'Amount']
+    exportTablePdf({
+      filename: `tsa-${branch?.name ?? 'academy'}-${type}-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+      title: `${definitions[type]?.label || 'Intelligence'} Report`,
+      branchName: branch?.name ?? 'The Scholar Coaching Academy',
+      headers,
+      rows: rows.map(item => [
+        item.date ? new Date(item.date).toLocaleDateString('en-PK') : 'Current',
+        item.branch,
+        item.primary,
+        item.secondary,
+        item.course,
+        item.status,
+        item.amount == null ? '—' : money(item.amount)
+      ]),
+      filterSummary: `${definitions[type]?.label} (${rows.length} records)`
+    })
+    setMessage('Filtered PDF report downloaded successfully.')
+  }
+
+  if (!current) return <DashboardLayout><div role="status" className="flex items-center gap-2 p-8 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin text-primary" />Preparing authorized report...</div></DashboardLayout>
+  if (current.error) return <DashboardLayout><div role="alert" className="p-8 text-destructive text-sm font-medium">{current.error} <Button size="sm" className="ml-3" onClick={() => setRefresh(x => x + 1)}>Retry</Button></div></DashboardLayout>
+  return <DashboardLayout><div className="space-y-4 print:space-y-3">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Management Intelligence · {type === 'branches' ? 'Authorized Academy Scope' : branch?.name}</p>
+        </div>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">Reports &amp; Ledgers</h1>
+        <p className="text-xs text-muted-foreground">Operational reports derived from saved authoritative DEMO records.</p>
+      </div>
+      <div className="flex items-center gap-2 print:hidden">
+        <Button variant="outline" size="sm" onClick={() => window.print()} className="h-9 gap-1.5 text-xs font-medium cursor-pointer shadow-sm">
+          <Printer size={14} />Print Report
+        </Button>
+        <Button size="sm" onClick={exportReport} className="h-9 gap-1.5 text-xs font-medium cursor-pointer bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm">
+          <Download size={14} />Export CSV
+        </Button>
+        <Button size="sm" onClick={exportReportPdf} className="h-9 gap-1.5 text-xs font-medium cursor-pointer bg-[#940016] text-white hover:bg-[#7a0012] shadow-sm">
+          <Download size={14} />Export PDF
+        </Button>
+      </div>
+    </header>
+
+    {message && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-medium text-emerald-800 print:hidden">{message}</p>}
+
+    <nav aria-label="Report categories" className="flex gap-1.5 overflow-x-auto rounded-lg border border-border/80 bg-muted/40 p-1 print:hidden">
+      {Object.entries(definitions).map(([key, item]) => (
+        <button
+          key={key}
+          onClick={() => setType(key)}
+          className={`min-w-max rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${type === key ? 'bg-[#940016] text-white shadow-sm' : 'text-muted-foreground hover:bg-card hover:text-foreground'}`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+
+    <Card className="border border-border/80 shadow-sm print:hidden">
+      <CardContent className="p-3.5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">{definitions[type].label}</h2>
+            <p className="text-xs text-muted-foreground">{definitions[type].description}</p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={reset} className="h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+            Reset filters
+          </Button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="relative xl:col-span-2">
+            <Search size={14} className="absolute left-3 top-2.5 text-muted-foreground" />
+            <Input className="h-9 pl-8 text-xs" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search report rows..." />
+          </div>
+          <Input aria-label="From date" type="date" className="h-9 text-xs" value={from} onChange={e => setFrom(e.target.value)} />
+          <Input aria-label="To date" type="date" className="h-9 text-xs" value={to} onChange={e => setTo(e.target.value)} />
+          {type === 'branches' && (
+            <select aria-label="Branch" className={`${control} h-9 text-xs`} value={branchFilter} onChange={e=>{setBranchFilter(e.target.value);setPage(1)}}>
+              <option value="All">All authorized branches</option>
+              {data.branches.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          )}
+          <select aria-label="Course" className={`${control} h-9 text-xs`} disabled={type === 'branches'} value={courseId} onChange={e => { setCourseId(e.target.value); setBatchId('All') }}>
+            <option value="All">All courses</option>
+            {courses.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select aria-label="Batch" className={`${control} h-9 text-xs`} disabled={type === 'branches'} value={batchId} onChange={e => setBatchId(e.target.value)}>
+            <option value="All">All batches</option>
+            {filteredBatches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select aria-label="Status" className={`${control} h-9 text-xs`} value={status} onChange={e => setStatus(e.target.value)}>
+            <option value="All">All statuses</option>
+            {statuses.map(item => <option key={item}>{item}</option>)}
+          </select>
+        </div>
+      </CardContent>
+    </Card>
+
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {kpis.map(([label, value], index) => {
+        const Icon = index === 0 ? FileText : index === 1 ? BarChart3 : Users
+        return (
+          <Card key={label} className="border border-border/80 shadow-sm transition hover:shadow-md">
+            <CardContent className="flex items-center justify-between p-3.5">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+                <div className="mt-1 text-xl font-bold tracking-tight text-gray-900">{value}</div>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg bg-[#940016]/10 text-[#940016]">
+                <Icon size={18} />
+              </span>
+            </CardContent>
+          </Card>
+        )
+      })}
+    </section>
+
+    <section className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-muted/20 px-3.5 py-2.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-900">{definitions[type].label} Report</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-medium text-muted-foreground">{rows.length} authorized records</span>
+          <TableToolbarActions onRefresh={() => setRefresh(x => x + 1)} showColumns={false} onExportPdf={exportReportPdf} onExportCsv={exportReport} onPrint={() => window.print()} exportScopeSummary={`${rows.length} records`} />
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left text-xs">
+          <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-wide dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200">
+            <tr>
+              {['Date', type === 'branches' ? 'Branch' : 'Student / Record', 'Reference', 'Course / Metric', 'Batch / Metric', 'Status', 'Amount'].map(item => (
+                <th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200" key={item}>{item}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/40">
+            {visible.map(item => {
+              const isPositive = ['Approved', 'Active', 'Verified', 'Authorized'].includes(item.status)
+              return (
+                <tr key={item.id} className="transition-colors hover:bg-[#F9EBEE]/35">
+                  <td className="px-3.5 py-2.5 text-muted-foreground whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en-PK') : 'Current'}</td>
+                  <td className="px-3.5 py-2.5">
+                    <span className="font-semibold text-gray-900">{item.primary}</span>
+                    <span className="block text-[11px] text-muted-foreground">{item.branch}</span>
+                  </td>
+                  <td className="px-3.5 py-2.5 font-mono text-[11px] text-muted-foreground">{item.secondary}</td>
+                  <td className="px-3.5 py-2.5 text-gray-700">{item.course}</td>
+                  <td className="px-3.5 py-2.5 text-muted-foreground">{item.batch}</td>
+                  <td className="px-3.5 py-2.5 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${isPositive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-muted text-muted-foreground border border-border/60'}`}>
+                      <span className={`size-1.5 rounded-full ${isPositive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="px-3.5 py-2.5 font-semibold text-gray-900">{item.amount == null ? '—' : money(item.amount)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {visible.length === 0 && <p className="p-8 text-center text-xs text-muted-foreground">No authoritative saved records match these filters.</p>}
+    </section>
+
+    <div className="flex items-center justify-between text-xs text-muted-foreground print:hidden">
+      <span>{rows.length ? (activePage - 1) * pageSize + 1 : 0}–{Math.min(activePage * pageSize, rows.length)} of {rows.length}</span>
+      <div className="flex items-center gap-1">
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs cursor-pointer" disabled={activePage <= 1} onClick={() => setPage(x => x - 1)}>Previous</Button>
+        {Array.from({ length: pages }, (_, index) => index + 1).slice(Math.max(0, activePage - 3), activePage + 2).map(number => (
+          <Button size="sm" key={number} variant={number === activePage ? 'default' : 'outline'} className={`h-7 w-7 p-0 text-xs cursor-pointer ${number === activePage ? 'bg-[#940016] text-white hover:bg-[#7a0012]' : ''}`} onClick={() => setPage(number)}>{number}</Button>
+        ))}
+        <Button size="sm" variant="outline" className="h-7 px-2 text-xs cursor-pointer" disabled={activePage >= pages} onClick={() => setPage(x => x + 1)}>Next</Button>
+      </div>
+    </div>
+    <p className="text-[11px] text-muted-foreground">Attendance, recovery-rate, defaulter-deadline and depreciation metrics are omitted because no approved authoritative policy/records support them.</p>
   </div></DashboardLayout>
 }

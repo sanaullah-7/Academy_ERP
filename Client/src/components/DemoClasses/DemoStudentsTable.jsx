@@ -5,6 +5,8 @@ import {
 } from 'lucide-react'
 import DemoStatusBadge from './DemoStatusBadge.jsx'
 import { downloadCsv } from '../../utils/exportHelpers.js'
+import { exportTablePdf } from '../../utils/pdfHelpers.js'
+import { TableToolbarActions } from '../Shared/TableUtilities.jsx'
 
 function deriveStream(courseName = '') {
   const c = courseName.toLowerCase()
@@ -132,6 +134,33 @@ export default function DemoStudentsTable({
     downloadCsv(`${branchName.toLowerCase().replace(/\s+/g, '-')}-demo-attendees.csv`, headers, rows)
   }
 
+  const handleExportPdf = () => {
+    const headers = [
+      'Demo ID', 'Candidate Name', 'Guardian Contact', 'Academic Stream',
+      'Target Program', 'Trial Schedule', 'Hall / Venue', 'Faculty',
+      'Status'
+    ]
+    const rows = filteredDemos.map(d => [
+      d.demoId,
+      d.studentName,
+      d.guardianContact,
+      deriveStream(d.courseName),
+      d.courseName,
+      formatScheduleTime(d),
+      d.scheduledSession?.location || 'Trial Hall',
+      d.scheduledSession?.teacherName || 'TBD',
+      d.status,
+    ])
+    exportTablePdf({
+      filename: `${branchName.toLowerCase().replace(/\s+/g, '-')}-demo-attendees.pdf`,
+      title: 'Demo Classes & Trial Candidates Report',
+      branchName: branchName || 'The Scholar Coaching Academy',
+      headers,
+      rows,
+      filterSummary: `${filteredDemos.length} demo candidates matching filters`
+    })
+  }
+
   return (
     <div className="space-y-3">
       {/* Tab Segment Controls & Search/Stream Filters */}
@@ -250,8 +279,7 @@ export default function DemoStudentsTable({
             <option value="Computer Science">Computer Science</option>
           </select>
 
-          {/* Hidden helper for test assertion */}
-          <button type="button" onClick={handleExport} className="sr-only">Export CSV</button>
+          <TableToolbarActions showColumns={false} onPrint={() => window.print()} onExportCsv={handleExport} onExportPdf={handleExportPdf} />
         </div>
       </div>
 
@@ -270,16 +298,16 @@ export default function DemoStudentsTable({
               <col className="w-[9%]" />
               <col className="w-[11%]" />
             </colgroup>
-            <thead className="bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-normal dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
               <tr>
-                <th scope="col" className="px-3 py-2.5 truncate">CANDIDATE DETAILS</th>
-                <th scope="col" className="px-2.5 py-2.5 truncate">ACADEMIC STREAM</th>
-                <th scope="col" className="px-2.5 py-2.5 truncate">TARGET PROGRAM</th>
-                <th scope="col" className="px-2.5 py-2.5 truncate">TRIAL SCHEDULE & HALL</th>
-                <th scope="col" className="px-2.5 py-2.5 truncate">TRIAL FACULTY</th>
-                <th scope="col" className="px-2.5 py-2.5 truncate">REMARKS / NOTES</th>
-                <th scope="col" className="px-2 py-2.5 truncate">STATUS</th>
-                <th scope="col" className="px-3 py-2.5 text-right truncate">ACTIONS</th>
+                <th scope="col" className="px-3 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">CANDIDATE DETAILS</th>
+                <th scope="col" className="px-2.5 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">ACADEMIC STREAM</th>
+                <th scope="col" className="px-2.5 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">TARGET PROGRAM</th>
+                <th scope="col" className="px-2.5 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">TRIAL SCHEDULE &amp; HALL</th>
+                <th scope="col" className="px-2.5 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">TRIAL FACULTY</th>
+                <th scope="col" className="px-2.5 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">REMARKS / NOTES</th>
+                <th scope="col" className="px-2 py-2.5 truncate font-bold text-slate-700 dark:text-slate-200">STATUS</th>
+                <th scope="col" className="px-3 py-2.5 text-right truncate font-bold text-slate-700 dark:text-slate-200">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">

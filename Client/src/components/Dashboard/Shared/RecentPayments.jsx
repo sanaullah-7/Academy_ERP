@@ -16,16 +16,19 @@ function formatAmount(amount) {
   return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(amount)
 }
 
-export default function RecentPayments({ payments = [], branchId, loading = false, error = '', onRetry, onOpenReceipt }) {
+export default function RecentPayments({ payments = [], branchId, loading = false, error = '', onRetry, onOpenReceipt, todayOnly = false, now = new Date(), timeZone = 'Asia/Karachi' }) {
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+  const today = dateFormatter.format(now)
   const verified = payments
     .filter(payment => payment.status === 'Verified' && payment.branchId === branchId)
+    .filter(payment => !todayOnly || (Number.isFinite(Date.parse(payment.paidAt)) && dateFormatter.format(new Date(payment.paidAt)) === today))
     .sort((a, b) => Date.parse(b.paidAt) - Date.parse(a.paidAt))
 
   return <Card className="gap-0 overflow-hidden rounded-[24px] border border-slate-200/80 bg-white py-0 shadow-[0_2px_8px_rgba(15,23,42,0.05)]">
     <CardHeader className="flex items-center justify-between gap-3 px-4 pb-5 pt-5 sm:px-5 sm:pb-6 sm:pt-6">
       <div className="min-w-0">
         <h2 className="text-xl font-semibold leading-7 tracking-tight text-slate-900 sm:text-[22px]">Recent Payments</h2>
-        <p className="mt-0.5 text-sm text-slate-500 sm:text-base">Verified fee receipts</p>
+        <p className="mt-0.5 text-sm text-slate-500 sm:text-base">{todayOnly ? "Today's verified fee receipts" : 'Verified fee receipts'}</p>
       </div>
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-slate-200/80 sm:size-11" aria-hidden="true">
         <ReceiptText size={21} strokeWidth={1.9} />
