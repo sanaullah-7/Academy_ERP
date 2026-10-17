@@ -35,4 +35,5 @@ export const admissionService = {
   delete: async (id, query) => mockApi.admissionOperation('delete', { id, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DELETE)),
   changeStatus: async (id, record, query) => mockApi.admissionOperation('changeStatus', { id, record, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
   enroll: async (id, record, query) => mockApi.enrollAdmission(id, record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
+  completeAdmission: async (record, query) => mockApi.completeAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
 }

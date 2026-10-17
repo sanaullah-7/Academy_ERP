@@ -6,6 +6,24 @@ import { canAccess } from '../constants/permissions.js'
 import * as fixtures from '../mock/authFixtures.js'
 
 describe('fictional sessions and branch validation', () => {
+  it('switches Super Admin to staff with persisted target permissions, not admin permissions', async () => {
+    await authService.login({userId:'demo-admin'})
+    await authService.selectBranch('demo-admin','demo-central')
+    const session=await authService.switchAccount('demo-teacher')
+    expect(session.user.id).toBe('demo-teacher')
+    expect(session.branchId).toBe('demo-central')
+    expect(canAccess('users.manage',session.user,session.branchId)).toBe(false)
+    expect(await authService.getSession()).toEqual(session)
+    await expect(authService.switchAccount('demo-admin')).rejects.toThrow('Only a Super Admin')
+  })
+  it('rejects disabled/unassigned targets without changing admin session', async () => {
+    await authService.login({userId:'demo-admin'})
+    await authService.selectBranch('demo-admin','demo-central')
+    for (const id of ['demo-disabled','demo-unassigned','missing']) await expect(authService.switchAccount(id)).rejects.toThrow('active staff')
+    expect((await authService.getSession()).user.id).toBe('demo-admin')
+    const session=await authService.switchAccount('demo-reception')
+    expect(session.branchId).toBe('demo-north')
+  })
   it.each([{ remaining: [] }, { remaining: [fixtures.DEMO_BRANCHES[1]] }])('revalidates a saved branch against changed authorized assignments: $remaining', async ({ remaining }) => {
     await authService.login({ userId: 'demo-multi' })
     await authService.selectBranch('demo-multi', 'demo-north')
@@ -51,7 +69,7 @@ describe('fictional sessions and branch validation', () => {
     localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({ version: 1, userId: 'demo-multi', branchId: 'foreign', roles: ['super_admin'], permissions: ['payments.reverse'] }))
     const session = await authService.getSession()
     expect(session.branchId).toBeNull()
-    expect(session.user).toBe(DEMO_USERS.find((user) => user.id === 'demo-multi'))
+    expect(session.user).toEqual(DEMO_USERS.find((user) => user.id === 'demo-multi'))
     expect(session.user.assignments[1].roles).toEqual(['teacher', 'receptionist'])
   })
 

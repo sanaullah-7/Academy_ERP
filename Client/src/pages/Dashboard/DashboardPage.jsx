@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Activity, ChartNoAxesCombined, Layers3, Sparkles, Users, BookOpen, UserCheck, CreditCard, ShieldAlert, BarChart3, Settings, FileText, ArrowRight, UserPlus, CreditCard as PaymentIcon, PhoneCall, CalendarDays, ClipboardList, Clock } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, ChartNoAxesCombined, Layers3, Sparkles, Users, BookOpen, UserCheck, CreditCard, BarChart3, Settings, FileText, ArrowRight, UserPlus, CreditCard as PaymentIcon, PhoneCall, CalendarDays, ClipboardList, Clock } from 'lucide-react'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader } from '../../components/ui/card.jsx'
@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/badge.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { useBranch } from '../../hooks/useBranch.js'
 import { usePermissions } from '../../hooks/usePermissions.js'
-import { ROLES, ROLE_LABELS } from '../../constants/roles.js'
+import { ROLES } from '../../constants/roles.js'
 import { KpiCard } from '../../components/Dashboard/KpiCard.jsx'
 import { studentService } from '../../services/studentService.js'
 import { courseService } from '../../services/courseService.js'
@@ -542,101 +542,13 @@ function ReceptionistDashboard() {
 
 export default function DashboardPage() {
   const { roles } = usePermissions()
-  const { branch } = useBranch()
-
-  const isSuperAdmin = roles.includes(ROLES.SUPER_ADMIN)
-
-  const availableRoles = useMemo(() => {
-    return isSuperAdmin
-      ? [ROLES.SUPER_ADMIN, ROLES.OWNER, ROLES.RECEPTIONIST, ROLES.TEACHER]
-      : roles
-  }, [isSuperAdmin, roles])
-
-  const [selectedRole, setSelectedRole] = useState(() => availableRoles.length === 1 ? availableRoles[0] : null)
-
-  useEffect(() => {
-    if (availableRoles.length === 1 && selectedRole !== availableRoles[0]) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedRole(availableRoles[0])
-    } else if (selectedRole && !availableRoles.includes(selectedRole)) {
-      setSelectedRole(null)
-    }
-  }, [availableRoles, selectedRole])
-
-  const renderDashboard = () => {
-    if (!selectedRole) {
-      return (
-        <DashboardLayout title="Dashboard" description="Role Selection Required">
-          <p className="sr-only">{branch?.name}</p>
-          <Card className="border-primary/20 bg-card max-w-2xl mx-auto mt-12">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3 text-primary">
-                <ShieldAlert size={24} />
-                <h2 className="text-lg font-semibold">Select Dashboard View</h2>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                You have multiple dashboard views available in this branch.
-                Please select which presentation you want to view. This only changes the dashboard layout and does not alter your actual permissions.
-              </p>
-              <div className="flex flex-col gap-3">
-                {availableRoles.map(role => (
-                  <Button key={role} variant="outline" className="justify-start h-auto py-3" onClick={() => setSelectedRole(role)}>
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="font-semibold">{ROLE_LABELS[role] ?? role} Dashboard</span>
-                      <span className="text-xs text-muted-foreground font-normal">View the dashboard presentation for {ROLE_LABELS[role]?.toLowerCase() ?? role}</span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </DashboardLayout>
-      )
-    }
-
-    let DashboardComponent
-    if (selectedRole === ROLES.SUPER_ADMIN) DashboardComponent = SuperAdminDashboard
-    else if (selectedRole === ROLES.OWNER) DashboardComponent = OwnerDashboard
-    else if (selectedRole === ROLES.RECEPTIONIST) DashboardComponent = ReceptionistDashboard
-    else if (selectedRole === ROLES.TEACHER) DashboardComponent = TeacherDashboard
-    else DashboardComponent = DefaultDashboard
-
-    return (
-      <div className="flex flex-col h-full">
-        {availableRoles.length > 1 && (
-          <div className="relative z-10 min-w-0 px-3 pt-6 -mb-2 sm:px-6">
-            <div className="flex min-w-0 flex-col justify-between gap-4 rounded-lg border border-primary/20 bg-card p-3 shadow-sm sm:flex-row sm:items-center">
-              <div>
-                <p className="sr-only">{branch?.name}</p>
-                <h2 className="text-sm font-semibold">View Dashboard As</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Presentation preview only
-                </p>
-              </div>
-              <div className="flex min-w-0 flex-wrap gap-2">
-                {availableRoles.map(role => (
-                  <Button
-                    key={role}
-                    variant={selectedRole === role ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedRole(role)}
-                    className="w-full min-w-0 text-xs sm:w-auto"
-                  >
-                    {ROLE_LABELS[role] ?? role}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-        <DashboardComponent />
-      </div>
-    )
-  }
-
-  return renderDashboard()
+  // Resolve presentation from current branch roles without changing authorization.
+  const role = [ROLES.SUPER_ADMIN, ROLES.OWNER, ROLES.RECEPTIONIST, ROLES.TEACHER].find(value => roles.includes(value))
+  if (role === ROLES.SUPER_ADMIN) return <SuperAdminDashboard />
+  if (role === ROLES.OWNER) return <OwnerDashboard />
+  if (role === ROLES.RECEPTIONIST) return <ReceptionistDashboard />
+  if (role === ROLES.TEACHER) return <TeacherDashboard />
+  return <DefaultDashboard />
 }
 
 function TeacherDashboard() {

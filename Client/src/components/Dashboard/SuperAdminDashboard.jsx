@@ -1,7 +1,8 @@
+import { classPeriod } from '../../utils/classTime.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { AlertCircle, ArrowRight, Banknote, CalendarDays, Clock3, CreditCard, DoorOpen, GraduationCap, Loader2, MapPin, MoreVertical, ReceiptText, RefreshCw, Search, TrendingDown, UserPlus, UserRound, Users } from 'lucide-react'
+import { AlertCircle, ArrowRight, Banknote, CalendarDays, CheckCircle2, Clock3, CreditCard, DoorOpen, GraduationCap, Loader2, MapPin, ReceiptText, RefreshCw, Search, TrendingDown, UserPlus, UserRound, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader } from '../ui/card.jsx'
 import { Badge } from '../ui/badge.jsx'
@@ -13,8 +14,9 @@ import { usePermissions } from '../../hooks/usePermissions.js'
 import { admissionService } from '../../services/admissionService.js'
 import { studentService } from '../../services/studentService.js'
 import { academicService } from '../../services/academicService.js'
-import { feeService } from '../../services/feeService.js'
-import { classScheduleService } from '../../services/classScheduleService.js'
+
+import { classScheduleService, resolveDailyClasses } from '../../services/classScheduleService.js'
+import { facultyService } from '../../services/facultyService.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import RecentPayments from './Shared/RecentPayments.jsx'
@@ -106,12 +108,12 @@ function CashflowChart({ period, periodLabel, range, payments, expenses }) {
   const burn = records.reduce((sum,item)=>sum+item.expenses,0)
   const hasData = inflow > 0 || burn > 0
   return <div className="space-y-3">
-    <div className="grid gap-2 rounded-xl bg-muted/40 p-2.5 sm:grid-cols-3">
+    <div className="mobile-chart-summary grid gap-2 rounded-xl bg-muted/40 p-2.5 sm:grid-cols-3">
       {[['Inflow', inflow], ['Burn', burn], ['Net Margin', inflow-burn]].map(([label, value]) => <div key={label}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{periodLabel} {label}</p><p className={`mt-1 font-bold ${value<0?'text-red-700':'text-foreground'}`}>{money(value)}</p></div>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-4 text-sm"><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-primary" />Revenue</span><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-blue-200" />Expenses</span></div><Badge variant="outline">{periodLabel}</Badge></div>
-    <div className="relative h-44 w-full sm:h-48" aria-label={`Revenue and expenses chart for ${periodLabel}`}>
-      <ResponsiveContainer width="100%" height="100%"><BarChart data={records} margin={{ top: 16, right: 8, left: -8, bottom: 0 }}><CartesianGrid vertical={false} strokeDasharray="4 4" stroke="hsl(var(--border))" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><Tooltip formatter={value=>money(value)} /><Bar dataKey="revenue" name="Revenue" fill="hsl(var(--primary))" radius={[5, 5, 0, 0]} /><Bar dataKey="expenses" name="Expenses" fill="#bfdbfe" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer>
+    <div className="relative h-52 w-full sm:h-60" aria-label={`Revenue and expenses chart for ${periodLabel}`}>
+      <ResponsiveContainer width="100%" height="100%"><BarChart data={records} margin={{ top: 16, right: 8, left: -8, bottom: 0 }}><CartesianGrid vertical={false} strokeDasharray="4 4" stroke="var(--border)" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><Tooltip formatter={value=>money(value)} /><Bar dataKey="revenue" name="Revenue" fill="var(--dashboard-revenue)" radius={[5, 5, 0, 0]} /><Bar dataKey="expenses" name="Expenses" fill="#bfdbfe" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer>
       {!hasData&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="max-w-sm rounded-xl border bg-card/95 px-5 py-4 text-center shadow-sm"><p className="font-semibold">No financial records for {periodLabel.toLowerCase()}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Verified receipts and posted expenses will appear automatically.</p></div></div>}
     </div>
   </div>
@@ -119,17 +121,118 @@ function CashflowChart({ period, periodLabel, range, payments, expenses }) {
 
 function FeeStatusBadge({ value }) {
   const status = value ?? 'Unavailable'
-  const style = status === 'Paid' ? 'border-emerald-200 bg-emerald-100 text-emerald-700' : status === 'Partial' ? 'border-amber-200 bg-amber-100 text-amber-700' : 'bg-background text-muted-foreground'
-  return <Badge variant="outline" className={`gap-1.5 whitespace-nowrap ${style}`}><span className={`size-2 rounded-full ${status === 'Paid' ? 'bg-emerald-500' : status === 'Partial' ? 'bg-amber-500' : 'bg-muted-foreground/50'}`} />{status}</Badge>
+  const style = status === 'Paid'
+    ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
+    : status === 'Partial'
+    ? 'border-amber-200 bg-amber-100 text-amber-700'
+    : status === 'Unpaid' || status === 'Overdue'
+    ? 'border-rose-200 bg-rose-100 text-rose-700'
+    : 'bg-background text-muted-foreground'
+  const dot = status === 'Paid'
+    ? 'bg-emerald-500'
+    : status === 'Partial'
+    ? 'bg-amber-500'
+    : status === 'Unpaid' || status === 'Overdue'
+    ? 'bg-rose-500'
+    : 'bg-muted-foreground/50'
+  return <Badge variant="outline" className={`gap-1.5 whitespace-nowrap ${style}`}><span className={`size-2 rounded-full ${dot}`} />{status}</Badge>
 }
 
-function FeeStatusMenu({ studentName, value, busy, onChange }) {
-  return <details className="relative inline-block text-left">
-    <summary className="grid size-9 cursor-pointer list-none place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" aria-label={`Enrollment actions for ${studentName}`}><MoreVertical size={18} aria-hidden="true" /></summary>
-    <div role="menu" className="absolute right-0 z-30 mt-1 grid w-28 gap-0.5 rounded-lg border bg-card p-1 shadow-lg">
-      {['Unavailable', 'Paid', 'Partial'].map(status => <button key={status} type="button" role="menuitem" disabled={busy} aria-current={(value ?? 'Unavailable') === status ? 'true' : undefined} className={`w-full rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted disabled:opacity-50 ${(value ?? 'Unavailable') === status ? 'bg-muted font-semibold' : ''}`} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); onChange(status) }}>{status}</button>)}
-    </div>
-  </details>
+function formatTime12(timeStr) {
+  if (!timeStr) return ''
+  const trimmed = timeStr.trim()
+  if (trimmed.includes('AM') || trimmed.includes('PM')) return trimmed
+  const parts = trimmed.split(':')
+  if (parts.length < 2) return trimmed
+  let h = parseInt(parts[0], 10)
+  const m = parts[1]
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  h = h % 12 || 12
+  return `${String(h).padStart(2, '0')}:${m} ${ampm}`
+}
+
+function formatClassSlotTime(startTime, endTime) {
+  if (!startTime) return ''
+  if (!endTime) return formatTime12(startTime)
+  const s = formatTime12(startTime)
+  const e = formatTime12(endTime)
+  const sParts = s.split(' ')
+  const eParts = e.split(' ')
+  if (sParts.length === 2 && eParts.length === 2 && sParts[1] === eParts[1]) {
+    return `${sParts[0]} – ${e}`
+  }
+  return `${s} – ${e}`
+}
+
+function getBatchBadgeColor(batchName = '', index = 0) {
+  const normalized = batchName.toLowerCase()
+  if (normalized.includes('mdcat') || normalized.includes('bio')) return 'bg-[#dcfce7] text-[#065f46] border border-emerald-200/50'
+  if (normalized.includes('fsc') || normalized.includes('phy') || normalized.includes('eng')) return 'bg-[#e0e7ff] text-[#3730a3] border border-indigo-200/50'
+  if (normalized.includes('etea') || normalized.includes('chem')) return 'bg-[#ccfbf1] text-[#115e59] border border-teal-200/50'
+  const palette = [
+    'bg-[#dcfce7] text-[#065f46] border border-emerald-200/50',
+    'bg-[#e0e7ff] text-[#3730a3] border border-indigo-200/50',
+    'bg-[#ccfbf1] text-[#115e59] border border-teal-200/50',
+    'bg-[#fef3c7] text-[#92400e] border border-amber-200/50',
+    'bg-[#fce7f3] text-[#9d174d] border border-pink-200/50',
+  ]
+  return palette[index % palette.length]
+}
+
+function getClassStatus(item, clock) {
+  if(item.timeStatus)return {text:item.timeStatus.label,type:item.timeStatus.type}
+  if (item.statusText) {
+    return { text: item.statusText, type: item.statusType || 'upcoming' }
+  }
+  const dateStr = item.classDate || localDateKey(clock)
+  const start = new Date(`${dateStr}T${item.startTime}:00`)
+  const end = new Date(`${dateStr}T${item.endTime}:00`)
+
+  if (!Number.isNaN(end.getTime()) && clock > end) {
+    return { text: 'Completed', type: 'completed' }
+  }
+  if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && clock >= start && clock <= end) {
+    return { text: 'In Progress', type: 'in-progress' }
+  }
+  if (!Number.isNaN(start.getTime())) {
+    const diffMinutes = Math.ceil((start - clock) / 60000)
+    if (diffMinutes <= 30 && diffMinutes >= 0) {
+      return { text: 'Starting soon', type: 'soon' }
+    }
+    if (diffMinutes < 60 && diffMinutes > 0) {
+      return { text: `In ${diffMinutes} min`, type: 'upcoming' }
+    }
+    if (diffMinutes >= 60) {
+      const h = Math.floor(diffMinutes / 60)
+      const m = diffMinutes % 60
+      return { text: m > 0 ? `In ${h}h ${m}m` : `In ${h}h`, type: 'upcoming' }
+    }
+  }
+  return { text: 'Upcoming slot', type: 'upcoming' }
+}
+
+function renderClassStatus(item, clock) {
+  const status = getClassStatus(item, clock)
+  if (status.type === 'in-progress') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-800">
+        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        In Progress
+      </span>
+    )
+  }
+  if (status.type === 'completed') {
+    return (
+      <span className="inline-flex items-center gap-1 font-medium text-slate-700">
+        <CheckCircle2 size={12} className="text-slate-400" />
+        Completed
+      </span>
+    )
+  }
+  if (status.type === 'soon' || status.text === 'Starting soon') {
+    return <span className="font-semibold text-amber-800">Starting soon</span>
+  }
+  return <span className="font-medium text-slate-700">{status.text}</span>
 }
 
 export default function SuperAdminDashboard() {
@@ -142,7 +245,6 @@ export default function SuperAdminDashboard() {
   const [range, setRange] = useState({ start: '', end: '' })
   const [request, setRequest] = useState(0)
   const [result, setResult] = useState(null)
-  const [feeUpdate, setFeeUpdate] = useState({ id: null, message: '', error: '' })
   const [clock, setClock] = useState(() => new Date())
   useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 60000); return () => window.clearInterval(timer) }, [])
 
@@ -153,10 +255,11 @@ export default function SuperAdminDashboard() {
       admissionService.list({ branchId }),
       academicService.overview({ branchId }),
       classScheduleService.list({ branchId }),
+      facultyService.listAssignments({ branchId }),
       financialService.overview({ branchId }),
       financialService.financeOverview({ branchId }),
-    ]).then(([students, admissions, academic, classes, financial, finance]) => {
-      if (active) setResult({ scopeKey, request, students, admissions, academic, classes, financial, finance })
+    ]).then(([students, admissions, academic, classes, assignments, financial, finance]) => {
+      if (active) setResult({ scopeKey, request, students, admissions, academic, classes, assignments, financial, finance })
     }, error => {
       if (active) setResult({ scopeKey, request, error: error.message })
     })
@@ -182,24 +285,41 @@ export default function SuperAdminDashboard() {
   const periodLabel = PERIODS.find(item => item.id === period)?.label
   const metricPeriodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'This week' : period === 'monthly' ? 'This month' : period === 'yearly' ? 'This year' : period === 'custom' ? (range.start && range.end ? `${range.start} – ${range.end}` : 'Choose dates') : 'All time'
   const canCreateAdmission = can(PERMISSIONS.ADMISSIONS_CREATE)
-  const todayKey = localDateKey(clock)
-  const upcomingClasses = (current?.classes ?? []).filter(item => item.classDate === todayKey && new Date(`${item.classDate}T${item.endTime}:00`) >= clock).sort((a,b)=>a.startTime.localeCompare(b.startTime))
-  const completedToday = (current?.classes ?? []).filter(item => item.classDate === todayKey && new Date(`${item.classDate}T${item.endTime}:00`) < clock).length
+  const resolvedTodayClasses = useMemo(()=>resolveDailyClasses({sessions:current?.classes,assignments:current?.assignments,academic:current?.academic,branchId,now:clock}),[branchId,clock,current?.academic,current?.assignments,current?.classes])
   const payments = current?.financial?.payments ?? []
   const challans = current?.financial?.challans ?? []
   const collected = payments.filter(item => isInPeriod(item.paidAt, period, range)).reduce((sum,item)=>sum+item.amount,0)
   const outstanding = challans.reduce((sum,item)=>sum+item.balance,0)
-  const classTiming = item => { const start = new Date(`${item.classDate}T${item.startTime}:00`), end = new Date(`${item.classDate}T${item.endTime}:00`); if (clock >= start && clock < end) return 'In Progress'; const minutes = Math.ceil((start-clock)/60000); return minutes <= 15 ? 'Starting Soon' : minutes < 60 ? `In ${minutes} min` : `In ${Math.floor(minutes/60)}h ${minutes%60}m` }
 
-  async function updateFeeStatus(enrollmentId, feeStatus, studentName) {
-    setFeeUpdate({ id: enrollmentId, message: '', error: '' })
-    try {
-      const saved = await feeService.updateEnrollmentStatus(enrollmentId, { feeStatus }, { branchId })
-      setResult(previous => previous?.students ? { ...previous, students: previous.students.map(student => ({ ...student, enrollments: (student.enrollments ?? []).map(enrollment => enrollment.id === saved.id ? { ...enrollment, feeStatus: saved.feeStatus } : enrollment) })) } : previous)
-      setFeeUpdate({ id: null, message: `${studentName} fee status updated to ${saved.feeStatus}.`, error: '' })
-    } catch (error) {
-      setFeeUpdate({ id: null, message: '', error: error.message })
+  const getEnrollmentDues = (enrollment) => {
+    const linkedChallan = challans.find(c => c.enrollmentId === enrollment.id)
+      || challans.find(c => c.studentId === enrollment.studentId && c.courseId === enrollment.courseId)
+      || challans.find(c => c.studentId === enrollment.studentId)
+
+    if (linkedChallan) {
+      const balance = Number.isFinite(linkedChallan.balance) ? Math.max(0, linkedChallan.balance) : 0
+      const status = balance <= 0
+        ? 'Paid'
+        : (linkedChallan.paidAmount > 0 ? 'Partial' : (linkedChallan.status ?? 'Unpaid'))
+      return { dueAmount: balance, feeStatus: status }
     }
+
+    if (Number.isFinite(enrollment.balance)) {
+      const balance = Math.max(0, enrollment.balance)
+      const status = balance <= 0 ? 'Paid' : (enrollment.initialPayment > 0 ? 'Partial' : (enrollment.feeStatus ?? 'Unpaid'))
+      return { dueAmount: balance, feeStatus: status }
+    }
+
+    if (enrollment.feeStatus === 'Paid') {
+      return { dueAmount: 0, feeStatus: 'Paid' }
+    }
+    if (enrollment.feeStatus === 'Partial') {
+      const total = Number.isFinite(enrollment.netFee) ? enrollment.netFee : (Number.isFinite(enrollment.configuredFee) ? enrollment.configuredFee : 45000)
+      const paid = Number.isFinite(enrollment.initialPayment) ? enrollment.initialPayment : Math.round(total * 0.6)
+      return { dueAmount: Math.max(0, total - paid), feeStatus: 'Partial' }
+    }
+    const total = Number.isFinite(enrollment.netFee) ? enrollment.netFee : (Number.isFinite(enrollment.configuredFee) ? enrollment.configuredFee : 0)
+    return { dueAmount: total, feeStatus: total === 0 ? 'Paid' : (enrollment.feeStatus ?? 'Unpaid') }
   }
 
   return <DashboardLayout title="Dashboard" description="Super Admin view for the selected branch.">
@@ -244,60 +364,78 @@ export default function SuperAdminDashboard() {
                 <Card className="h-fit gap-0 overflow-visible rounded-xl border-border/70 py-0 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
                   <CardHeader className="flex min-h-20 grid-cols-none flex-row items-center justify-between gap-3 rounded-t-xl border-b border-border/60 px-4 py-4 sm:px-5"><div className="min-w-0"><h2 className="text-base font-semibold tracking-tight">Recent Student Enrollments</h2><p className="mt-0.5 truncate text-xs text-muted-foreground">Latest applicants processed across academic wings</p></div>{can(PERMISSIONS.ADMISSIONS_VIEW) && <Button asChild variant="link" size="sm" className="shrink-0 px-1 text-xs"><Link to={ROUTE_PATHS.ADMISSIONS}>View all admissions <ArrowRight size={17} aria-hidden="true" /></Link></Button>}</CardHeader>
                   <CardContent className="p-0">
-                    {feeUpdate.message && <p role="status" className="border-b bg-emerald-50 px-5 py-3 text-sm font-medium text-emerald-700">{feeUpdate.message}</p>}
-                    {feeUpdate.error && <p role="alert" className="border-b bg-red-50 px-5 py-3 text-sm font-medium text-red-700">{feeUpdate.error}</p>}
                     {visibleEnrollments.length === 0 ? <div className="p-6"><EmptyData icon={Users} title="No recent enrollments" description={`No saved enrollments were found for ${periodLabel?.toLowerCase()} in this branch.`} /></div> : <>
-                      <div className="hidden w-full rounded-b-xl md:block"><table className="w-full table-fixed text-left text-[11px] xl:text-xs"><colgroup><col className="w-[24%]" /><col className="w-[18%]" /><col className="w-[20%]" /><col className="w-[17%]" /><col className="w-[13%]" /><col className="w-[8%]" /></colgroup><thead className="bg-primary/5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"><tr><th className="whitespace-nowrap px-3 py-2.5">Student Name</th><th className="whitespace-nowrap px-2 py-2.5">Field / Program</th><th className="whitespace-nowrap px-2 py-2.5">Batch</th><th className="whitespace-nowrap px-2 py-2.5">Enrolled</th><th className="whitespace-nowrap px-2 py-2.5">Fee Status</th><th className="whitespace-nowrap px-1 py-2.5 text-center">Actions</th></tr></thead><tbody>{visibleEnrollments.map((item, index) => <tr key={item.id} className={`whitespace-nowrap transition-colors hover:bg-primary/5 ${index % 2 ? 'bg-primary/[0.035]' : 'bg-card'} ${index === visibleEnrollments.length - 1 ? '[&>td:first-child]:rounded-bl-xl [&>td:last-child]:rounded-br-xl' : ''}`}><td className="min-w-0 px-3 py-2.5"><Link title={item.studentName} className="block truncate font-semibold text-foreground hover:text-primary hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{item.admissionReference}</span></td><td className="px-2 py-2.5"><span title={item.courseName} className={`block w-fit max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${index % 2 ? 'bg-indigo-100 text-indigo-800' : 'bg-cyan-100 text-cyan-800'}`}>{item.courseName}</span></td><td title={item.batchName} className="truncate px-2 py-2.5 text-muted-foreground">{item.batchName}</td><td className="truncate px-2 py-2.5 text-muted-foreground">{formatDateTime(item.enrolledAt)}</td><td className="px-2 py-2.5"><FeeStatusBadge value={item.feeStatus} /></td><td className="px-1 py-1.5 text-center"><FeeStatusMenu studentName={item.studentName} value={item.feeStatus} busy={feeUpdate.id === item.id} onChange={status => updateFeeStatus(item.id, status, item.studentName)} /></td></tr>)}</tbody></table></div>
-                      <div className="grid gap-3 p-4 md:hidden">{visibleEnrollments.map(item => <article key={item.id} className="relative rounded-xl border p-4 pr-12"><div className="absolute right-2 top-2"><FeeStatusMenu studentName={item.studentName} value={item.feeStatus} busy={feeUpdate.id === item.id} onChange={status => updateFeeStatus(item.id, status, item.studentName)} /></div><Link title={item.studentName} className="block truncate font-semibold text-foreground hover:text-primary hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="block truncate text-xs text-muted-foreground">{item.admissionReference}</span><p className="mt-3 truncate text-sm text-muted-foreground" title={`${item.courseName} • ${item.batchName}`}>{item.courseName} • {item.batchName}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="truncate text-xs text-muted-foreground">{formatDateTime(item.enrolledAt)}</span><FeeStatusBadge value={item.feeStatus} /></div></article>)}</div>
+                      <div className="hidden w-full rounded-b-xl md:block"><table className="w-full table-fixed text-left text-[11px] xl:text-xs"><colgroup><col className="w-[24%]" /><col className="w-[18%]" /><col className="w-[18%]" /><col className="w-[16%]" /><col className="w-[12%]" /><col className="w-[12%]" /></colgroup><thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-normal dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"><tr><th className="whitespace-nowrap px-3 py-2.5 font-bold text-slate-700 dark:text-slate-200">Student Name</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Field / Program</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Batch</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Enrolled</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Fee Status</th><th className="whitespace-nowrap px-3 py-2.5 text-right font-bold text-slate-700 dark:text-slate-200">Dues</th></tr></thead><tbody>{visibleEnrollments.map((item, index) => {
+                        const duesInfo = getEnrollmentDues(item)
+                        return <tr key={item.id} tabIndex={0} role="button" aria-label={`View ${item.studentName} in Students directory`} onClick={() => navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } })} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } }) } }} className={`group cursor-pointer whitespace-nowrap transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring ${index % 2 ? 'bg-primary/[0.035]' : 'bg-card'} ${index === visibleEnrollments.length - 1 ? '[&>td:first-child]:rounded-bl-xl [&>td:last-child]:rounded-br-xl' : ''}`}><td className="min-w-0 px-3 py-2.5"><Link title={item.studentName} onClick={event => event.stopPropagation()} className="block truncate font-semibold text-foreground group-hover:text-primary group-hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{item.admissionReference}</span></td><td className="px-2 py-2.5"><span title={item.courseName} className={`block w-fit max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${index % 2 ? 'bg-indigo-100 text-indigo-800' : 'bg-cyan-100 text-cyan-800'}`}>{item.courseName}</span></td><td title={item.batchName} className="truncate px-2 py-2.5 text-muted-foreground">{item.batchName}</td><td className="truncate px-2 py-2.5 text-muted-foreground">{formatDateTime(item.enrolledAt)}</td><td className="px-2 py-2.5"><FeeStatusBadge value={duesInfo.feeStatus} /></td><td className="px-3 py-2.5 text-right whitespace-nowrap font-medium">{duesInfo.dueAmount > 0 ? <span className="font-bold text-rose-600 dark:text-rose-400">{money(duesInfo.dueAmount)}</span> : <span className="font-semibold text-emerald-600 dark:text-emerald-400">PKR 0</span>}</td></tr>
+                      })}</tbody></table></div>
+                      <div className="grid gap-3 p-4 md:hidden">{visibleEnrollments.map(item => {
+                        const duesInfo = getEnrollmentDues(item)
+                        return <article key={item.id} tabIndex={0} role="button" aria-label={`View ${item.studentName} in Students directory`} onClick={() => navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } })} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } }) } }} className="group relative cursor-pointer rounded-xl border p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><Link title={item.studentName} onClick={event => event.stopPropagation()} className="block truncate font-semibold text-foreground group-hover:text-primary group-hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="block truncate text-xs text-muted-foreground">{item.admissionReference}</span></div><div className="text-right shrink-0">{duesInfo.dueAmount > 0 ? <span className="text-xs font-bold text-rose-600 dark:text-rose-400">{money(duesInfo.dueAmount)}</span> : <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">PKR 0</span>}</div></div><p className="mt-2.5 truncate text-sm text-muted-foreground" title={`${item.courseName} • ${item.batchName}`}>{item.courseName} • {item.batchName}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="truncate text-xs text-muted-foreground">{formatDateTime(item.enrolledAt)}</span><FeeStatusBadge value={duesInfo.feeStatus} /></div></article>
+                      })}</div>
                     </>}
                   </CardContent>
                 </Card>
               </div>
 
               <aside className="grid min-w-0 content-start gap-4">
-                <Card className="border-border/70 shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><CardHeader><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Quick Operations</h2><span className="text-xs text-muted-foreground">Fast desk</span></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="secondary" className="h-auto min-h-20 justify-start rounded-xl border border-primary/20 bg-primary/5 px-4 text-left hover:bg-primary/10" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-10 place-items-center rounded-lg bg-primary text-white shadow-xs"><UserPlus size={19} aria-hidden="true" /></span><span><strong className="block">New Admission</strong><small className="font-normal text-muted-foreground">Student registration</small></span></Button>
-                  {[{ title: 'Collect Fee', note: 'Open Fees', icon: ReceiptText, path: ROUTE_PATHS.FEES, style: 'border-blue-100 bg-blue-50/70 hover:bg-blue-100/70', iconStyle: 'bg-blue-100 text-blue-700' }, { title: 'Record Expense', note: 'Open Finance', icon: CreditCard, path: ROUTE_PATHS.FINANCE, style: 'border-amber-100 bg-amber-50/70 hover:bg-amber-100/70', iconStyle: 'bg-amber-100 text-amber-700' }, { title: 'Add Demo', note: 'Open Demo Classes', icon: DoorOpen, path: ROUTE_PATHS.DEMO_CLASSES, style: 'border-violet-100 bg-violet-50/70 hover:bg-violet-100/70', iconStyle: 'bg-violet-100 text-violet-700' }].map(item => <Button key={item.title} variant="secondary" className={`h-auto min-h-20 justify-start rounded-xl border px-4 text-left ${item.style}`} onClick={() => navigate(item.path)}><span className={`grid size-10 place-items-center rounded-lg ${item.iconStyle}`}><item.icon size={19} aria-hidden="true" /></span><span><strong className="block">{item.title}</strong><small className="font-normal text-muted-foreground">{item.note}</small></span></Button>)}
+                <Card className="border-border/70 shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><CardHeader className="px-4 pb-2 pt-3"><div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Quick Operations</h2><span className="text-[10px] text-muted-foreground">Fast desk</span></div></CardHeader><CardContent className="grid gap-2 px-4 pb-3 pt-1 sm:grid-cols-2">
+                  <Button variant="secondary" className="h-auto min-h-16 justify-start rounded-lg border border-primary/20 bg-primary/5 gap-2 px-2.5 py-2 text-left hover:bg-primary/10" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-white shadow-xs"><UserPlus size={16} aria-hidden="true" /></span><span className="min-w-0"><strong className="block text-xs leading-tight">New Admission</strong><small className="mt-0.5 block text-[10px] font-normal leading-tight text-muted-foreground">Student registration</small></span></Button>
+                  {[{ title: 'Collect Fee', note: 'Open Fees', icon: ReceiptText, path: ROUTE_PATHS.FEES, style: 'border-blue-100 bg-blue-50/70 hover:bg-blue-100/70', iconStyle: 'bg-blue-100 text-blue-700' }, { title: 'Record Expense', note: 'Open Finance', icon: CreditCard, path: ROUTE_PATHS.FINANCE, style: 'border-amber-100 bg-amber-50/70 hover:bg-amber-100/70', iconStyle: 'bg-amber-100 text-amber-700' }, { title: 'Add Demo', note: 'Open Demo Classes', icon: DoorOpen, path: ROUTE_PATHS.DEMO_CLASSES, style: 'border-violet-100 bg-violet-50/70 hover:bg-violet-100/70', iconStyle: 'bg-violet-100 text-violet-700' }].map(item => <Button key={item.title} variant="secondary" className={`h-auto min-h-16 justify-start rounded-lg border gap-2 px-2.5 py-2 text-left ${item.style}`} onClick={() => navigate(item.path)}><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${item.iconStyle}`}><item.icon size={16} aria-hidden="true" /></span><span className="min-w-0"><strong className="block text-xs leading-tight">{item.title}</strong><small className="mt-0.5 block text-[10px] font-normal leading-tight text-muted-foreground">{item.note}</small></span></Button>)}
                 </CardContent></Card>
 
                 <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
-                  <CardHeader className="flex flex-nowrap items-center justify-start gap-12.5 px-3 py-5 sm:px-5">
-                    <h2 className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-md font-bold tracking-tight text-slate-950 sm:text-base">
-                      <span className="size-2.5 shrink-0 rounded-full bg-primary/20 ring-2 ring-primary/10" aria-hidden="true" />
+                  <CardHeader className="flex flex-row items-center justify-between gap-3 border-b border-primary/10 bg-primary/[0.035] px-4 py-3.5 sm:px-5">
+                    <h2 className="text-base font-bold tracking-tight text-primary sm:text-lg">
                       Upcoming Classes Today
                     </h2>
-                    <Badge className="h-5 w-fit shrink-0 self-center whitespace-nowrap rounded-full border-0 bg-blue-100 px-1.5 py-0 text-[9px] font-bold leading-none text-blue-950 hover:bg-blue-100 sm:text-[11px]" variant="secondary">{upcomingClasses.length} Active {upcomingClasses.length === 1 ? 'Slot' : 'Slots'}</Badge>
+                    <Badge className="h-6 w-fit shrink-0 whitespace-nowrap rounded-full border-0 bg-blue-100/80 px-2.5 py-0.5 text-xs font-semibold text-blue-900 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300" variant="secondary">
+                      {resolvedTodayClasses.length} Active {resolvedTodayClasses.length === 1 ? 'Slot' : 'Slots'}
+                    </Badge>
                   </CardHeader>
-                  <CardContent className="grid gap-2 p-[5px]">
-                    {upcomingClasses.length === 0
-                      ? <EmptyData icon={Clock3} title="No upcoming classes today" description={completedToday ? `${completedToday} class${completedToday === 1 ? ' has' : 'es have'} already completed today.` : 'Add a class from the Class Schedule page.'} />
-                      : upcomingClasses.map(item => <button
+                  <CardContent className="grid gap-2.5 p-3 sm:p-4">
+                    {resolvedTodayClasses.length === 0
+                      ? <EmptyData icon={Clock3} title="No classes scheduled for today." description="Create a subject-specific weekly assignment or a class session for today." />
+                      : resolvedTodayClasses.map((item, index) => <button
                           key={item.id}
+                          type="button"
                           aria-label={`Open ${item.subject} in Class Schedule`}
-                          onClick={() => navigate(ROUTE_PATHS.CLASS_SCHEDULE, { state: { classId: item.id } })}
-                          className="group w-full rounded-xl bg-[#eef3ff] p-3 text-left transition-colors hover:bg-[#e5edff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:p-4"
+                          onClick={() => navigate(ROUTE_PATHS.FACULTY_CLASSES, {
+                            state: {
+                              classId: item.id,
+                              assignmentId: item.assignmentId,
+                              teacherId: item.teacherId,
+                              teacherName: item.teacherName,
+                              subject: item.subject,
+                              batchId: item.batchId,
+                              courseId: item.courseId,
+                              fromDashboard: true,
+                            },
+                          })}
+                          className="dashboard-class-slot group w-full rounded-2xl border p-3 text-left text-slate-950 shadow-[0_2px_10px_rgba(15,23,42,0.045)] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:p-3.5"
                         >
-                          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <strong className="text-sm font-bold text-slate-950 sm:text-base">{item.subject}</strong>
-                                <Badge className="max-w-full truncate border-0 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/15" variant="secondary">{item.batchName}</Badge>
-                              </div>
-                              <span className="mt-2.5 flex min-w-0 items-center gap-2 text-xs text-slate-500 sm:text-sm"><UserRound className="shrink-0" size={17} aria-hidden="true" /><span className="truncate">{item.teacherName}</span></span>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                              <strong className="text-sm font-bold text-slate-950 sm:text-[15px]">{item.subject}</strong>
+                              <span className="inline-flex shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{classPeriod(item.startTime)}</span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-tight ${getBatchBadgeColor(item.batchName, index)}`}>{item.batchName}</span>
                             </div>
-                            <div className="text-left sm:text-right">
-                              <strong className="whitespace-nowrap text-sm font-bold text-primary">{item.startTime} – {item.endTime}</strong>
-                              <span className="mt-1 block text-xs font-medium text-slate-500">{classTiming(item)}</span>
+                            <div className="text-right shrink-0">
+                              <span className="block text-xs font-bold tracking-tight text-primary sm:text-[13px]">{formatClassSlotTime(item.startTime, item.endTime)}</span>
+                              <div className="mt-0.5 text-[11px] font-medium text-slate-700">{renderClassStatus(item, clock)}</div>
                             </div>
                           </div>
-                          <div className="mt-4 grid gap-2 text-xs sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                            <span className="flex min-w-0 items-center gap-1.5 text-slate-600"><MapPin className="shrink-0 text-primary" size={18} aria-hidden="true" /><span className="truncate">{item.location}</span></span>
-                            <span className="flex items-center gap-1.5 font-semibold text-slate-800 sm:justify-end"><Users className="shrink-0 text-primary" size={18} aria-hidden="true" />{item.enrolledCount} Students Enrolled</span>
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-800">
+                            <UserRound size={13} className="shrink-0 text-slate-600" aria-hidden="true" /><span className="truncate">{item.teacherName}</span>{item.courseName && <span className="truncate font-normal text-slate-600">• {item.courseName}</span>}
+                          </div>
+                          <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                            <span className="flex min-w-0 items-center gap-1.5 font-medium text-slate-800"><MapPin size={13} className="shrink-0 text-primary/80" aria-hidden="true" /><span className="truncate">{item.location}</span></span>
+                            <span className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-950"><Users size={13} className="shrink-0 text-primary/80" aria-hidden="true" /><span>{item.enrolledCount ?? 0} Students Enrolled</span></span>
                           </div>
                         </button>)}
                   </CardContent>
                 </Card>
-                <RecentPayments branchId={branchId} payments={payments} onOpenReceipt={payment => navigate(ROUTE_PATHS.FEES, { state: { receiptId: payment.receiptId } })} />
+                <RecentPayments todayOnly now={clock} branchId={branchId} payments={payments} onOpenReceipt={payment => navigate(ROUTE_PATHS.FEES, { state: { receiptId: payment.receiptId } })} />
               </aside>
             </div>
             <p className="sr-only">{current.academic.courses.length} courses and {current.academic.batches.length} batches are available in the active branch.</p>

@@ -25,10 +25,11 @@ describe('F05 Faculty & Classes screens', () => {
     expect(screen.queryByRole('link', { name: 'Demo Teacher' })).not.toBeInTheDocument()
     await userEvent.setup().clear(screen.getByRole('searchbox', { name: 'Search faculty' }))
     await userEvent.setup().click(await screen.findAllByRole('link', { name: 'Demo Teacher' }).then(found => found[0]))
-    expect(await screen.findByRole('heading', { name: 'Faculty Profile' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Demo Teacher' })).toBeInTheDocument()
     expect(screen.getByText('Demo Teacher', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.getByText('Demo Central Campus', { selector: 'dd' })).toBeInTheDocument()
-    expect(screen.getByText(/Qualifications, specialization and employment details are not present/)).toBeInTheDocument()
+    expect(screen.getByText('Professional & Academic Credentials')).toBeInTheDocument()
+    expect(screen.getAllByText('Not recorded').length).toBeGreaterThan(0)
   })
 
   it('keeps subject assignments read-only and shows only branch batches with explicit unassigned state', async () => {
@@ -56,15 +57,14 @@ describe('F05 Faculty & Classes screens', () => {
     expect(screen.getByText(admission.admissionId)).toBeInTheDocument()
   })
 
-  it('shows the approved class schedule controls and empty state for Super Admin', async () => {
+  it('redirects the retired schedule URL to the current faculty assignment interface', async () => {
     await signIn()
     history.replaceState(null, '', '/faculty/schedule')
     render(<App />)
-    expect(await screen.findByText('No saved classes match these filters.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add Class' })).toBeEnabled()
-    expect(screen.getByLabelText('Filter classes by date')).toBeEnabled()
-    expect(screen.getByLabelText('Filter classes by batch')).toBeEnabled()
-    expect(screen.getByLabelText('Filter classes by teacher')).toBeEnabled()
+    expect(await screen.findByRole('heading', { name: 'Faculty & Classes', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Add Class' })).toBeEnabled()
+    expect(screen.getByText('ASSIGNED CLASSES & TIMETABLE')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Filter classes by date')).not.toBeInTheDocument()
   })
 
   it('denies Teacher and ambiguous multi-role accounts direct module access', async () => {

@@ -1,3 +1,4 @@
+import { formatClassTime } from '../utils/classTime.js'
 /**
  * Purpose: Will define mock Database for the mock area of the Academy frontend.
  * Module: mock
@@ -24,14 +25,14 @@ const validText = (value) => typeof value === 'string' && value.trim().length > 
 const validDateOnly = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value
 const validContact = (value) => typeof value === 'string' && /^\+?[0-9\s().-]{3,30}$/.test(value.trim()) && value.length <= 200
 const validBranch = (value) => getDemoBranches().some((branch) => branch.id === value)
-const collections = ['students', 'courses', 'admissions', 'batches', 'academicStreams', 'subjects', 'enrollments', 'classes', 'challans', 'payments', 'expenses', 'demoClasses', 'assets']
+const collections = ['students', 'courses', 'admissions', 'batches', 'academicStreams', 'subjects', 'enrollments', 'classes', 'challans', 'payments', 'expenses', 'demoClasses', 'assets', 'facultyAssignments']
 
 function validateRecord(record, collection) {
   if (!object(record) || !validText(record.id) || !validBranch(record.branchId)) {
     fail('INVALID_RECORD', 'Expected a provisional record with id, authorized demo branchId.')
   }
   if (collection === 'admissions') {
-    const validKeys = ['id', 'branchId', 'studentName', 'guardianName', 'contact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address', 'dob', 'course', 'courseId', 'streamId', 'preferredBatchId', 'subjectIds', 'configuredFee', 'statusHistory', 'status', 'createdAt', 'previousSchool', 'notes', 'admissionId', 'admissionNumber', 'studentId', 'createdByAdmissionFlow']
+    const validKeys = ['id', 'branchId', 'studentName', 'guardianName', 'contact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address', 'dob', 'course', 'courseId', 'streamId', 'streamIds', 'courseIds', 'preferredBatchId', 'subjectIds', 'configuredFee', 'discountAmount', 'discountReason', 'discountAuthorizedBy', 'discountAuthorizedAt', 'netFee', 'proposedDiscountAmount', 'proposedDiscountReason', 'initialPayment', 'paymentMethod', 'nextDueDate', 'statusHistory', 'status', 'createdAt', 'previousSchool', 'notes', 'admissionId', 'admissionNumber', 'studentId', 'createdByAdmissionFlow']
     if (record.statusHistory !== undefined) {
       if (!Array.isArray(record.statusHistory)) fail('INVALID_RECORD', 'Invalid DEMO status history.')
       let previousStatus = null
@@ -50,6 +51,8 @@ function validateRecord(record, collection) {
     if (record.streamId != null && !validText(record.streamId)) fail('INVALID_RECORD', 'Invalid saved academic stream reference.')
     if (record.subjectIds !== undefined && (!Array.isArray(record.subjectIds) || record.subjectIds.some(id => !validText(id)) || new Set(record.subjectIds).size !== record.subjectIds.length)) fail('INVALID_RECORD', 'Invalid saved subject selections.')
     if (record.configuredFee !== undefined && (!Number.isFinite(record.configuredFee) || record.configuredFee < 0)) fail('INVALID_RECORD', 'Invalid configured admission fee.')
+    if (record.discountAmount !== undefined && (!Number.isFinite(record.discountAmount) || record.discountAmount < 0)) fail('INVALID_RECORD', 'Invalid admission discount amount.')
+    if (record.netFee !== undefined && (!Number.isFinite(record.netFee) || record.netFee < 0)) fail('INVALID_RECORD', 'Invalid admission net fee.')
     if (Object.keys(record).some((key) => !validKeys.includes(key))) fail('INVALID_RECORD', 'Expected an admission record with authorized fields.')
     if (!validText(record.studentName) || !validText(record.guardianName) || !validText(record.contact) || !validText(record.dob) || !validText(record.course) || !validText(record.status) || !validText(record.createdAt)) {
       fail('INVALID_RECORD', 'Admission missing required text fields.')
@@ -58,7 +61,7 @@ function validateRecord(record, collection) {
     if (record.studentId != null && !validText(record.studentId)) fail('INVALID_RECORD', 'Invalid linked student ID.')
     for (const key of ['previousSchool', 'notes']) if (record[key] !== undefined && typeof record[key] !== 'string') fail('INVALID_RECORD', 'Invalid optional admission text.')
   } else if (collection === 'students') {
-    const validKeys = ['id', 'branchId', 'name', 'status', 'admissionId', 'admissionDisplayId', 'studentNumber', 'createdByAdmissionFlow', 'dateOfBirth', 'guardianName', 'guardianContact']
+    const validKeys = ['id', 'branchId', 'name', 'status', 'admissionId', 'admissionDisplayId', 'studentNumber', 'createdByAdmissionFlow', 'dateOfBirth', 'guardianName', 'guardianContact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']
     if (Object.keys(record).some((key) => !validKeys.includes(key)) || !validText(record.name)) {
       fail('INVALID_RECORD', 'Expected a provisional record with id, authorized demo branchId and name.')
     }
@@ -70,17 +73,23 @@ function validateRecord(record, collection) {
     for (const key of ['dateOfBirth', 'guardianName', 'guardianContact']) if (record[key] !== undefined && !validText(record[key])) fail('INVALID_RECORD', 'Invalid saved student details.')
     if (record.dateOfBirth !== undefined && !validDateOnly(record.dateOfBirth)) fail('INVALID_RECORD', 'Invalid saved date of birth.')
     if (record.guardianContact !== undefined && !validContact(record.guardianContact)) fail('INVALID_RECORD', 'Invalid saved guardian contact.')
+    for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) if (record[key] !== undefined && (typeof record[key] !== 'string' || record[key].length > 200)) fail('INVALID_RECORD', 'Invalid saved student details.')
   } else if (collection === 'enrollments') {
-    const keys = ['id', 'branchId', 'admissionId', 'studentId', 'courseId', 'batchId', 'subjectIds', 'configuredFee', 'status', 'enrolledAt', 'feeStatus']
+    const keys = ['id', 'branchId', 'admissionId', 'studentId', 'courseId', 'batchId', 'subjectIds', 'configuredFee', 'discountAmount', 'discountReason', 'netFee', 'status', 'enrolledAt', 'feeStatus']
     if (Object.keys(record).some(key => !keys.includes(key)) || !['admissionId', 'studentId', 'courseId', 'batchId', 'enrolledAt'].every(key => validText(record[key])) || record.status !== 'Active' || !Number.isFinite(Date.parse(record.enrolledAt)) || (record.feeStatus !== undefined && !['Unavailable', 'Paid', 'Partial'].includes(record.feeStatus))) fail('INVALID_RECORD', 'Invalid enrollment record.')
     if (record.subjectIds !== undefined && (!Array.isArray(record.subjectIds) || record.subjectIds.some(id => !validText(id)))) fail('INVALID_RECORD', 'Invalid enrollment subjects.')
     if (record.configuredFee !== undefined && (!Number.isFinite(record.configuredFee) || record.configuredFee < 0)) fail('INVALID_RECORD', 'Invalid enrollment fee.')
+    if (record.discountAmount !== undefined && (!Number.isFinite(record.discountAmount) || record.discountAmount < 0)) fail('INVALID_RECORD', 'Invalid enrollment discount.')
+    if (record.netFee !== undefined && (!Number.isFinite(record.netFee) || record.netFee < 0)) fail('INVALID_RECORD', 'Invalid enrollment net fee.')
   } else if (collection === 'challans') {
-    const keys = ['id', 'branchId', 'enrollmentId', 'studentId', 'description', 'amount', 'issueDate', 'dueDate', 'number', 'reference', 'createdAt']
+    const keys = ['id', 'branchId', 'enrollmentId', 'studentId', 'description', 'amount', 'totalAmount', 'discountAmount', 'discountReason', 'issueDate', 'dueDate', 'number', 'reference', 'createdAt']
     if (Object.keys(record).some(key => !keys.includes(key)) || !['enrollmentId', 'studentId', 'description', 'issueDate', 'dueDate', 'reference', 'createdAt'].every(key => validText(record[key])) || !Number.isFinite(record.amount) || record.amount <= 0 || !Number.isSafeInteger(record.number) || record.number <= 0 || !validDateOnly(record.issueDate) || !validDateOnly(record.dueDate) || record.issueDate > record.dueDate) fail('INVALID_RECORD', 'Invalid challan record.')
+    if (record.totalAmount !== undefined && (!Number.isFinite(record.totalAmount) || record.totalAmount < 0)) fail('INVALID_RECORD', 'Invalid challan total amount.')
+    if (record.discountAmount !== undefined && (!Number.isFinite(record.discountAmount) || record.discountAmount < 0)) fail('INVALID_RECORD', 'Invalid challan discount.')
   } else if (collection === 'payments') {
+    const validMethods = ['Cash', 'Bank Transfer', 'Mobile Wallet', 'EasyPaisa', 'Cash Counter', 'Bank / 1Link']
     const keys = ['id', 'branchId', 'challanId', 'studentId', 'amount', 'method', 'status', 'number', 'receiptReference', 'paidAt', 'actorUserId']
-    if (Object.keys(record).some(key => !keys.includes(key)) || !['challanId', 'studentId', 'receiptReference', 'paidAt', 'actorUserId'].every(key => validText(record[key])) || !Number.isFinite(record.amount) || record.amount <= 0 || !['Cash', 'Bank Transfer', 'Mobile Wallet'].includes(record.method) || record.status !== 'Verified' || !Number.isSafeInteger(record.number) || record.number <= 0 || !Number.isFinite(Date.parse(record.paidAt))) fail('INVALID_RECORD', 'Invalid payment record.')
+    if (Object.keys(record).some(key => !keys.includes(key)) || !['challanId', 'studentId', 'receiptReference', 'paidAt', 'actorUserId'].every(key => validText(record[key])) || !Number.isFinite(record.amount) || record.amount <= 0 || !validMethods.includes(record.method) || record.status !== 'Verified' || !Number.isSafeInteger(record.number) || record.number <= 0 || !Number.isFinite(Date.parse(record.paidAt))) fail('INVALID_RECORD', 'Invalid payment record.')
   } else if (collection === 'expenses') {
     const keys = ['id', 'branchId', 'amount', 'category', 'description', 'method', 'entryDate', 'status', 'createdAt', 'actorUserId']
     if (Object.keys(record).some(key => !keys.includes(key)) || !['category', 'description', 'method', 'entryDate', 'createdAt', 'actorUserId'].every(key => validText(record[key])) || !Number.isFinite(record.amount) || record.amount <= 0 || !validDateOnly(record.entryDate) || record.status !== 'Posted') fail('INVALID_RECORD', 'Invalid expense record.')
@@ -127,7 +136,20 @@ function validateRecord(record, collection) {
     if (!Array.isArray(record.history) || !Array.isArray(record.maintenanceHistory)) fail('INVALID_RECORD', 'Asset history is invalid.')
     if (record.assignedToId != null && !validText(record.assignedToId)) fail('INVALID_RECORD', 'Asset assignment is invalid.')
   } else if (collection === 'batches') {
-    if (Object.keys(record).some(key => !['id', 'branchId', 'courseId', 'name', 'active', 'capacity', 'startTime', 'endTime'].includes(key)) || !validText(record.name) || !validText(record.courseId) || (record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime !== undefined && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime !== undefined && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime)) fail('INVALID_RECORD', 'Invalid provisional batch record.')
+    if (Object.keys(record).some(key => !['id', 'branchId', 'courseId', 'name', 'active', 'capacity', 'startTime', 'endTime', 'days', 'room'].includes(key)) || !validText(record.name) || !validText(record.courseId) || (record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime !== undefined && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime !== undefined && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime)) fail('INVALID_RECORD', 'Invalid provisional batch record.')
+    if (record.days !== undefined && (!Array.isArray(record.days) || record.days.some(d => !validText(d)))) fail('INVALID_RECORD', 'Invalid batch days configuration.')
+    if (record.room !== undefined && (typeof record.room !== 'string' || record.room.length > 200)) fail('INVALID_RECORD', 'Invalid batch room configuration.')
+  } else if (collection === 'facultyAssignments') {
+    const validKeys = ['id', 'branchId', 'teacherId', 'courseId', 'batchId', 'subjectId', 'days', 'startTime', 'endTime', 'room', 'createdAt', 'notes']
+    if (Object.keys(record).some(key => !validKeys.includes(key))) fail('INVALID_RECORD', 'Unknown fields in faculty assignment record.')
+    if (!validText(record.teacherId) || !validText(record.courseId) || !validText(record.batchId) || !validText(record.subjectId) || !validText(record.room) || !validText(record.createdAt)) {
+      fail('INVALID_RECORD', 'Faculty assignment missing required teacher, course, batch, subject, room, or creation date.')
+    }
+    if (!Array.isArray(record.days) || record.days.length === 0 || record.days.some(d => !validText(d))) fail('INVALID_RECORD', 'Faculty assignment must have at least one teaching day.')
+    if (!/^\d{2}:\d{2}$/.test(record.startTime) || !/^\d{2}:\d{2}$/.test(record.endTime) || record.startTime >= record.endTime) {
+      fail('INVALID_RECORD', 'Faculty assignment start time must precede end time.')
+    }
+    if (record.notes !== undefined && typeof record.notes !== 'string') fail('INVALID_RECORD', 'Invalid faculty assignment notes.')
   } else if (collection === 'academicStreams') {
     if (Object.keys(record).some(key => !['id', 'branchId', 'name', 'active'].includes(key)) || !validText(record.name) || typeof record.active !== 'boolean') fail('INVALID_RECORD', 'Invalid academic stream record.')
   } else if (collection === 'subjects') {
@@ -174,6 +196,13 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
     for (const course of data.courses) if (course.streamId != null && !data.academicStreams.some(stream => stream.id === course.streamId && stream.branchId === course.branchId)) fail('INVALID_REFERENCE', 'Saved course academic stream link is invalid.')
     for (const subject of data.subjects) if (!data.courses.some(course => course.id === subject.courseId && course.branchId === subject.branchId)) fail('INVALID_REFERENCE', 'Saved subject course link is invalid.')
+    for (const assignment of data.facultyAssignments ?? []) {
+      if (!data.courses.some(course => course.id === assignment.courseId && course.branchId === assignment.branchId)) fail('INVALID_REFERENCE', 'Saved faculty assignment course link is invalid.')
+      if (!data.batches.some(batch => batch.id === assignment.batchId && batch.branchId === assignment.branchId && batch.courseId === assignment.courseId)) fail('INVALID_REFERENCE', 'Saved faculty assignment batch link is invalid.')
+      if (!data.subjects.some(subject => subject.id === assignment.subjectId && subject.branchId === assignment.branchId && subject.courseId === assignment.courseId)) fail('INVALID_REFERENCE', 'Saved faculty assignment subject link is invalid.')
+      const teacher = getDemoUsers().find(user => user.id === assignment.teacherId && user.enabled && getBranchRoles(user, assignment.branchId).includes(ROLES.TEACHER))
+      if (!teacher) fail('INVALID_REFERENCE', 'Saved faculty assignment teacher link is invalid.')
+    }
     const admissionIds = new Set()
     const activeCombinations = new Set()
     for (const enrollment of data.enrollments) {
@@ -277,6 +306,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       initial.financialCounters = Object.fromEntries(getDemoBranches().map(branch => [branch.id, { challan: 0, receipt: 0 }]))
       initial.demoClasses = createDemoClassSeeds()
       initial.assets = []
+      initial.facultyAssignments = []
       initial.version = 8
       normalizeAdmissions(initial)
       if (persist) write(initial)
@@ -322,6 +352,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       data.version = 8
     }
     if (data.version !== 8) fail('UNSUPPORTED_VERSION', 'Saved mock data version is unsupported; data was preserved.')
+    if (data.facultyAssignments === undefined) data.facultyAssignments = []
     data.financialCounters ??= {}
     for (const branch of getDemoBranches()) {
       data.financialCounters[branch.id] ??= { challan: 0, receipt: 0 }
@@ -362,6 +393,8 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
         : { ...data[collection][index], studentName: studentName.trim(), guardianName: guardianName.trim(), contact: contact.trim(), ...optionalDetails, dob: dob.trim(), course: course.trim(), previousSchool: previousSchool.trim(), notes: notes.trim() }
       for (const key of ['courseId', 'preferredBatchId']) if (record[key] !== undefined) result[key] = record[key]
       if (record.streamId !== undefined) result.streamId = record.streamId
+      if (record.streamIds !== undefined) result.streamIds = [...record.streamIds]
+      if (record.courseIds !== undefined) result.courseIds = [...record.courseIds]
       if (record.subjectIds !== undefined) result.subjectIds = [...record.subjectIds]
       const previous = operation === 'update' ? data[collection][index] : null
       const referencesChanged = !previous || result.courseId !== previous.courseId || result.preferredBatchId !== previous.preferredBatchId || result.course !== previous.course
@@ -430,7 +463,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       if (!object(record)) fail('INVALID_RECORD', 'Record must be an object.')
       if (collection === 'admissions') {
         if (operation === 'create' && !validText(record.courseId)) fail('INVALID_REFERENCE', 'A saved course is required for a new admission.')
-        if (Object.keys(record).some((key) => !['studentName', 'guardianName', 'contact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address', 'dob', 'course', 'courseId', 'streamId', 'preferredBatchId', 'subjectIds', 'previousSchool', 'notes'].includes(key))) fail('INVALID_RECORD', 'Only approved admission input fields are accepted.')
+        if (Object.keys(record).some((key) => !['studentName', 'guardianName', 'contact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address', 'dob', 'course', 'courseId', 'streamId', 'streamIds', 'courseIds', 'preferredBatchId', 'subjectIds', 'previousSchool', 'notes'].includes(key))) fail('INVALID_RECORD', 'Only approved admission input fields are accepted.')
         for (const key of ['courseId', 'preferredBatchId']) if (record[key] != null && !validText(record[key])) fail('INVALID_RECORD', 'Invalid course or batch reference.')
         if (record.streamId != null && !validText(record.streamId)) fail('INVALID_RECORD', 'Invalid academic stream reference.')
         if (record.subjectIds !== undefined && (!Array.isArray(record.subjectIds) || record.subjectIds.some(id => !validText(id)) || new Set(record.subjectIds).size !== record.subjectIds.length)) fail('INVALID_RECORD', 'Invalid subject selections.')
@@ -438,11 +471,14 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
         for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) if (record[key] !== undefined && (typeof record[key] !== 'string' || record[key].length > 200)) fail('INVALID_RECORD', 'Invalid admission identity details.')
         for (const key of ['previousSchool', 'notes']) if (record[key] !== undefined && (typeof record[key] !== 'string' || record[key].length > 200)) fail('INVALID_RECORD', 'Invalid optional admission text.')
       } else if (collection === 'students') {
-        const allowedKeys = ['name', 'dateOfBirth', 'guardianName', 'guardianContact']
+        const allowedKeys = ['name', 'dateOfBirth', 'guardianName', 'guardianContact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']
         if (Object.keys(record).some((key) => !allowedKeys.includes(key)) || !validText(record.name)) fail('INVALID_RECORD', 'Student requires a non-empty name.')
         for (const key of ['dateOfBirth', 'guardianName', 'guardianContact']) if (record[key] !== undefined && !validText(record[key])) fail('INVALID_RECORD', 'Invalid student details.')
         if (record.dateOfBirth !== undefined && !validDateOnly(record.dateOfBirth)) fail('INVALID_RECORD', 'Invalid date of birth.')
         if (record.guardianContact !== undefined && !validContact(record.guardianContact)) fail('INVALID_RECORD', 'Invalid guardian contact.')
+        for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) {
+          if (record[key] !== undefined && (typeof record[key] !== 'string' || record[key].length > 200)) fail('INVALID_RECORD', 'Invalid student detail value.')
+        }
       } else {
         if (Object.keys(record).length !== 1 || !validText(record.name)) fail('INVALID_RECORD', 'Only a non-empty provisional name is accepted.')
       }
@@ -486,8 +522,73 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const branchCourses = data.courses.filter(item => item.branchId === query.branchId)
     const branchBatches = data.batches.filter(item => item.branchId === query.branchId)
     const branchSubjects = data.subjects.filter(item => item.branchId === query.branchId)
-    const presentCourse = course => ({ ...course, active: course.active ?? true, category: course.category ?? 'Not configured', streamName: branchStreams.find(stream => stream.id === course.streamId)?.name ?? 'Unassigned', batchCount: branchBatches.filter(batch => batch.courseId === course.id).length, subjectCount: branchSubjects.filter(subject => subject.courseId === course.id).length, enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').length })
-    const presentBatch = batch => { const enrolledCount = data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').length; return { ...batch, active: batch.active ?? true, capacity: batch.capacity ?? null, courseName: branchCourses.find(course => course.id === batch.courseId)?.name ?? 'Unresolved course', enrolledCount, remainingSeats: batch.capacity == null ? null : Math.max(0, batch.capacity - enrolledCount), teachers: [], timetable: [] } }
+    const presentCourse = course => {
+      const courseAssignments = (data.facultyAssignments ?? []).filter(a => a.branchId === query.branchId && a.courseId === course.id)
+      return {
+        ...course,
+        active: course.active ?? true,
+        category: course.category ?? 'Not configured',
+        streamName: branchStreams.find(stream => stream.id === course.streamId)?.name ?? 'Unassigned',
+        batchCount: branchBatches.filter(batch => batch.courseId === course.id).length,
+        subjectCount: branchSubjects.filter(subject => subject.courseId === course.id).length,
+        enrolledCount: new Set(data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').map(e=>e.studentId)).size,
+        assignments: courseAssignments.map(a => {
+          const teacher = getDemoUsers().find(u => u.id === a.teacherId)
+          const subject = branchSubjects.find(s => s.id === a.subjectId)
+          const batch = branchBatches.find(b => b.id === a.batchId)
+          return {
+            ...a,
+            teacherName: teacher?.name ?? 'Teacher',
+            subjectName: subject?.name ?? 'Subject',
+            batchName: batch?.name ?? 'Batch',
+          }
+        }),
+      }
+    }
+    const presentBatch = batch => {
+      const enrolledCount = new Set(data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').map(e=>e.studentId)).size
+      const batchAssignments = (data.facultyAssignments ?? []).filter(a => a.branchId === query.branchId && a.batchId === batch.id)
+      const teachers = batchAssignments.map(a => {
+        const teacher = getDemoUsers().find(u => u.id === a.teacherId)
+        const subject = branchSubjects.find(s => s.id === a.subjectId)
+        return {
+          id: a.teacherId,
+          name: teacher?.name ?? 'Teacher',
+          assignmentId: a.id,
+          subjectId: a.subjectId,
+          subjectName: subject?.name ?? 'Subject',
+          days: a.days,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          room: a.room,
+        }
+      })
+      const timetable = batchAssignments.map(a => {
+        const teacher = getDemoUsers().find(u => u.id === a.teacherId)
+        const subject = branchSubjects.find(s => s.id === a.subjectId)
+        return {
+          id: a.id,
+          subjectId: a.subjectId,
+          subjectName: subject?.name ?? 'Subject',
+          teacherId: a.teacherId,
+          teacherName: teacher?.name ?? 'Teacher',
+          days: a.days,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          room: a.room,
+        }
+      })
+      return {
+        ...batch,
+        active: batch.active ?? true,
+        capacity: batch.capacity ?? null,
+        courseName: branchCourses.find(course => course.id === batch.courseId)?.name ?? 'Unresolved course',
+        enrolledCount,
+        remainingSeats: batch.capacity == null ? null : Math.max(0, batch.capacity - enrolledCount),
+        teachers,
+        timetable,
+      }
+    }
     const presentSubject = subject => ({ ...subject, courseName: branchCourses.find(course => course.id === subject.courseId)?.name ?? 'Unresolved course' })
     if (operation === 'overview') return { streams: branchStreams, courses: branchCourses.map(presentCourse), batches: branchBatches.map(presentBatch), subjects: branchSubjects.map(presentSubject) }
     const collection = entity === 'stream' ? data.academicStreams : entity === 'course' ? data.courses : entity === 'batch' ? data.batches : data.subjects
@@ -518,12 +619,12 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       write(data)
       return entity === 'course' ? presentCourse(existing) : entity === 'batch' ? presentBatch(existing) : entity === 'subject' ? presentSubject(existing) : existing
     }
-    const allowed = entity === 'stream' ? ['name', 'active'] : entity === 'course' ? ['name', 'streamId', 'active', 'feeAmount', 'pricingMode'] : entity === 'batch' ? ['name', 'courseId', 'active', 'capacity', 'startTime', 'endTime'] : ['name', 'courseId', 'active', 'feeAmount']
+    const allowed = entity === 'stream' ? ['name', 'active'] : entity === 'course' ? ['name', 'streamId', 'active', 'feeAmount', 'pricingMode'] : entity === 'batch' ? ['name', 'courseId', 'active', 'capacity', 'startTime', 'endTime', 'days', 'room'] : ['name', 'courseId', 'active', 'feeAmount']
     if (!object(record) || Object.keys(record).some(key => !allowed.includes(key)) || !validText(record.name)) fail('INVALID_RECORD', 'A valid academic record name is required.')
     if (entity === 'stream' && typeof record.active !== 'boolean') fail('INVALID_RECORD', 'Stream status is required.')
     if (entity === 'course' && ((record.active !== undefined && typeof record.active !== 'boolean') || (record.streamId != null && !branchStreams.some(stream => stream.id === record.streamId)) || (record.pricingMode !== undefined && !['course', 'subjects'].includes(record.pricingMode)) || (record.feeAmount !== undefined && (!Number.isFinite(record.feeAmount) || record.feeAmount < 0)))) fail('INVALID_RECORD', 'Course configuration is invalid.')
     if (entity === 'batch' && !branchCourses.some(course => course.id === record.courseId)) fail('INVALID_REFERENCE', 'Choose a Course from the active branch.')
-    if (entity === 'batch' && ((record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime))) fail('INVALID_RECORD', 'Batch configuration is invalid.')
+    if (entity === 'batch' && ((record.active !== undefined && typeof record.active !== 'boolean') || (record.capacity !== undefined && (!Number.isSafeInteger(record.capacity) || record.capacity <= 0)) || (record.startTime && !/^\d{2}:\d{2}$/.test(record.startTime)) || (record.endTime && !/^\d{2}:\d{2}$/.test(record.endTime)) || (record.startTime && record.endTime && record.startTime >= record.endTime) || (record.days !== undefined && (!Array.isArray(record.days) || record.days.some(d => !validText(d)))) || (record.room !== undefined && typeof record.room !== 'string'))) fail('INVALID_RECORD', 'Batch configuration is invalid.')
     if (entity === 'subject' && (!branchCourses.some(course => course.id === record.courseId) || typeof record.active !== 'boolean' || (record.feeAmount !== undefined && (!Number.isFinite(record.feeAmount) || record.feeAmount < 0)))) fail('INVALID_RECORD', 'Subject configuration is invalid.')
     const name = record.name.trim()
     if (collection.some(item => item.branchId === query.branchId && item.id !== id && item.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase() && (entity !== 'subject' || item.courseId === record.courseId))) fail('DUPLICATE_RECORD', `A ${entity} with this name already exists in the branch.`)
@@ -553,26 +654,95 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
   function projectStudent(data, student, project = createDisplayProjector(data)) {
     const admission = data.admissions.find(item => item.id === student.admissionId && item.studentId === student.id && item.branchId === student.branchId)
     const enrollments = data.enrollments.filter(item => item.studentId === student.id && item.branchId === student.branchId)
-      .map(enrollment => ({
-        ...enrollment,
-        feeStatus: enrollment.feeStatus ?? 'Unavailable',
-        courseName: data.courses.find(item => item.id === enrollment.courseId && item.branchId === student.branchId)?.name ?? 'Unresolved course',
-        batchName: data.batches.find(item => item.id === enrollment.batchId && item.branchId === student.branchId)?.name ?? 'Unresolved batch',
-      }))
+      .map(enrollment => {
+        const course = data.courses.find(item => item.id === enrollment.courseId && item.branchId === student.branchId)
+        const batch = data.batches.find(item => item.id === enrollment.batchId && item.branchId === student.branchId)
+        const stream = data.academicStreams.find(item => item.id === course?.streamId && item.branchId === student.branchId)
+        const enrolledSubjects = (enrollment.subjectIds ?? []).map(sId => {
+          const sub = data.subjects.find(s => s.id === sId && s.branchId === student.branchId)
+          if (!sub) return null
+          const assignment = (data.facultyAssignments ?? []).find(a => a.branchId === student.branchId && a.batchId === enrollment.batchId && a.subjectId === sub.id)
+          const teacher = assignment ? getDemoUsers().find(u => u.id === assignment.teacherId) : null
+          return {
+            ...sub,
+            teacherName: teacher?.name ?? null,
+            room: assignment?.room ?? batch?.room ?? 'Room not set',
+            days: assignment?.days ?? batch?.days ?? [],
+            startTime: assignment?.startTime ?? batch?.startTime ?? null,
+            endTime: assignment?.endTime ?? batch?.endTime ?? null,
+          }
+        }).filter(Boolean)
+
+        return {
+          ...enrollment,
+          feeStatus: enrollment.feeStatus ?? 'Unavailable',
+          courseName: course?.name ?? 'Unresolved course',
+          streamName: stream?.name ?? 'General',
+          batchName: batch?.name ?? 'Unresolved batch',
+          room: batch?.room ?? null,
+          batchTiming: batch?.startTime && batch?.endTime ? `${batch.startTime} – ${batch.endTime}` : null,
+          subjects: enrolledSubjects,
+        }
+      })
     const currentEnrollment = [...enrollments].filter(item => item.status === 'Active').sort((a, b) => Date.parse(b.enrolledAt) - Date.parse(a.enrolledAt))[0]
     const courseId = currentEnrollment?.courseId ?? admission?.courseId ?? null
     const batchId = currentEnrollment?.batchId ?? admission?.preferredBatchId ?? null
+    const course = data.courses.find(item => item.id === courseId && item.branchId === student.branchId)
+    const stream = data.academicStreams.find(item => item.id === (course?.streamId ?? admission?.streamId) && item.branchId === student.branchId)
+    const batch = data.batches.find(item => item.id === batchId && item.branchId === student.branchId)
+
+    const admissionSubjects = (admission?.subjectIds ?? []).map(sId => {
+      const sub = data.subjects.find(s => s.id === sId && s.branchId === student.branchId)
+      if (!sub) return null
+      const assignment = (data.facultyAssignments ?? []).find(a => a.branchId === student.branchId && a.batchId === batchId && a.subjectId === sub.id)
+      const teacher = assignment ? getDemoUsers().find(u => u.id === assignment.teacherId) : null
+      return {
+        ...sub,
+        teacherName: teacher?.name ?? null,
+        room: assignment?.room ?? batch?.room ?? 'Room not set',
+        days: assignment?.days ?? batch?.days ?? [],
+        startTime: assignment?.startTime ?? batch?.startTime ?? null,
+        endTime: assignment?.endTime ?? batch?.endTime ?? null,
+      }
+    }).filter(Boolean)
+
+    const fallbackCourseSubjects = (courseId ? data.subjects.filter(s => s.courseId === courseId && s.branchId === student.branchId && s.active) : []).map(sub => {
+      const assignment = (data.facultyAssignments ?? []).find(a => a.branchId === student.branchId && a.batchId === batchId && a.subjectId === sub.id)
+      const teacher = assignment ? getDemoUsers().find(u => u.id === assignment.teacherId) : null
+      return {
+        ...sub,
+        teacherName: teacher?.name ?? null,
+        room: assignment?.room ?? batch?.room ?? 'Room not set',
+        days: assignment?.days ?? batch?.days ?? [],
+        startTime: assignment?.startTime ?? batch?.startTime ?? null,
+        endTime: assignment?.endTime ?? batch?.endTime ?? null,
+      }
+    })
+
+    const finalSubjects = currentEnrollment?.subjects?.length
+      ? currentEnrollment.subjects
+      : (admissionSubjects.length ? admissionSubjects : fallbackCourseSubjects)
+
     return {
       ...project('students', student),
       dateOfBirth: admission?.dob ?? student.dateOfBirth ?? null,
       guardianName: admission?.guardianName ?? student.guardianName ?? null,
       guardianContact: admission?.contact ?? student.guardianContact ?? null,
+      studentPhone: admission?.studentPhone ?? student.studentPhone ?? null,
+      identityNumber: admission?.identityNumber ?? student.identityNumber ?? null,
+      gender: admission?.gender ?? student.gender ?? null,
+      residenceType: admission?.residenceType ?? student.residenceType ?? null,
+      address: admission?.address ?? student.address ?? null,
       admissionCreatedAt: admission?.createdAt ?? null,
       admissionStatus: admission?.status ?? null,
       courseId,
-      courseName: data.courses.find(item => item.id === courseId && item.branchId === student.branchId)?.name ?? admission?.course ?? null,
+      courseName: course?.name ?? admission?.course ?? null,
+      streamName: stream?.name ?? 'General',
       batchId,
-      batchName: data.batches.find(item => item.id === batchId && item.branchId === student.branchId)?.name ?? null,
+      batchName: batch?.name ?? null,
+      batchRoom: batch?.room ?? null,
+      batchTiming: batch?.startTime && batch?.endTime ? `${batch.startTime} – ${batch.endTime}` : null,
+      subjects: finalSubjects,
       admission: admission ? project('admissions', admission) : null,
       enrollments,
     }
@@ -584,8 +754,8 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const data = read(false)
     const student = applyOperation(data, 'students', 'getById', id, undefined, query)
     student.name = record.name.trim()
-    for (const key of ['dateOfBirth', 'guardianName', 'guardianContact']) {
-      if (record[key] !== undefined) student[key] = record[key].trim()
+    for (const key of ['dateOfBirth', 'guardianName', 'guardianContact', 'studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) {
+      if (record[key] !== undefined) student[key] = typeof record[key] === 'string' ? record[key].trim() : record[key]
     }
     const linkedAdmissions = data.admissions.filter(item => item.studentId === student.id && item.branchId === student.branchId)
     if (student.admissionId != null && (linkedAdmissions.length !== 1 || linkedAdmissions[0].id !== student.admissionId)) fail('INVALID_LINK', 'The linked Admission cannot be safely synchronized with this Student.')
@@ -594,10 +764,31 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       if (record.dateOfBirth !== undefined) linkedAdmissions[0].dob = record.dateOfBirth
       if (record.guardianName !== undefined) linkedAdmissions[0].guardianName = record.guardianName.trim()
       if (record.guardianContact !== undefined) linkedAdmissions[0].contact = record.guardianContact.trim()
+      if (record.studentPhone !== undefined) linkedAdmissions[0].studentPhone = record.studentPhone.trim()
+      if (record.identityNumber !== undefined) linkedAdmissions[0].identityNumber = record.identityNumber.trim()
+      if (record.gender !== undefined) linkedAdmissions[0].gender = record.gender
+      if (record.residenceType !== undefined) linkedAdmissions[0].residenceType = record.residenceType
+      if (record.address !== undefined) linkedAdmissions[0].address = record.address.trim()
     }
     normalizeAdmissions(data)
     write(data)
     return createDisplayProjector(data)('students', student)
+  }
+
+  function deleteStudent(id, query = {}) {
+    if (!object(query) || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    authorizeStudent('edit', query)
+    const data = read(false)
+    const student = data.students.find(item => item.id === id && item.branchId === query.branchId)
+    if (!student) fail('NOT_FOUND', 'Record was not found in the requested branch.')
+    if (student.admissionId) {
+      return deleteAdmission(student.admissionId, query)
+    }
+    data.students = data.students.filter(item => item.id !== id)
+    data.enrollments = data.enrollments.filter(item => item.studentId !== id)
+    normalizeAdmissions(data)
+    write(data)
+    return { id, deleted: true }
   }
 
   function studentOperation(operation, { id, query } = {}) {
@@ -696,15 +887,39 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       : Array.isArray(result) ? result.map((item) => project(operations[index].collection, item)) : project(operations[index].collection, result))
   }
 
+  function demoConversionSource(data, id, branchId) {
+    if (!id) return null
+    const session = readMockSession()
+    if (!canAccess(PERMISSIONS.DEMO_CLASSES_MANAGE, session?.user, branchId)) fail('DEMO_ACTION_DENIED', 'Demo conversion is not permitted.')
+    const demo = data.demoClasses.find(item=>item.id===id&&item.branchId===branchId)
+    if (!demo) fail('INVALID_REFERENCE', 'Choose a demo inquiry from this branch.')
+    if (demo.convertedAdmissionId || demo.status === 'Converted') fail('ALREADY_CONVERTED', 'This demo inquiry already has an admission.')
+    if (!['Registered','Scheduled','Attended'].includes(demo.status)) fail('INVALID_TRANSITION', 'This demo inquiry cannot be converted.')
+    return demo
+  }
+  function linkDemoAdmission(demo, admission) {
+    if (!demo) return
+    const now=new Date().toISOString(), session=readMockSession(), previous=demo.status
+    demo.status='Converted';demo.convertedAdmissionId=admission.id;demo.convertedAdmissionDisplayId=admission.admissionId;demo.convertedAt=now;demo.updatedAt=now
+    demo.statusHistory.push({id:`hist-${makeId()}`,demoId:demo.id,fromStatus:previous,toStatus:'Converted',actorUserId:session.user.id,actorName:session.user.name,occurredAt:now,reason:'Converted through Admissions'})
+    validateRecord(demo,'demoClasses')
+  }
   function createAdmission(record, query) {
+    const demoId=record?.demoId
+    if (demoId) {record={...record};delete record.demoId}
     validateRequest('admissions', 'create', undefined, record, query)
     const data = read(false)
+    const sourceDemo=demoConversionSource(data,demoId,query.branchId)
     const admission = applyOperation(data, 'admissions', 'create', undefined, record, query)
     const student = applyOperation(data, 'students', 'create', undefined, { name: admission.studentName, status: 'Provisional', admissionId: admission.id }, query)
     if (student.id === admission.id) fail('ID_CONFLICT', 'Admission and student require distinct internal IDs.')
     admission.studentId = student.id
     admission.createdByAdmissionFlow = true
     student.createdByAdmissionFlow = true
+    for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) {
+      if (admission[key]) student[key] = admission[key]
+    }
+    linkDemoAdmission(sourceDemo,admission)
     normalizeAdmissions(data)
     write(data)
     const project = createDisplayProjector(data)
@@ -733,7 +948,15 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (data.enrollments.some(item => item.admissionId === id)) fail('ENROLLED_RECORD_PROTECTED', 'An enrolled admission cannot be edited.')
     const student = linkedProvisional(data, admission)
     const updated = applyOperation(data, 'admissions', 'update', id, record, query)
-    if (student) student.name = updated.studentName
+    if (student) {
+      student.name = updated.studentName
+      if (updated.dob) student.dateOfBirth = updated.dob
+      if (updated.guardianName) student.guardianName = updated.guardianName
+      if (updated.contact) student.guardianContact = updated.contact
+      for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) {
+        if (updated[key] !== undefined) student[key] = updated[key]
+      }
+    }
     normalizeAdmissions(data)
     write(data)
     const project = createDisplayProjector(data)
@@ -817,7 +1040,22 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     let enrollmentId
     try { enrollmentId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Enrollment ID could not be generated.') }
     if (!validText(enrollmentId) || collections.some(collection => data[collection].some(item => item.id === enrollmentId))) fail('ID_CONFLICT', 'Enrollment ID conflicts with saved data.')
-    const enrollment = { id: enrollmentId, branchId: query.branchId, admissionId: admission.id, studentId: student.id, courseId: course.id, batchId: batch.id, ...(admission.subjectIds ? { subjectIds: [...admission.subjectIds] } : {}), ...(Number.isFinite(admission.configuredFee) ? { configuredFee: admission.configuredFee } : {}), status: 'Active', enrolledAt: new Date().toISOString(), feeStatus: 'Unavailable' }
+    const enrollment = {
+      id: enrollmentId,
+      branchId: query.branchId,
+      admissionId: admission.id,
+      studentId: student.id,
+      courseId: course.id,
+      batchId: batch.id,
+      ...(admission.subjectIds ? { subjectIds: [...admission.subjectIds] } : {}),
+      ...(Number.isFinite(admission.configuredFee) ? { configuredFee: admission.configuredFee } : {}),
+      ...(Number.isFinite(admission.discountAmount) ? { discountAmount: admission.discountAmount } : {}),
+      ...(admission.discountReason ? { discountReason: admission.discountReason } : {}),
+      ...(Number.isFinite(admission.netFee) ? { netFee: admission.netFee } : {}),
+      status: 'Active',
+      enrolledAt: new Date().toISOString(),
+      feeStatus: 'Unavailable'
+    }
     student.status = 'Active'
     data.enrollments.push(enrollment)
     normalizeAdmissions(data)
@@ -849,6 +1087,9 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       return {
         ...item,
         courseName: course?.name ?? item.courseName ?? 'Unknown Course',
+        streamId: course?.streamId ?? null,
+        streamName: data.academicStreams.find(stream=>stream.id===course?.streamId&&stream.branchId===item.branchId)?.name ?? 'Unassigned',
+        branchName: getDemoBranches().find(branch=>branch.id===item.branchId)?.name ?? 'Unknown branch',
         batchName: batch?.name ?? item.batchName ?? null,
         scheduledSession: item.scheduledSession ? {
           ...item.scheduledSession,
@@ -1341,18 +1582,20 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     let generatedId
     try { generatedId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Financial record ID could not be generated.') }
     if (collections.some(key => data[key].some(item => item.id === generatedId))) fail('ID_CONFLICT', 'Financial record ID conflicts with saved data.')
+    const validMethods = ['Cash', 'Bank Transfer', 'Mobile Wallet', 'EasyPaisa', 'Cash Counter', 'Bank / 1Link']
     if (operation === 'createChallan') {
       if (!object(record) || !validText(record.enrollmentId) || !validText(record.description) || !Number.isFinite(record.amount) || record.amount <= 0 || !validDateOnly(record.issueDate) || !validDateOnly(record.dueDate) || record.issueDate > record.dueDate) fail('INVALID_RECORD', 'Complete the challan with valid dates and a positive amount.')
       const enrollment = data.enrollments.find(item => item.id === record.enrollmentId && item.branchId === query.branchId && item.status === 'Active')
       if (!enrollment) fail('INVALID_REFERENCE', 'Choose an active enrollment in this branch.')
       if (data.challans.some(item => item.enrollmentId === enrollment.id)) fail('DUPLICATE_CHALLAN', 'An official challan already exists for this enrollment.')
-      if (Number.isFinite(enrollment.configuredFee) && record.amount !== enrollment.configuredFee) fail('FEE_MISMATCH', 'Challan amount must match the confirmed configured admission fee.')
+      const expectedAmount = Number.isFinite(enrollment.netFee) ? enrollment.netFee : enrollment.configuredFee
+      if (Number.isFinite(expectedAmount) && record.amount !== expectedAmount) fail('FEE_MISMATCH', 'Challan amount must match the confirmed configured admission fee.')
       const number = ++data.financialCounters[query.branchId].challan
-      const challan = { id: generatedId, branchId: query.branchId, enrollmentId: enrollment.id, studentId: enrollment.studentId, description: record.description.trim(), amount: record.amount, issueDate: record.issueDate, dueDate: record.dueDate, number, reference: `CH-${number}`, createdAt: new Date().toISOString() }
+      const challan = { id: generatedId, branchId: query.branchId, enrollmentId: enrollment.id, studentId: enrollment.studentId, description: record.description.trim(), amount: record.amount, totalAmount: enrollment.configuredFee ?? record.amount, discountAmount: enrollment.discountAmount ?? 0, discountReason: enrollment.discountReason ?? '', issueDate: record.issueDate, dueDate: record.dueDate, number, reference: `CH-${number}`, createdAt: new Date().toISOString() }
       validateRecord(challan, 'challans'); data.challans.push(challan); write(data); return presentChallan(challan)
     }
     if (operation === 'recordPayment') {
-      if (!object(record) || !validText(record.challanId) || !Number.isFinite(record.amount) || record.amount <= 0 || !['Cash', 'Bank Transfer', 'Mobile Wallet'].includes(record.method)) fail('INVALID_RECORD', 'Choose a challan, valid method and positive amount.')
+      if (!object(record) || !validText(record.challanId) || !Number.isFinite(record.amount) || record.amount <= 0 || !validMethods.includes(record.method)) fail('INVALID_RECORD', 'Choose a challan, valid method and positive amount.')
       const challan = data.challans.find(item => item.id === record.challanId && item.branchId === query.branchId)
       if (!challan) fail('INVALID_REFERENCE', 'Choose a challan in this branch.')
       const paid = data.payments.filter(item => item.challanId === challan.id && item.status === 'Verified').reduce((sum,item)=>sum+item.amount,0)
@@ -1368,5 +1611,429 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
     fail('INVALID_REQUEST', 'Unknown financial operation.')
   }
-  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation, assetOperation, reportOperation }
+
+  function facultyAssignmentOperation(operation, { id, record, query = {} } = {}) {
+    if (!object(query) || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
+    const mutating = ['create', 'update', 'delete'].includes(operation)
+    const permission = operation==='checkTeacherDelete' ? PERMISSIONS.USERS_MANAGE : mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
+    if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for faculty assignments.')
+
+    const data = read(!mutating, !mutating)
+    data.facultyAssignments ??= []
+    if(operation==='checkTeacherDelete') {
+      if(data.facultyAssignments.some(item=>item.teacherId===id)||data.classes.some(item=>item.teacherId===id)||data.demoClasses.some(item=>item.scheduledSession?.teacherId===id)||data.assets.some(item=>item.assignedToId===id))fail('LINKED_RECORDS','Remove or reassign this faculty member\'s teaching schedules, demo sessions and asset assignments before deleting. Existing linked records are protected.')
+      return true
+    }
+
+    const project = item => {
+      const teacher = getDemoUsers().find(u => u.id === item.teacherId)
+      const course = data.courses.find(c => c.id === item.courseId && c.branchId === item.branchId)
+      const batch = data.batches.find(b => b.id === item.batchId && b.branchId === item.branchId)
+      const subject = data.subjects.find(s => s.id === item.subjectId && s.branchId === item.branchId)
+      return {
+        ...item,
+        teacherName: teacher?.name ?? 'Teacher',
+        courseName: course?.name ?? 'Unresolved Course',
+        batchName: batch?.name ?? 'Unresolved Batch',
+        subjectName: subject?.name ?? 'Unresolved Subject',
+      }
+    }
+
+    if (operation === 'list') {
+      return data.facultyAssignments.filter(item => item.branchId === query.branchId).map(project)
+    }
+
+    const index = data.facultyAssignments.findIndex(item => item.id === id && item.branchId === query.branchId)
+    if (operation === 'get') {
+      if (index < 0) fail('NOT_FOUND', 'Faculty assignment was not found.')
+      return project(data.facultyAssignments[index])
+    }
+
+    if (operation === 'delete') {
+      if (index < 0) fail('NOT_FOUND', 'Faculty assignment was not found.')
+      const [removed] = data.facultyAssignments.splice(index, 1)
+      write(data)
+      return project(removed)
+    }
+
+    let generatedId
+    try { generatedId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Assignment ID could not be generated.') }
+    if (index < 0 && collections.some(key => (data[key] ?? []).some(item => item.id === generatedId))) fail('ID_CONFLICT', 'Assignment ID conflicts with saved data.')
+
+    if(operation === 'update' && index < 0) fail('NOT_FOUND', 'Faculty assignment was not found.')
+    const candidate = {
+      ...(index >= 0 ? data.facultyAssignments[index] : {}),
+      ...record,
+      id: index >= 0 ? data.facultyAssignments[index].id : generatedId,
+      branchId: query.branchId,
+      createdAt: index >= 0 ? data.facultyAssignments[index].createdAt : (record?.createdAt ?? new Date().toISOString()),
+    }
+
+    if(!Array.isArray(candidate.days))fail('INVALID_RECORD','Choose valid weekdays.')
+    candidate.days = [...new Set((candidate.days||[]).map(day=>String(day).trim().slice(0,3).toLowerCase()).map(day=>({mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'})[day]))]
+    if(candidate.days.some(day=>!day))fail('INVALID_RECORD','Choose valid weekdays.')
+    validateRecord(candidate, 'facultyAssignments')
+
+    const course = data.courses.find(c => c.id === candidate.courseId && c.branchId === query.branchId)
+    if (!course) fail('INVALID_REFERENCE', 'Choose a valid course in the active branch.')
+
+    const batch = data.batches.find(b => b.id === candidate.batchId && b.branchId === query.branchId && b.courseId === candidate.courseId)
+    if (!batch) fail('INVALID_REFERENCE', 'Choose a valid batch belonging to the selected course.')
+
+    const subject = data.subjects.find(s => s.id === candidate.subjectId && s.branchId === query.branchId && s.courseId === candidate.courseId)
+    if (!subject) fail('INVALID_REFERENCE', 'Choose a valid subject belonging to the selected course.')
+
+    const teacher = getDemoUsers().find(u => u.id === candidate.teacherId && u.enabled && getBranchRoles(u, query.branchId).includes(ROLES.TEACHER))
+    if (!teacher) fail('INVALID_REFERENCE', 'Choose an enabled Teacher from the active branch.')
+    if (teacher.specialization?.trim() && teacher.specialization.trim().toLowerCase() !== subject.name.trim().toLowerCase()) fail('INVALID_REFERENCE', 'Choose the subject matching this teacher primary subject.')
+
+    // Conflict 1: Teacher double booking
+    const teacherConflict = data.facultyAssignments.find(item =>
+      item.id !== candidate.id &&
+      item.branchId === query.branchId &&
+      item.teacherId === candidate.teacherId &&
+      item.days.some(d => candidate.days.some(day=>day.toLowerCase()===String(d).trim().slice(0,3).toLowerCase())) &&
+      candidate.startTime < item.endTime &&
+      candidate.endTime > item.startTime
+    )
+    if (teacherConflict) {
+      const conflictSubject = data.subjects.find(s => s.id === teacherConflict.subjectId)?.name ?? 'another subject'
+      const conflictBatch = data.batches.find(b => b.id === teacherConflict.batchId)?.name ?? 'another batch'
+      fail('SCHEDULE_CONFLICT', `Teacher ${teacher.name} already has an overlapping class for ${conflictSubject} in ${conflictBatch} (${formatClassTime(teacherConflict.startTime)} – ${formatClassTime(teacherConflict.endTime)}).`)
+    }
+
+    // Conflict 2: Room double booking
+    const roomConflict = data.facultyAssignments.find(item =>
+      item.id !== candidate.id &&
+      item.branchId === query.branchId &&
+      item.room.trim().toLowerCase() === candidate.room.trim().toLowerCase() &&
+      item.days.some(d => candidate.days.some(day=>day.toLowerCase()===String(d).trim().slice(0,3).toLowerCase())) &&
+      candidate.startTime < item.endTime &&
+      candidate.endTime > item.startTime
+    )
+    if (roomConflict) {
+      const conflictBatch = data.batches.find(b => b.id === roomConflict.batchId)?.name ?? 'another batch'
+      fail('SCHEDULE_CONFLICT', `Room ${candidate.room} is already booked by ${conflictBatch} on the selected time (${roomConflict.startTime} – ${roomConflict.endTime}).`)
+    }
+
+    // Conflict 3: Duplicate subject assignment in the same batch
+    const duplicateSubject = data.facultyAssignments.find(item =>
+      item.id !== candidate.id &&
+      item.branchId === query.branchId &&
+      item.batchId === candidate.batchId &&
+      item.subjectId === candidate.subjectId
+    )
+    if (duplicateSubject) {
+      fail('SCHEDULE_CONFLICT', 'An assignment for this subject already exists in this batch. Edit or remove the existing assignment first.')
+    }
+
+    if (index >= 0) {
+      data.facultyAssignments[index] = candidate
+    } else {
+      data.facultyAssignments.push(candidate)
+    }
+    write(data)
+    return project(candidate)
+  }
+
+  function completeInstantAdmission(record, query = {}) {
+    if (!object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) {
+      fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    }
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId) {
+      fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
+    }
+    if (!canAccess(PERMISSIONS.ADMISSIONS_DECIDE, session.user, query.branchId) || !canAccess(PERMISSIONS.FEES_MANAGE, session.user, query.branchId)) {
+      fail('DEMO_ACTION_DENIED', 'Only an authorized Super Admin can complete instant admission and issue financial records.')
+    }
+
+    if (!object(record)) fail('INVALID_RECORD', 'Admission details are required.')
+    const studentName = typeof record.studentName === 'string' ? record.studentName.trim() : ''
+    const guardianName = typeof record.guardianName === 'string' ? record.guardianName.trim() : ''
+    const contact = typeof record.contact === 'string' ? record.contact.trim() : ''
+    const dob = typeof record.dob === 'string' ? record.dob.trim() : ''
+    if (!validText(studentName) || !validText(guardianName) || !validText(contact) || !validText(dob)) {
+      fail('INVALID_RECORD', 'Complete student name, guardian name, contact and date of birth.')
+    }
+
+    const batchId = record.preferredBatchId || record.batchId
+    if (!validText(record.courseId) || !validText(batchId)) {
+      fail('INVALID_RECORD', 'A valid course and batch are required for instant enrollment.')
+    }
+
+    const data = read(false)
+    const sourceDemo=demoConversionSource(data,record.demoId,query.branchId)
+    const course = data.courses.find(item => item.id === record.courseId && item.branchId === query.branchId)
+    const batch = data.batches.find(item => item.id === batchId && item.branchId === query.branchId && item.courseId === record.courseId)
+    if (!course || !batch) {
+      fail('INVALID_REFERENCE', 'Choose a saved course and matching batch in the active branch.')
+    }
+
+    // Capacity check
+    const enrolledInBatch = data.enrollments.filter(item => item.branchId === query.branchId && item.batchId === batch.id && item.status === 'Active').length
+    if (batch.capacity != null && enrolledInBatch >= batch.capacity) {
+      fail('BATCH_FULL', `Selected batch "${batch.name}" is already at full capacity (${batch.capacity}/${batch.capacity} seats).`)
+    }
+
+    // Fee calculation
+    let configuredFee
+    const subjectIds = Array.isArray(record.subjectIds) ? [...new Set(record.subjectIds)] : []
+    if (course.pricingMode === 'course') {
+      configuredFee = Number.isFinite(course.feeAmount) ? course.feeAmount : 0
+    } else if (course.pricingMode === 'subjects') {
+      const selectedSubs = subjectIds.map(id => data.subjects.find(s => s.id === id && s.branchId === query.branchId && s.courseId === course.id && s.active)).filter(Boolean)
+      configuredFee = selectedSubs.reduce((sum, s) => sum + (Number.isFinite(s.feeAmount) ? s.feeAmount : 0), 0)
+    } else {
+      configuredFee = Number.isFinite(record.configuredFee) ? record.configuredFee : 0
+    }
+
+    const discountAmount = Math.max(0, Number(record.discountAmount || 0))
+    if (!Number.isFinite(discountAmount) || discountAmount < 0) fail('INVALID_RECORD', 'Discount amount must be a positive number or zero.')
+    if (discountAmount > configuredFee) fail('INVALID_DISCOUNT', 'Discount amount cannot exceed total course fee.')
+    const discountReason = typeof record.discountReason === 'string' ? record.discountReason.trim() : ''
+
+    const netFee = Math.max(0, configuredFee - discountAmount)
+    const initialPayment = Math.max(0, Number(record.initialPayment || 0))
+    if (!Number.isFinite(initialPayment) || initialPayment < 0) fail('INVALID_RECORD', 'Initial payment must be a positive number or zero.')
+    if (initialPayment > netFee) fail('OVERPAYMENT', 'Initial payment cannot exceed net payable fee.')
+
+    const validMethods = ['Cash', 'Bank Transfer', 'Mobile Wallet', 'EasyPaisa', 'Cash Counter', 'Bank / 1Link']
+    const paymentMethod = validMethods.includes(record.paymentMethod) ? record.paymentMethod : 'Cash'
+
+    const now = new Date().toISOString()
+    const today = getLocalDateOnly()
+    const dueDate = record.nextDueDate && validDateOnly(record.nextDueDate) ? record.nextDueDate : today
+
+    // Check if upgrading an existing pending admission
+    let admission = record.id ? data.admissions.find(item => item.id === record.id && item.branchId === query.branchId) : null
+    let student = admission ? data.students.find(item => item.id === admission.studentId && item.branchId === query.branchId) : null
+
+    if (!admission) {
+      let admissionId = makeId()
+      let studentId = makeId()
+      while (collections.some(col => data[col].some(item => item.id === admissionId || item.id === studentId)) || admissionId === studentId) {
+        admissionId = makeId()
+        studentId = makeId()
+      }
+
+      const admissionNumber = ++data.branchCounters[query.branchId].admission
+      const studentNumber = ++data.branchCounters[query.branchId].student
+
+      const optionalDetails = Object.fromEntries(
+        ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address', 'previousSchool', 'notes']
+          .filter(key => record[key] !== undefined && typeof record[key] === 'string')
+          .map(key => [key, record[key].trim()])
+      )
+
+      admission = {
+        id: admissionId,
+        branchId: query.branchId,
+        admissionNumber,
+        admissionId: formatAdmissionId(admissionNumber),
+        studentName,
+        guardianName,
+        contact,
+        dob,
+        course: record.course || course.name,
+        courseId: course.id,
+        streamId: record.streamId ?? course.streamId ?? null,
+        ...(record.courseIds ? { courseIds: record.courseIds } : {}),
+        ...(record.streamIds ? { streamIds: record.streamIds } : {}),
+        preferredBatchId: batch.id,
+        subjectIds,
+        configuredFee,
+        discountAmount,
+        discountReason,
+        discountAuthorizedBy: session.user.id,
+        discountAuthorizedAt: now,
+        netFee,
+        initialPayment,
+        paymentMethod,
+        nextDueDate: dueDate,
+        status: 'Approved',
+        studentId,
+        createdByAdmissionFlow: true,
+        createdAt: today,
+        ...optionalDetails,
+        statusHistory: [
+          {
+            id: makeId(),
+            admissionId,
+            branchId: query.branchId,
+            fromStatus: 'Pending',
+            toStatus: 'Approved',
+            actorUserId: session.user.id,
+            occurredAt: now,
+            reason: 'Instant Admission & Official Enrollment',
+          }
+        ]
+      }
+
+      student = {
+        id: studentId,
+        branchId: query.branchId,
+        studentNumber,
+        name: studentName,
+        status: 'Active',
+        admissionId,
+        admissionDisplayId: admission.admissionId,
+        dateOfBirth: dob,
+        guardianName,
+        guardianContact: contact,
+        ...(optionalDetails.studentPhone ? { studentPhone: optionalDetails.studentPhone } : {}),
+        ...(optionalDetails.identityNumber ? { identityNumber: optionalDetails.identityNumber } : {}),
+        ...(optionalDetails.gender ? { gender: optionalDetails.gender } : {}),
+        ...(optionalDetails.residenceType ? { residenceType: optionalDetails.residenceType } : {}),
+        ...(optionalDetails.address ? { address: optionalDetails.address } : {}),
+        createdByAdmissionFlow: true,
+      }
+
+      validateRecord(student, 'students')
+      validateRecord(admission, 'admissions')
+      data.students.push(student)
+      data.admissions.push(admission)
+    } else {
+      if (admission.status !== 'Approved') {
+        admission.statusHistory = [...(admission.statusHistory ?? []), {
+          id: makeId(),
+          admissionId: admission.id,
+          branchId: query.branchId,
+          fromStatus: admission.status,
+          toStatus: 'Approved',
+          actorUserId: session.user.id,
+          occurredAt: now,
+          reason: 'Instant Admission & Official Enrollment',
+        }]
+        admission.status = 'Approved'
+      }
+      admission.discountAmount = discountAmount
+      admission.discountReason = discountReason
+      admission.discountAuthorizedBy = session.user.id
+      admission.discountAuthorizedAt = now
+      admission.netFee = netFee
+      admission.initialPayment = initialPayment
+      admission.paymentMethod = paymentMethod
+      admission.nextDueDate = dueDate
+      admission.preferredBatchId = batch.id
+      admission.subjectIds = subjectIds
+      admission.configuredFee = configuredFee
+
+      if (student) {
+        student.status = 'Active'
+      }
+      validateRecord(admission, 'admissions')
+      if (student) validateRecord(student, 'students')
+    }
+
+    if (data.enrollments.some(item => item.admissionId === admission.id)) {
+      fail('DUPLICATE_ENROLLMENT', 'This admission already has an active enrollment.')
+    }
+
+    let enrollmentId = makeId()
+    while (collections.some(col => data[col].some(item => item.id === enrollmentId))) enrollmentId = makeId()
+
+    const feeStatus = initialPayment >= netFee ? 'Paid' : initialPayment > 0 ? 'Partial' : 'Unavailable'
+    const enrollment = {
+      id: enrollmentId,
+      branchId: query.branchId,
+      admissionId: admission.id,
+      studentId: student.id,
+      courseId: course.id,
+      batchId: batch.id,
+      subjectIds,
+      configuredFee,
+      discountAmount,
+      discountReason,
+      netFee,
+      status: 'Active',
+      enrolledAt: now,
+      feeStatus,
+    }
+    validateRecord(enrollment, 'enrollments')
+    data.enrollments.push(enrollment)
+
+    let challanId = makeId()
+    while (collections.some(col => data[col].some(item => item.id === challanId))) challanId = makeId()
+
+    const challanNumber = ++data.financialCounters[query.branchId].challan
+    const challan = {
+      id: challanId,
+      branchId: query.branchId,
+      enrollmentId: enrollment.id,
+      studentId: student.id,
+      description: `Admission & Course Fee - ${course.name}`,
+      amount: netFee,
+      totalAmount: configuredFee,
+      discountAmount,
+      discountReason,
+      issueDate: today,
+      dueDate,
+      number: challanNumber,
+      reference: `CH-${challanNumber}`,
+      createdAt: now,
+    }
+    validateRecord(challan, 'challans')
+    data.challans.push(challan)
+
+    let payment = null
+    if (initialPayment > 0) {
+      let paymentId = makeId()
+      while (collections.some(col => data[col].some(item => item.id === paymentId))) paymentId = makeId()
+
+      const receiptNumber = ++data.financialCounters[query.branchId].receipt
+      payment = {
+        id: paymentId,
+        branchId: query.branchId,
+        challanId: challan.id,
+        studentId: student.id,
+        amount: initialPayment,
+        method: paymentMethod,
+        status: 'Verified',
+        number: receiptNumber,
+        receiptReference: `RCPT-${receiptNumber}`,
+        paidAt: now,
+        actorUserId: session.user.id,
+      }
+      validateRecord(payment, 'payments')
+      data.payments.push(payment)
+    }
+
+    linkDemoAdmission(sourceDemo,admission)
+    normalizeAdmissions(data)
+    write(data)
+
+    const project = createDisplayProjector(data)
+    const presentedChallan = {
+      ...challan,
+      studentName: student.name,
+      studentNumber: student.studentNumber,
+      courseName: course.name,
+      batchName: batch.name,
+      paidAmount: initialPayment,
+      balance: Math.max(0, netFee - initialPayment),
+      status: feeStatus === 'Paid' ? 'Paid' : initialPayment > 0 ? 'Partial' : (challan.dueDate < today ? 'Overdue' : 'Unpaid'),
+    }
+
+    const presentedPayment = payment ? {
+      ...payment,
+      studentName: student.name,
+      courseName: course.name,
+      batchName: batch.name,
+      challanReference: challan.reference,
+      receiptId: payment.id,
+    } : null
+
+    return {
+      admission: project('admissions', admission),
+      student: project('students', student),
+      enrollment,
+      challan: presentedChallan,
+      payment: presentedPayment,
+    }
+  }
+
+  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation, assetOperation, reportOperation, facultyAssignmentOperation, completeInstantAdmission, deleteStudent }
 }

@@ -5,15 +5,16 @@ import { ThemeProvider } from './ThemeContext.jsx'
 import useAcademy from '../hooks/useAcademy.js'
 import useTheme from '../hooks/useTheme.js'
 import AcademyLogo from '../components/Layout/AcademyLogo.jsx'
-import { MOCK_BRANDING_KEY } from '../constants/storageKeys.js'
+import { COLOR_MODE_KEY, MOCK_BRANDING_KEY } from '../constants/storageKeys.js'
 
 function Probe() {
   const { branding, error, updateBranding } = useAcademy()
-  const { primaryColor, updatePrimaryColor } = useTheme()
+  const { colorMode, primaryColor, toggleColorMode, updatePrimaryColor } = useTheme()
   return <><p>{branding.name}</p><p>{primaryColor}</p><p>{error?.code}</p><AcademyLogo />
     <button onClick={() => updateBranding({ name: 'Fictional Academy', logo: '/images/example.png' })}>Brand</button>
     <button onClick={() => updatePrimaryColor('#123ABC')}>Color</button>
-    <button onClick={() => updatePrimaryColor('#FFFFFF')}>Invalid color</button></>
+    <button onClick={() => updatePrimaryColor('#FFFFFF')}>Invalid color</button>
+    <button onClick={toggleColorMode}>{colorMode === 'dark' ? 'Use light mode' : 'Use dark mode'}</button></>
 }
 function BatchedUpdates() {
   const { branding, updateBranding } = useAcademy()
@@ -40,6 +41,17 @@ describe('shared academy and theme providers', () => {
     expect(document.documentElement.style.getPropertyValue('--workspace-focus')).toBe('#72000E')
     expect(document.documentElement.style.getPropertyValue('--workspace-sidebar-text')).toBe('#111827')
     expect(document.documentElement.style.getPropertyValue('--workspace-sidebar-icon')).toBe('#111827')
+  })
+  it('persists an accessible dark mode and restores light mode', () => {
+    render(tree)
+    fireEvent.click(screen.getByRole('button', { name: 'Use dark mode' }))
+    expect(document.documentElement).toHaveClass('dark')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+    expect(document.documentElement.style.getPropertyValue('--workspace-background')).toBe('#0b1220')
+    expect(localStorage.getItem(COLOR_MODE_KEY)).toBe('dark')
+    fireEvent.click(screen.getByRole('button', { name: 'Use light mode' }))
+    expect(document.documentElement).not.toHaveClass('dark')
+    expect(localStorage.getItem(COLOR_MODE_KEY)).toBe('light')
   })
   it('shares updates, restores persisted branding on remount, and handles broken logos', () => {
     const view = render(tree)

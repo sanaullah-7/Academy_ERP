@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
@@ -8,30 +8,37 @@ import { demoWorkflowService } from '../../services/demoWorkflowService.js'
 
 
 beforeEach(() => window.history.replaceState(null, '', '/dashboard'))
+afterEach(() => vi.useRealTimers())
 
 describe('approved shared dashboard skeleton', () => {
-  it('loads a persisted active-branch class created today after navigation and refresh', async () => {
+  it.each([
+    ['2026-10-18T18:58:00Z', '2026-10-18'],
+    ['2026-10-18T19:01:00Z', '2026-10-19'],
+  ])('loads a persisted active-branch class created today after navigation and refresh (%s)', async (instant, academyDate) => {
+    // Freeze only Date: UI/service timers remain real. Cover both sides of academy
+    // midnight so host/CI timezone cannot silently move the fixture to yesterday.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(instant))
     await authService.login({ userId: 'demo-admin' })
     await authService.selectBranch('demo-admin', 'demo-central')
     const now = new Date()
-    const classDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    await classScheduleService.create({ subject: 'Dashboard Biology', batchId: 'batch-demo-course-demo-2', teacherId: 'demo-teacher', classDate, startTime: '00:00', endTime: '23:59', location: 'Lecture Hall 2' }, { branchId: 'demo-central' })
+    const classDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+    expect(classDate).toBe(academyDate)
+    const savedClass = await classScheduleService.create({ subject: 'Dashboard Biology', batchId: 'batch-demo-course-demo-2', teacherId: 'demo-teacher', classDate, startTime: '00:00', endTime: '23:59', location: 'Lecture Hall 2' }, { branchId: 'demo-central' })
+    expect(await classScheduleService.getById(savedClass.id, { branchId: 'demo-central' })).toMatchObject({ subject: 'Dashboard Biology', classDate: academyDate, branchId: 'demo-central' })
     window.history.replaceState(null, '', '/faculty/schedule')
     const first = render(<App />)
     expect(await screen.findByText('Dashboard Biology')).toBeInTheDocument()
     window.history.pushState(null, '', '/dashboard')
     window.dispatchEvent(new PopStateEvent('popstate'))
-    expect(await screen.findByRole('button', { name: /Super Admin Dashboard/i })).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole('button', { name: /Super Admin Dashboard/i }))
     expect(await screen.findByText('Dashboard Biology')).toBeInTheDocument()
     first.unmount()
     render(<App />)
-    await userEvent.setup().click(await screen.findByRole('button', { name: /Super Admin Dashboard/i }))
     expect(await screen.findByText('Dashboard Biology')).toBeInTheDocument()
     expect(screen.getByText('Lecture Hall 2')).toBeInTheDocument()
     expect(screen.getByText('1 Active Slot')).toBeInTheDocument()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Open Dashboard Biology in Class Schedule' }))
-    expect(location.pathname).toBe('/faculty/schedule')
+    expect(location.pathname).toBe('/faculty')
     expect(await screen.findByText('Selected from dashboard')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Class Details' })).not.toBeInTheDocument()
   })
@@ -63,8 +70,9 @@ describe('approved shared dashboard skeleton', () => {
     await authService.selectBranch('demo-admin', 'demo-north')
     render(<App />)
     const user = userEvent.setup()
-    expect(await screen.findByRole('heading', { name: 'Select Dashboard View' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /Super Admin Dashboard/i }))
+    expect(await screen.findByRole('heading', { name: 'Upcoming Classes Today' })).toBeInTheDocument()
+    expect(screen.queryByText('Select Dashboard View')).not.toBeInTheDocument()
+    expect(screen.queryByText('View Dashboard As')).not.toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
     for (const title of ['Monthly Cashflow Performance', 'Recent Student Enrollments', 'Quick Operations', 'Upcoming Classes Today', 'Recent Payments']) expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
     for (const title of ['Active Students', 'New Admissions', 'Fees Collected', 'Outstanding Fees']) expect(screen.getByText(title)).toBeInTheDocument()
@@ -91,7 +99,6 @@ describe('approved shared dashboard skeleton', () => {
     await demoWorkflowService.setup({ branchId: 'demo-north' })
     const user = userEvent.setup()
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: /Super Admin Dashboard/i }))
     await user.click(await screen.findByRole('button', { name: 'Daily' }))
     expect(screen.getByLabelText('Revenue and expenses chart for Daily')).toBeInTheDocument()
     expect(screen.queryByText('No financial records for daily')).not.toBeInTheDocument()
@@ -102,7 +109,6 @@ describe('approved shared dashboard skeleton', () => {
     await authService.selectBranch('demo-admin', 'demo-north')
     render(<App />)
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: /Super Admin Dashboard/i }))
     await user.click(await screen.findByRole('button', { name: /Collect Fee.*Open Fees/ }))
     expect(location.pathname).toBe('/fees')
     expect(await screen.findByRole('heading', { name: 'Fees', level: 4 })).toBeInTheDocument()
@@ -129,7 +135,8 @@ describe('approved shared dashboard skeleton', () => {
     const first = render(<App />)
     await screen.findByRole('heading', { name: 'Dashboard', level: 4 })
     expect(screen.getByText(/Demo North Campus/i, { selector: 'p' })).toBeInTheDocument()
-    await userEvent.setup().selectOptions(screen.getByLabelText('Active demo branch'), 'demo-central')
+    await userEvent.setup().click(screen.getByLabelText('Active demo branch'))
+    await userEvent.setup().click(screen.getByRole('option', { name: 'Demo Central Campus' }))
     expect(await screen.findByText(/Demo Central Campus/i, { selector: 'p' })).toBeInTheDocument()
     expect(location.pathname).toBe('/dashboard')
     first.unmount()
@@ -145,7 +152,8 @@ describe('approved shared dashboard skeleton', () => {
     link.focus()
     await user.keyboard('{Enter}')
     expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Log out of demo' }))
+    await user.click(screen.getByRole('button', { name: 'Open user menu' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Log out of demo' }))
     await waitFor(() => expect(location.pathname).toBe('/login'))
     expect(screen.queryByRole('heading', { name: 'Dashboard', level: 4 })).not.toBeInTheDocument()
   })

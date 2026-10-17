@@ -22,12 +22,12 @@ describe('approved public and protected routes', () => {
     expect(window.location.pathname).toBe('/login')
   })
 
-  it('keeps existing public content and offers a route back to the signed-in demo workspace', async () => {
+  it('keeps the signed-in shell available without a redundant workspace shortcut', async () => {
     await authService.login({ userId: 'demo-owner' })
     mountAt('/')
     expect(screen.getByTitle('The Scholar Coaching Academy')).toBeInTheDocument()
-    await userEvent.setup().click(await screen.findByRole('link', { name: 'Open demo workspace' }))
-    expect(await screen.findByText('Assigned roles: Owner')).toBeInTheDocument()
+    expect(await screen.findByRole('button',{name:'Open user menu'})).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Open demo workspace' })).not.toBeInTheDocument()
   })
 
   it('logs in a single-branch account, restores on refresh and logs out', async () => {
@@ -40,7 +40,8 @@ describe('approved public and protected routes', () => {
     first.unmount()
     const second = mountAt('/workspace')
     expect(await screen.findByText('Assigned roles: Teacher')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Log out of demo' }))
+    await user.click(screen.getByRole('button', { name: 'Open user menu' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Log out of demo' }))
     expect(await screen.findByRole('heading', { name: 'Demo login' })).toBeInTheDocument()
     expect(localStorage.getItem(MOCK_SESSION_KEY)).toBeNull()
     second.unmount()
@@ -67,6 +68,19 @@ describe('approved public and protected routes', () => {
     localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({ version: 1, userId: 'demo-admin', branchId: 'foreign' }))
     mountAt('/workspace')
     expect(await screen.findByRole('heading', { name: 'Select a demo branch' })).toBeInTheDocument()
+  })
+
+  it('opens permission-aware global search from the topbar shortcut', async () => {
+    await authService.login({ userId: 'demo-admin' })
+    await authService.selectBranch('demo-admin', 'demo-central')
+    const user=userEvent.setup()
+    mountAt('/dashboard')
+    await screen.findByRole('button',{name:'Open user menu'})
+    await user.keyboard('{Control>}k{/Control}')
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    const search=screen.getByRole('textbox',{name:'Global search'})
+    await user.type(search,'Courses')
+    expect((await screen.findAllByText('Courses & Batches')).length).toBeGreaterThan(0)
   })
 
   it('denies an account with no authorized branches', async () => {

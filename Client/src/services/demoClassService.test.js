@@ -1,3 +1,5 @@
+import { academicService } from './academicService.js'
+import { financialService } from './financialService.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { authService } from './authService.js'
 import { demoClassService } from './demoClassService.js'
@@ -516,4 +518,27 @@ describe('F08 Demo Classes Module — Service & Workflow Tests', () => {
       expect(saved.students[0].name).toBe('Legacy Student')
     })
   })
+})
+describe('Demo to editable Admissions workflow',()=>{
+ it('links a pending admission atomically and rejects duplicate conversion',async()=>{
+  await authService.login({userId:'demo-admin'});await authService.selectBranch('demo-admin','demo-central')
+  const demo=await demoClassService.register({...sampleRegistration,studentName:'QA Pending Demo Conversion'},central)
+  const before=JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY)).admissions.length
+  const admission=await admissionService.createWithStudent({demoId:demo.id,studentName:'QA Edited Candidate',guardianName:demo.guardianName,contact:demo.guardianContact,dob:'2010-01-01',courseId:demo.courseId,course:demo.courseName,preferredBatchId:demo.preferredBatchId},central)
+  expect(admission.status).toBe('Pending')
+  expect((await demoClassService.getById(demo.id,central)).convertedAdmissionId).toBe(admission.id)
+  await expect(admissionService.createWithStudent({demoId:demo.id,studentName:demo.studentName,guardianName:demo.guardianName,contact:demo.guardianContact,dob:'2010-01-01',courseId:demo.courseId,course:demo.courseName},central)).rejects.toMatchObject({code:'ALREADY_CONVERTED'})
+  expect(JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY)).admissions.length).toBe(before+1)
+ })
+ it('completes demo enrollment/payment through the existing admission transaction',async()=>{
+  await authService.login({userId:'demo-admin'});await authService.selectBranch('demo-admin','demo-central')
+  const course=await academicService.saveCourse(null,{name:'QA Demo Conversion Course',pricingMode:'course',feeAmount:1000,active:true},central)
+  const batch=await academicService.saveBatch(null,{name:'QA Demo Conversion Batch',courseId:course.id,active:true},central)
+  const demo=await demoClassService.register({...sampleRegistration,studentName:'QA Paid Demo Conversion',courseId:course.id,preferredBatchId:batch.id},central)
+  const result=await admissionService.completeAdmission({demoId:demo.id,studentName:demo.studentName,guardianName:demo.guardianName,contact:demo.guardianContact,dob:'2010-01-01',courseId:course.id,preferredBatchId:batch.id,initialPayment:500,paymentMethod:'Cash',discountAmount:0},central)
+  expect(result.enrollment.status).toBe('Active')
+  expect(result.payment.amount).toBe(500)
+  expect((await demoClassService.getById(demo.id,central)).convertedAdmissionId).toBe(result.admission.id)
+  expect((await financialService.financeOverview(central)).payments.some(payment=>payment.id===result.payment.id)).toBe(true)
+ })
 })

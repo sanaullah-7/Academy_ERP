@@ -1,0 +1,170 @@
+/* MOBILE-20261018: presentation only. Keep every override below 768px and
+   screen-only so desktop, PDF templates and printed documents stay unchanged. */
+@media screen and (max-width: 767px) {
+  .workspace-shell { font-size: 13px; }
+  .workspace-body, .workspace-content, .workspace-content .grid > * { min-width: 0; }
+  .workspace-content {
+    padding: 12px max(10px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  .workspace-topbar {
+    height: calc(60px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    gap: 6px;
+    background: var(--card);
+  }
+  .workspace-topbar > div { gap: 6px; }
+  .workspace-topbar > div:first-child { flex: 0 0 auto; }
+  .workspace-topbar .workspace-icon-button { width: 44px; height: 44px; }
+  /* Fullscreen is an optional desktop convenience; search, campus and account remain visible. */
+  .workspace-topbar button[aria-label$="full screen"] { display: none; }
+  .workspace-topbar button[aria-label="Open global search"] { width: 44px; height: 44px; padding: 12px; flex-shrink: 0; }
+  .workspace-topbar button[aria-label="Open global search"] :is(span, kbd) { display: none; }
+  .workspace-topbar button[aria-label="Open user menu"] { min-width: 44px; min-height: 44px; padding: 4px; }
+  .workspace-topbar button[aria-label="Open user menu"] > .hidden { display: none; }
+  .workspace-topbar .demo-branch-trigger { width: clamp(108px, 38vw, 180px); max-width: 100%; min-height: 44px; padding: 8px; font-size: 11px; gap: 5px; }
+  .demo-branch-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .demo-branch-options { width: min(260px, calc(100vw - 24px)); max-height: min(360px, 65dvh); overflow-y: auto; }
+  .demo-branch-option { min-height: 44px; font-size: 13px; }
+  .workspace-topbar [role="menu"] { max-width: calc(100vw - 24px); }
+  .workspace-topbar [role="menuitem"] { min-height: 44px; font-size: 13px; }
+
+  .workspace-page-header { min-height: 36px; gap: 8px; margin-bottom: 14px; padding: 0; }
+  .workspace-page-title { min-width: 0; flex-shrink: 1; font-size: 16px; line-height: 1.35; }
+  .workspace-page-description { margin-top: 4px; font-size: 12px; }
+  .workspace-page-breadcrumb { min-height: 30px; gap: 5px; padding: 5px 8px; font-size: 10px; }
+  .workspace-page-breadcrumb span { max-width: 88px; }
+  .workspace-content h1 { font-size: 20px; line-height: 1.3; overflow-wrap: anywhere; }
+  .workspace-content .workspace-page-title { font-size: 16px; }
+  .workspace-content h2 { font-size: 15px; line-height: 1.4; }
+  .workspace-content h3 { font-size: 14px; line-height: 1.4; }
+  .workspace-content .space-y-6 > :not(:last-child) { margin-block-end: 16px; }
+  .workspace-content [data-slot="card"] { border-radius: 14px; }
+  .workspace-content [data-slot="card-header"] { min-height: 0; padding: 12px; gap: 6px; }
+  .workspace-content [data-slot="card-content"] { padding: 12px; }
+  .workspace-content [data-slot="card-title"] { font-size: 14px; }
+  .workspace-content [data-slot="card-header"]:has(> div.flex) > div.flex { flex-wrap: wrap; }
+  .workspace-content [data-slot="card-header"] :is(h2, h3, p) { white-space: normal; }
+
+  .workspace-content .grid:has(> .top-kpi-card),
+  .workspace-content section[aria-label="Dashboard key metrics"] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .workspace-content .top-kpi-card { min-height: 112px; padding: 12px; border-radius: 14px; }
+  .workspace-content .top-kpi-card:has(> [data-slot="card-content"]) { padding: 0; }
+  .workspace-content .top-kpi-card > [data-slot="card-content"] { padding: 12px; }
+  .workspace-content .top-kpi-card :is(.text-3xl, .text-2xl) { font-size: 20px; line-height: 1.25; overflow-wrap: anywhere; }
+  .workspace-content .top-kpi-card .uppercase { font-size: 10px; letter-spacing: .025em; }
+  .workspace-content .top-kpi-card :is(.size-9, .size-10) { width: 28px; height: 28px; }
+  .workspace-content .top-kpi-card .flex { min-width: 0; gap: 5px; }
+  .workspace-content .top-kpi-card .flex > div { min-width: 0; }
+  .workspace-content .top-kpi-card .border-t { flex-wrap: wrap; }
+  .workspace-content header > div.flex { max-width: 100%; flex-wrap: wrap; }
+  .workspace-content header > div.flex button { flex-shrink: 1; }
+  .workspace-content .mobile-chart-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .mobile-chart-summary p { font-size: 10px; }
+  .workspace-content .mobile-fee-status { width: 100%; max-width: 100%; overflow-x: auto; flex-shrink: 1; }
+  .mobile-fee-status button { min-height: 44px; flex-shrink: 0; padding-inline: 9px; }
+  .workspace-content .mobile-demo-filters { min-width: 0; width: 100%; flex-wrap: wrap; }
+  .mobile-demo-filters > div:first-child { flex: 1 0 100%; min-width: 0; }
+  .mobile-demo-filters input { width: 100%; }
+  .mobile-demo-filters select { flex: 1; }
+  #faculty-mobile-details > [data-slot="card"] > div.flex:first-child { flex-wrap: wrap; gap: 10px; }
+  #faculty-mobile-details > [data-slot="card"] > div.flex:first-child > div:first-child { min-width: 0; }
+  .workspace-content .top-kpi-card:hover { transform: none; }
+  .workspace-content [aria-label="Dashboard date range"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .workspace-content [data-slot="card-content"]:has(button small) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .workspace-content [data-slot="card-content"]:has(button small) button { min-height: 68px; white-space: normal; }
+
+  /* Preserve every table field and action, with overflow confined to its own region.
+     Students already has a compact record layout, so keep that representation. */
+  .workspace-content :is(div, section):has(> table),
+  .ui-dialog-content :is(div, section):has(> table) {
+    min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .workspace-content:not([data-page="Students"]) table,
+  .ui-dialog-content table { min-width: 640px; table-layout: auto; font-size: 12px; }
+  .workspace-content table :is(th, td), .ui-dialog-content table :is(th, td) { padding: 10px; }
+  .workspace-content table th { font-size: 10px; }
+  .workspace-content table :is(button, a), .ui-dialog-content table :is(button, a) { min-height: 40px; }
+  .workspace-content table [role="menu"] {
+    position: fixed; inset: auto 12px max(12px, env(safe-area-inset-bottom)) auto;
+    z-index: 60; width: min(240px, calc(100vw - 24px)); max-height: 60dvh; overflow-y: auto;
+    border-radius: 14px; padding: 6px; box-shadow: 0 12px 40px rgb(15 23 42 / .2);
+  }
+  .workspace-content table [role="menuitem"] { min-height: 44px; font-size: 13px; }
+  .workspace-content [data-page="Students"] { min-width: 0; }
+  .workspace-content [role="tablist"], .workspace-content nav[aria-label="Report categories"] {
+    max-width: 100%; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-padding-inline: 8px; -webkit-overflow-scrolling: touch;
+  }
+  .workspace-content [role="tab"], .workspace-content nav[aria-label="Report categories"] > button { flex-shrink: 0; min-height: 44px; white-space: nowrap; font-size: 12px; }
+  .workspace-content [data-slot="button"], .ui-dialog-content [data-slot="button"] { min-height: 40px; font-size: 12px; max-width: 100%; }
+  .workspace-content button[aria-label="Toggle column visibility"],
+  .workspace-content button[aria-label="Refresh table data"],
+  .workspace-content button[aria-label="Print or save PDF"],
+  .workspace-content button[aria-label="Export CSV"] { min-width: 40px; min-height: 40px; }
+  .workspace-content input[type="checkbox"], .ui-dialog-content input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; }
+  .mobile-pagination { gap: 8px; padding: 10px; font-size: 11px; }
+  .mobile-pagination > div { width: 100%; flex-wrap: wrap; justify-content: space-between; }
+  .mobile-pagination nav { width: 100%; max-width: 100%; overflow-x: auto; justify-content: flex-end; }
+  .mobile-pagination nav button { width: 40px; height: 40px; flex-shrink: 0; }
+  .mobile-pagination nav > span { flex-shrink: 0; }
+  .mobile-pagination select { min-height: 40px; }
+
+  /* Existing Radix focus management and dismiss behavior are retained. dvh also
+     lets the scrollable dialog adapt when the software keyboard resizes it. */
+  .ui-dialog-centered, .course-details-dialog.ui-dialog-centered {
+    width: calc(100vw - 20px); max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: 16px; gap: 14px; border-radius: 18px; overflow-x: hidden; overflow-y: auto;
+    scroll-padding-block: 56px; overscroll-behavior: contain;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ui-dialog-centered > * { min-width: 0; max-width: 100%; }
+  .ui-dialog-centered [data-slot="button"] { white-space: normal; height: auto; line-height: 1.4; }
+  .ui-dialog-centered [data-slot="dialog-header"] { padding-right: 28px; }
+  .ui-dialog-centered [data-slot="dialog-title"] { font-size: 17px; line-height: 1.35; }
+  .ui-dialog-centered [data-slot="dialog-description"] { font-size: 12px; }
+  .ui-dialog-centered [data-slot="dialog-footer"] { padding-bottom: env(safe-area-inset-bottom); gap: 8px; }
+  .ui-dialog-centered .grid > * { min-width: 0; }
+  .ui-dialog-centered form .grid { grid-template-columns: minmax(0, 1fr); }
+  .ui-dialog-centered form .grid > * { grid-column: auto; }
+  .workspace-content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+  .ui-dialog-content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    min-width: 0; max-width: 100%; min-height: 44px; font-size: 16px;
+  }
+  .ui-dialog-content [role="listbox"], .workspace-content [role="listbox"] { max-width: min(320px, calc(100vw - 48px)); max-height: min(280px, 45dvh); }
+  .ui-dialog-content [role="option"], .workspace-content [role="option"] { min-height: 44px; font-size: 13px; }
+  .course-details-dialog.ui-dialog-centered { padding: 0; }
+  .course-details-dialog [role="tablist"] { flex-wrap: nowrap; overflow-x: auto; }
+  .course-details-dialog [role="tab"] { min-width: max-content; min-height: 44px; font-size: 11px; white-space: nowrap; }
+  .course-details-dialog > .overflow-y-auto { min-height: 0; overscroll-behavior: contain; }
+  .ui-command-palette.ui-dialog-centered { padding: 0; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); }
+  .ui-command-palette > .overflow-y-auto { max-height: 55dvh; }
+  .ui-command-palette [role="option"] { min-height: 52px; }
+  [data-mobile-form="admission"] { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  [data-mobile-form="admission"] .sticky { position: static; }
+  [data-mobile-form="admission"] .grid { min-width: 0; }
+
+  .workspace-drawer { width: min(310px, calc(100vw - 32px)); padding-bottom: env(safe-area-inset-bottom); }
+  .workspace-drawer .workspace-brand { flex-direction: row; gap: 10px; justify-content: flex-start; height: 76px; min-height: 76px; max-height: 76px; padding: 12px 52px 12px 14px; }
+  .workspace-drawer .workspace-brand-mark { width: 44px; height: 44px; }
+  .workspace-drawer .workspace-brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+  .workspace-drawer .workspace-brand-name { margin: 0; text-align: left; white-space: normal; font-size: 12px; }
+  .workspace-drawer .workspace-mobile-close { width: 44px; height: 44px; top: 16px; right: 6px; }
+  .workspace-drawer .workspace-navigation { padding: 12px 10px; }
+  .workspace-drawer :is(.workspace-current, .workspace-nav-placeholder) { min-height: 44px; font-size: 13px; }
+  .workspace-drawer .workspace-nav-group { margin-top: 14px; }
+  .workspace-content .mobile-faculty-row { gap: 8px; padding: 12px 10px; }
+  .mobile-faculty-row > div:last-child { padding-left: 0; gap: 6px; flex-wrap: wrap; }
+  .mobile-faculty-row > div:first-child { gap: 8px; }
+  .mobile-faculty-row :is(p, a) { font-size: 12px; }
+  #faculty-mobile-details { scroll-margin-top: 76px; outline-offset: 4px; }
+  #faculty-mobile-details > [data-slot="card"] { padding: 14px; }
+  .academic-portfolio-card { min-width: 0; }
+}
+
+@media screen and (max-width: 359px) {
+  .workspace-page-breadcrumb { display: none; }
+  .workspace-content[data-page="Finance"] .grid:has(> .top-kpi-card) { grid-template-columns: minmax(0, 1fr); }
+  .workspace-topbar .demo-branch-trigger { width: 122px; }
+}

@@ -1213,3 +1213,7 @@ Do not reinterpret a minor client change as permission to redesign the whole ERP
 **Current Development Authorization:** Documentation review only
 
 This document defines professional visual and UX standards for the Academy Management ERP. It does not authorize implementation of unapproved features or replacement of the client-approved visual direction.
+
+## MOBILE-20261018 - Confirmed mobile presentation scope (2026-10-18)
+
+Owner approved mobile-only presentation at widths <=767px, targeting320,360,375,390,414 and430px plus landscape. Existing >=768px design remains unchanged. Reuse the current accessible drawer/topbar, semantic theme, compact KPI grids, existing record cards where available, bounded inner table scroll with all data/actions preserved, readable single-column forms and viewport-fit dialogs. Inline admission summary belongs below the form and must not cover inputs. Respect safe areas/reduced motion and existing permissions. Mobile-specific rules are screen-only to preserve print/PDF appearance. MOBILE-20261018 is IN_REVIEW pending owner acceptance; this does not authorize new business rules or alter existing desktop tokens. Validation/evidence and physical-device limitations are recorded in PROGRESS.md.

@@ -135,4 +135,31 @@ describe('provisional student/course service contracts', () => {
     try { expect(() => createMockApi({ beforeRequest: () => {} })).toThrow('test-only') }
     finally { vi.unstubAllEnvs() }
   })
+
+  it('allows deleting a standalone demo student and updates extended fields', async () => {
+    const central = { branchId: 'demo-central' }
+    await signIn('demo-central')
+    createMockDatabase()
+    // Test extended fields
+    const updated = await studentService.update('student-demo-2', {
+      name: 'Updated Demo Student',
+      dateOfBirth: '2008-05-12',
+      guardianName: 'Guardian Name',
+      guardianContact: '03001234567',
+      studentPhone: '03009876543',
+      identityNumber: '17301-1234567-1',
+      gender: 'Male',
+      residenceType: 'Day Scholar',
+      address: 'Peshawar, KPK',
+    }, central)
+    expect(updated.name).toBe('Updated Demo Student')
+    expect(updated.studentPhone).toBe('03009876543')
+    expect(updated.identityNumber).toBe('17301-1234567-1')
+    expect(updated.gender).toBe('Male')
+
+    // Test delete
+    const result = await studentService.delete('student-demo-2', central)
+    expect(result.deleted).toBe(true)
+    await expect(studentService.getById('student-demo-2', central)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
 })

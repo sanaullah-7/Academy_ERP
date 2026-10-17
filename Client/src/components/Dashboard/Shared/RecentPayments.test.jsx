@@ -4,6 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 import RecentPayments from './RecentPayments.jsx'
 
 describe('RecentPayments', () => {
+  it('shows only today receipts using the academy timezone', () => {
+    const payments = [
+      { id: 'today', branchId: 'branch-a', status: 'Verified', paidAt: '2026-10-16T20:00:00Z', studentName: 'Today Student', amount: 100, method: 'Cash' },
+      { id: 'yesterday', branchId: 'branch-a', status: 'Verified', paidAt: '2026-10-16T18:00:00Z', studentName: 'Yesterday Student', amount: 100, method: 'Cash' },
+    ]
+    render(<RecentPayments todayOnly now={new Date('2026-10-17T05:00:00Z')} branchId="branch-a" payments={payments}/>)
+    expect(screen.getByText('Today Student')).toBeInTheDocument()
+    expect(screen.queryByText('Yesterday Student')).not.toBeInTheDocument()
+  })
   it('shows the honest empty state when no verified payment source exists', () => {
     render(<RecentPayments branchId="branch-a" />)
     expect(screen.getByRole('heading', { name: 'Recent Payments' })).toBeInTheDocument()

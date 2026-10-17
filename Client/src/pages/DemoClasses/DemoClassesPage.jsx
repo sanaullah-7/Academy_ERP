@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, AlertCircle, UserPlus, Download } from 'lucide-react'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
@@ -22,13 +23,14 @@ import DemoDetailsDialog from '../../components/DemoClasses/DemoDetailsDialog.js
 import { useBranch } from '../../hooks/useBranch.js'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
+import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import { demoClassService } from '../../services/demoClassService.js'
 import { courseService } from '../../services/courseService.js'
 import { batchService } from '../../services/batchService.js'
 import { facultyService } from '../../services/facultyService.js'
-import { studentService } from '../../services/studentService.js'
 
 export default function DemoClassesPage() {
+  const navigate = useNavigate()
   const { branchId, branch, scopeKey } = useBranch()
   const { can } = usePermissions()
   const canManage = can(PERMISSIONS.DEMO_CLASSES_MANAGE)
@@ -43,7 +45,6 @@ export default function DemoClassesPage() {
   const [courses, setCourses] = useState([])
   const [batches, setBatches] = useState([])
   const [teachers, setTeachers] = useState([])
-  const [students, setStudents] = useState([])
 
   // Dialog states
   const [dialog, setDialog] = useState(null)
@@ -57,19 +58,18 @@ export default function DemoClassesPage() {
     let active = true
     if (!branchId) return () => { active = false }
 
+    Promise.resolve().then(()=>{if(active){setLoading(true);setError('')}})
     Promise.all([
       demoClassService.list({ branchId }),
       courseService.list({ branchId }),
       batchService.list({ branchId }),
       facultyService.list({ branchId }),
-      studentService.listDirectory({ branchId }).catch(() => []),
-    ]).then(([demoList, courseList, batchList, teacherList, studentList]) => {
+    ]).then(([demoList, courseList, batchList, teacherList]) => {
       if (!active) return
       setDemos(demoList || [])
       setCourses(courseList || [])
       setBatches(batchList || [])
       setTeachers(teacherList || [])
-      setStudents(studentList || [])
       setLoading(false)
     }).catch(err => {
       if (!active) return
@@ -80,6 +80,12 @@ export default function DemoClassesPage() {
     return () => { active = false }
   }, [branchId, scopeKey, refreshTrigger])
 
+  useEffect(()=>{
+    const refresh=()=>setRefreshTrigger(value=>value+1)
+    const timer=window.setInterval(refresh,60000)
+    window.addEventListener('focus',refresh);window.addEventListener('storage',refresh)
+    return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('storage',refresh)}
+  },[])
   // Handlers
   const handleRegister = async (record) => {
     setDialogBusy(true)
@@ -181,6 +187,28 @@ export default function DemoClassesPage() {
     setDialog('attendance')
   }
 
+  const handleDirectConvert = (item) => {
+    if (!item) return
+    navigate(ROUTE_PATHS.ADMISSIONS, {
+      state: {
+        focusNewAdmission: true,
+        prefillAdmission: {
+          studentName: item.studentName,
+          guardianName: item.guardianName || '',
+          contact: item.guardianContact || '',
+          studentPhone: '',
+          course: item.courseName,
+          branchId,
+          streamId: courses.find(course=>course.id===item.courseId)?.streamId || null,
+          courseId: item.courseId,
+          preferredBatchId: item.preferredBatchId,
+          notes: item.notes ? `Demo candidate (${item.demoId}) — ${item.notes}` : `Converted from Demo candidate (${item.demoId})`,
+          demoId: item.id,
+        }
+      }
+    })
+  }
+
   const openConvertDialog = (item) => {
     setSelectedDemo(item)
     setDialogError('')
@@ -213,8 +241,8 @@ export default function DemoClassesPage() {
       d.guardianContact,
       d.courseName,
       d.scheduledSession?.classDate || d.requestedDate,
-      d.scheduledSession?.location || 'Trial Hall',
-      d.scheduledSession?.teacherName || 'TBD',
+      d.scheduledSession?.location || 'Not configured',
+      d.scheduledSession?.teacherName || 'Not assigned',
       d.notes || '',
       d.status,
       d.convertedAdmissionDisplayId || '',
@@ -231,9 +259,9 @@ export default function DemoClassesPage() {
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
               <span>STUDENT ONBOARDING</span>
               <span className="text-primary font-bold">•</span>
-              <span className="text-primary font-medium">{branch?.name || 'Main Campus'}</span>
+              <span className="text-primary font-medium">{branch?.name || 'Current branch'}</span>
               <span className="text-primary font-bold">•</span>
-              <span className="text-primary font-medium">Session 2025–26</span>
+              <span className="text-primary font-medium">Active branch registry</span>
             </div>
             <h1
               aria-label="Demo Classes Management — Demo Classes & Trial Sessions"
@@ -322,6 +350,7 @@ export default function DemoClassesPage() {
               onSchedule={openScheduleDialog}
               onAttendance={openAttendanceDialog}
               onConvert={openConvertDialog}
+              onDirectConvert={handleDirectConvert}
               onCancel={openCancelDialog}
             />
           </>
@@ -329,12 +358,14 @@ export default function DemoClassesPage() {
 
         {/* Dialogs */}
         <DemoRegistrationForm
+          key={dialog==='register'?`register-${refreshTrigger}`:'closed'}
           open={dialog === 'register'}
           onClose={() => setDialog(null)}
           onSubmit={handleRegister}
           courses={courses}
           batches={batches}
-          students={students}
+          students={[]}
+          branchName={branch?.name}
           busy={dialogBusy}
           error={dialogError}
         />
@@ -362,6 +393,7 @@ export default function DemoClassesPage() {
           open={dialog === 'convert'}
           onClose={() => { setDialog(null); setSelectedDemo(null); setConversionResult(null) }}
           onSubmit={handleConvert}
+          onDirectConvert={handleDirectConvert}
           demo={selectedDemo}
           busy={dialogBusy}
           error={dialogError}

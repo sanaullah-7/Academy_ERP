@@ -28,4 +28,5 @@ export const studentService = {
   getProfile: (id, query) => inScope(() => mockApi.studentOperation('getProfile', { id, query }), query, PERMISSIONS.STUDENTS_VIEW),
   create: (record, query) => inScope(() => collection.create(record, query), query, PERMISSIONS.STUDENTS_CREATE),
   update: (id, record, query) => inScope(() => collection.update(id, record, query), query, PERMISSIONS.STUDENTS_EDIT),
+  delete: (id, query) => inScope(() => collection.delete(id, query), query, PERMISSIONS.STUDENTS_EDIT),
 }

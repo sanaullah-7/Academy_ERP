@@ -67,7 +67,7 @@ export default function DashboardLayout({ children, academyName, title = 'Worksp
             onToggleSidebar={() => setIsCollapsed((value) => !value)}
             onOpenNavigation={() => setIsNavigationOpen(true)}
           />
-          <main id="workspace-content" className="workspace-content" tabIndex={-1}>
+          <main id="workspace-content" className="workspace-content" data-page={routeTitle} tabIndex={-1}>
           <PageHeader title={displayTitle} description={description} />
             {children}
           </main>

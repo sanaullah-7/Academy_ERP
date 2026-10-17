@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { studentService } from './studentService.js'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authService } from './authService.js'
 import { admissionService } from './admissionService.js'
 import { facultyService } from './facultyService.js'
@@ -16,6 +17,17 @@ async function signIn(userId = 'demo-admin', branchId = central.branchId) {
 }
 
 describe('F05 branch-scoped Faculty & Classes reads', () => {
+  it('filters class students by saved enrollment subject IDs as well as batch and branch',async()=>{
+    await signIn()
+    const batchId='batch-demo-course-demo-2'
+    const row=(id,subjectIds,status='Active',branchId='demo-central')=>({id,name:id,enrollments:[{id:`en-${id}`,batchId,branchId,status,subjectIds}]})
+    const spy=vi.spyOn(studentService,'listDirectory').mockResolvedValue([row('urdu',['urdu']),row('chemistry',['chemistry']),row('pending',['urdu'],'Pending'),row('other-branch',['urdu'],'Active','demo-north')])
+    try {
+      expect((await facultyService.listClassStudents(batchId,{...central,subjectId:'urdu'})).map(student=>student.id)).toEqual(['urdu'])
+      expect(await facultyService.listClassStudents(batchId,{...central,subjectId:'missing'})).toEqual([])
+    } finally {spy.mockRestore()}
+  })
+
   it('lists only explicit single-role Teacher identities for the selected branch', async () => {
     await signIn()
     const centralTeachers = await facultyService.list(central)
