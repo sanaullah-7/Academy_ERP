@@ -139,7 +139,7 @@ describe('provisional student/course service contracts', () => {
   it('allows deleting a standalone demo student and updates extended fields', async () => {
     const central = { branchId: 'demo-central' }
     await signIn('demo-central')
-    const db = createMockDatabase()
+    createMockDatabase()
     // Test extended fields
     const updated = await studentService.update('student-demo-2', {
       name: 'Updated Demo Student',

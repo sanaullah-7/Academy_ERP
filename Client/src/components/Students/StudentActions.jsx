@@ -18,7 +18,7 @@ export default function StudentActions({ student, branchId, onUpdated, onDeleted
   const canDelete = canAccess(PERMISSIONS.ADMISSIONS_DELETE, user, branchId)
   const [editing, setEditing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [placement, setPlacement] = useState('bottom')
+  const [, setPlacement] = useState('bottom')
   const [deleting, setDeleting] = useState(false)
   const [deletePending, setDeletePending] = useState(false)
   const [deleteError, setDeleteError] = useState('')

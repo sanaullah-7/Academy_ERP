@@ -1,17 +1,19 @@
+import { useBranch } from '../../hooks/useBranch.js'
 import { useEffect, useState } from 'react'
 import { AlertCircle, GraduationCap, Loader2, Users } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import { Button } from '../ui/button.jsx'
 import { facultyService } from '../../services/facultyService.js'
 
-export default function BatchStudentsModal({ open, onClose, teacher, branchId }) {
-  const [selectedBatchId, setSelectedBatchId] = useState('')
+function BatchStudentsContent({ open, onClose, teacher, branchId, initialBatchId, subjectId, subjectName, subjectOnly = false }) {
+  const { branch } = useBranch()
+  const [selectedBatchId, setSelectedBatchId] = useState(initialBatchId || '')
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const batches = teacher?.assignedBatches || []
-  const effectiveBatchId = selectedBatchId || batches[0]?.id || ''
+  const effectiveBatchId = selectedBatchId || initialBatchId || batches[0]?.id || ''
 
   useEffect(() => {
     let active = true
@@ -25,7 +27,7 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
     })
 
     facultyService
-      .listClassStudents(effectiveBatchId, { branchId })
+      .listClassStudents(effectiveBatchId, { branchId, subjectId: subjectOnly ? (subjectId || '__unconfigured_subject__') : undefined })
       .then((res) => {
         if (active) {
           setStudents(res || [])
@@ -42,7 +44,7 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
     return () => {
       active = false
     }
-  }, [open, effectiveBatchId, branchId])
+  }, [open, effectiveBatchId, branchId, subjectId, subjectOnly])
 
   if (!teacher) return null
 
@@ -59,7 +61,8 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
                 Batch Students — {teacher.name}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Active students enrolled in this instructor&apos;s assigned batches.
+                {subjectOnly ? `Active students enrolled in ${subjectName || 'this subject'} only.` : "Active students enrolled in this instructor's assigned batches."}
+                <span className="mt-1 block">Branch: {branch?.name || 'Not configured'}</span>
               </DialogDescription>
             </div>
           </div>
@@ -72,7 +75,8 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
                 Select Batch:
               </label>
               <select
-                value={selectedBatchId}
+                value={effectiveBatchId}
+                disabled={subjectOnly}
                 onChange={(e) => setSelectedBatchId(e.target.value)}
                 className="h-8 rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus:ring-1 focus:ring-ring"
               >
@@ -99,7 +103,7 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
               </div>
             ) : students.length === 0 ? (
               <div className="py-10 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
-                No active students currently enrolled in this batch.
+                {subjectOnly ? 'No active students enrolled in this subject and batch.' : 'No active students currently enrolled in this batch.'}
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border border-border/80 max-h-72 overflow-y-auto">
@@ -114,7 +118,7 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
                   </thead>
                   <tbody className="divide-y divide-border/40">
                     {students.map((student) => (
-                      <tr key={student.id} className="hover:bg-slate-50/60">
+                      <tr key={student.enrollmentId || student.id} className="hover:bg-slate-50/60">
                         <td className="px-3.5 py-2.5 font-medium text-slate-900">
                           {student.name}
                         </td>
@@ -161,4 +165,8 @@ export default function BatchStudentsModal({ open, onClose, teacher, branchId })
       </DialogContent>
     </Dialog>
   )
+}
+
+export default function BatchStudentsModal(props) {
+  return <BatchStudentsContent key={`${props.open}-${props.branchId}-${props.teacher?.id}-${props.initialBatchId || ''}`} {...props} />
 }

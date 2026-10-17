@@ -1,3 +1,4 @@
+import { formatClassTime } from '../utils/classTime.js'
 /**
  * Purpose: Will define mock Database for the mock area of the Academy frontend.
  * Module: mock
@@ -886,9 +887,29 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       : Array.isArray(result) ? result.map((item) => project(operations[index].collection, item)) : project(operations[index].collection, result))
   }
 
+  function demoConversionSource(data, id, branchId) {
+    if (!id) return null
+    const session = readMockSession()
+    if (!canAccess(PERMISSIONS.DEMO_CLASSES_MANAGE, session?.user, branchId)) fail('DEMO_ACTION_DENIED', 'Demo conversion is not permitted.')
+    const demo = data.demoClasses.find(item=>item.id===id&&item.branchId===branchId)
+    if (!demo) fail('INVALID_REFERENCE', 'Choose a demo inquiry from this branch.')
+    if (demo.convertedAdmissionId || demo.status === 'Converted') fail('ALREADY_CONVERTED', 'This demo inquiry already has an admission.')
+    if (!['Registered','Scheduled','Attended'].includes(demo.status)) fail('INVALID_TRANSITION', 'This demo inquiry cannot be converted.')
+    return demo
+  }
+  function linkDemoAdmission(demo, admission) {
+    if (!demo) return
+    const now=new Date().toISOString(), session=readMockSession(), previous=demo.status
+    demo.status='Converted';demo.convertedAdmissionId=admission.id;demo.convertedAdmissionDisplayId=admission.admissionId;demo.convertedAt=now;demo.updatedAt=now
+    demo.statusHistory.push({id:`hist-${makeId()}`,demoId:demo.id,fromStatus:previous,toStatus:'Converted',actorUserId:session.user.id,actorName:session.user.name,occurredAt:now,reason:'Converted through Admissions'})
+    validateRecord(demo,'demoClasses')
+  }
   function createAdmission(record, query) {
+    const demoId=record?.demoId
+    if (demoId) {record={...record};delete record.demoId}
     validateRequest('admissions', 'create', undefined, record, query)
     const data = read(false)
+    const sourceDemo=demoConversionSource(data,demoId,query.branchId)
     const admission = applyOperation(data, 'admissions', 'create', undefined, record, query)
     const student = applyOperation(data, 'students', 'create', undefined, { name: admission.studentName, status: 'Provisional', admissionId: admission.id }, query)
     if (student.id === admission.id) fail('ID_CONFLICT', 'Admission and student require distinct internal IDs.')
@@ -898,6 +919,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     for (const key of ['studentPhone', 'identityNumber', 'gender', 'residenceType', 'address']) {
       if (admission[key]) student[key] = admission[key]
     }
+    linkDemoAdmission(sourceDemo,admission)
     normalizeAdmissions(data)
     write(data)
     const project = createDisplayProjector(data)
@@ -1065,6 +1087,9 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       return {
         ...item,
         courseName: course?.name ?? item.courseName ?? 'Unknown Course',
+        streamId: course?.streamId ?? null,
+        streamName: data.academicStreams.find(stream=>stream.id===course?.streamId&&stream.branchId===item.branchId)?.name ?? 'Unassigned',
+        branchName: getDemoBranches().find(branch=>branch.id===item.branchId)?.name ?? 'Unknown branch',
         batchName: batch?.name ?? item.batchName ?? null,
         scheduledSession: item.scheduledSession ? {
           ...item.scheduledSession,
@@ -1592,11 +1617,15 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const session = readMockSession()
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     const mutating = ['create', 'update', 'delete'].includes(operation)
-    const permission = mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
+    const permission = operation==='checkTeacherDelete' ? PERMISSIONS.USERS_MANAGE : mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
     if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for faculty assignments.')
 
     const data = read(!mutating, !mutating)
     data.facultyAssignments ??= []
+    if(operation==='checkTeacherDelete') {
+      if(data.facultyAssignments.some(item=>item.teacherId===id)||data.classes.some(item=>item.teacherId===id)||data.demoClasses.some(item=>item.scheduledSession?.teacherId===id)||data.assets.some(item=>item.assignedToId===id))fail('LINKED_RECORDS','Remove or reassign this faculty member\'s teaching schedules, demo sessions and asset assignments before deleting. Existing linked records are protected.')
+      return true
+    }
 
     const project = item => {
       const teacher = getDemoUsers().find(u => u.id === item.teacherId)
@@ -1658,6 +1687,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
 
     const teacher = getDemoUsers().find(u => u.id === candidate.teacherId && u.enabled && getBranchRoles(u, query.branchId).includes(ROLES.TEACHER))
     if (!teacher) fail('INVALID_REFERENCE', 'Choose an enabled Teacher from the active branch.')
+    if (teacher.specialization?.trim() && teacher.specialization.trim().toLowerCase() !== subject.name.trim().toLowerCase()) fail('INVALID_REFERENCE', 'Choose the subject matching this teacher primary subject.')
 
     // Conflict 1: Teacher double booking
     const teacherConflict = data.facultyAssignments.find(item =>
@@ -1671,7 +1701,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (teacherConflict) {
       const conflictSubject = data.subjects.find(s => s.id === teacherConflict.subjectId)?.name ?? 'another subject'
       const conflictBatch = data.batches.find(b => b.id === teacherConflict.batchId)?.name ?? 'another batch'
-      fail('SCHEDULE_CONFLICT', `Teacher ${teacher.name} already has an overlapping class for ${conflictSubject} in ${conflictBatch} (${teacherConflict.startTime} – ${teacherConflict.endTime}).`)
+      fail('SCHEDULE_CONFLICT', `Teacher ${teacher.name} already has an overlapping class for ${conflictSubject} in ${conflictBatch} (${formatClassTime(teacherConflict.startTime)} – ${formatClassTime(teacherConflict.endTime)}).`)
     }
 
     // Conflict 2: Room double booking
@@ -1735,6 +1765,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
 
     const data = read(false)
+    const sourceDemo=demoConversionSource(data,record.demoId,query.branchId)
     const course = data.courses.find(item => item.id === record.courseId && item.branchId === query.branchId)
     const batch = data.batches.find(item => item.id === batchId && item.branchId === query.branchId && item.courseId === record.courseId)
     if (!course || !batch) {
@@ -1970,6 +2001,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       data.payments.push(payment)
     }
 
+    linkDemoAdmission(sourceDemo,admission)
     normalizeAdmissions(data)
     write(data)
 

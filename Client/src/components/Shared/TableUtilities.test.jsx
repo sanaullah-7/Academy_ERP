@@ -1,9 +1,7 @@
+import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, renderHook, act } from '@testing-library/react'
 import {
-  useTableSelection,
-  useColumnVisibility,
-  ColumnVisibilityDropdown,
   TableToolbarActions,
   BulkActionBar
 } from './TableUtilities.jsx'

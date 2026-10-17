@@ -4,7 +4,7 @@
  * Status: Planned — functionality not implemented.
  */
 
-import { Badge } from '../ui/badge.jsx'
+
 import { generatePath, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import StudentActions from './StudentActions.jsx'

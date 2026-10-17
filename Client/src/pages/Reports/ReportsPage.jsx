@@ -151,14 +151,21 @@ export default function ReportsPage() {
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {kpis.map(([label, value], index) => {
         const Icon = index === 0 ? FileText : index === 1 ? BarChart3 : Users
+        const kpiThemes = ['kpi-maroon', 'kpi-sky', 'kpi-emerald', 'kpi-amber']
+        const iconStyles = [
+          'bg-[#F9EBEE] text-[#940016] border-[#f0d5d9]',
+          'bg-sky-50 text-sky-700 border-sky-100',
+          'bg-emerald-50 text-emerald-700 border-emerald-100',
+          'bg-amber-50 text-amber-700 border-amber-100'
+        ]
         return (
-          <Card key={label} className="border border-border/80 shadow-sm transition hover:shadow-md">
+          <Card key={label} className={`top-kpi-card ${kpiThemes[index % 4]} border shadow-xs transition hover:shadow-md`}>
             <CardContent className="flex items-center justify-between p-3.5">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
                 <div className="mt-1 text-xl font-bold tracking-tight text-gray-900">{value}</div>
               </div>
-              <span className="flex size-9 items-center justify-center rounded-lg bg-[#940016]/10 text-[#940016]">
+              <span className={`flex size-9 items-center justify-center rounded-lg border ${iconStyles[index % 4]}`}>
                 <Icon size={18} />
               </span>
             </CardContent>

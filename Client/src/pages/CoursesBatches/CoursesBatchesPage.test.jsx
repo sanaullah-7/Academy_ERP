@@ -1,3 +1,4 @@
+import { demoWorkflowService } from '../../services/demoWorkflowService.js'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -33,7 +34,7 @@ describe('F04 Courses & Batches page', () => {
     await user.selectOptions(screen.getByLabelText('Course'), screen.getByRole('option', { name: 'DEMO Robotics' }))
     await user.click(screen.getByRole('button', { name: 'Add batch' }))
     expect(await screen.findByText(/Batch “DEMO Robotics Morning” saved/)).toBeInTheDocument()
-    expect(await screen.findByText('No saved timetable sessions. Schedule editing is deferred until day/time, teacher, room and overlap policies are approved.')).toBeInTheDocument()
+    expect((await screen.findAllByText('DEMO Robotics Morning')).length).toBeGreaterThan(0)
   })
   it('saves Add Stream and Add Subject form submissions to branch storage', async () => {
     await login('demo-admin', 'demo-north')
@@ -48,6 +49,7 @@ describe('F04 Courses & Batches page', () => {
       expect.arrayContaining([expect.objectContaining({ name: 'DEMO Add Stream', branchId: 'demo-north' })]),
     )
 
+    await user.click(screen.getByRole('tab',{name:'Subjects',exact:true}))
     await user.click(screen.getByRole('button', { name: 'Add Subject' }))
     await user.type(screen.getByLabelText('Subject name'), 'DEMO Add Subject')
     await user.click(screen.getByRole('button', { name: 'Save' }))
@@ -58,26 +60,29 @@ describe('F04 Courses & Batches page', () => {
 
     unmount()
     render(<App />)
-    expect(await screen.findByText('DEMO Add Stream')).toBeInTheDocument()
+    expect((await screen.findAllByText('DEMO Add Stream')).length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('tab',{name:'Subjects',exact:true}))
     expect(await screen.findByText('DEMO Add Subject')).toBeInTheDocument()
     expect(screen.getAllByText('Demo Course One').length).toBeGreaterThan(0)
   })
   it('shows the saved stream, course, subject and batch relationships clearly', async () => {
     await login('demo-admin', 'demo-north')
-    const user = userEvent.setup()
+    await demoWorkflowService.setup({branchId:'demo-north'})
     render(<App />)
-    await user.click(await screen.findByRole('button', { name: 'Set Up QA Demo' }))
-    await user.click(screen.getByRole('button', { name: 'Confirm QA Demo Setup' }))
+    expect(screen.queryByRole('button',{name:'Set Up QA Demo'})).not.toBeInTheDocument()
     expect(await screen.findByText('Academic Portfolios')).toBeInTheDocument()
-    const portfolio = screen.getAllByText('QA Pre-Medical').map(item => item.closest('article')).find(Boolean)
+    const portfolio = (await screen.findAllByText('QA Pre-Medical')).map(item => item.closest('article')).find(Boolean)
     expect(within(portfolio).getByText('QA MDCAT Preparation')).toBeInTheDocument()
     expect(within(portfolio).getByText('Courses')).toBeInTheDocument()
     expect(within(portfolio).getByText('Subjects')).toBeInTheDocument()
     expect(within(portfolio).getByText('Batches')).toBeInTheDocument()
+    expect(screen.queryByText('QA Biology')).not.toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('tab',{name:'Subjects',exact:true}))
     const subjectRow = screen.getByText('QA Biology').closest('tr')
     expect(within(subjectRow).getByText('QA MDCAT Preparation')).toBeInTheDocument()
     expect(within(subjectRow).getByText('QA Pre-Medical')).toBeInTheDocument()
-    expect(screen.getAllByRole('columnheader', { name: 'Academic stream' })).toHaveLength(2)
+    expect(screen.getAllByRole('columnheader', { name: 'Academic stream' })).toHaveLength(1)
+    await userEvent.setup().click(screen.getByRole('tab',{name:'Courses',exact:true}))
     expect(screen.getAllByText(/subjects · .*batches/).length).toBeGreaterThan(0)
   })
   it('paginates the subjects table with configurable rows per page', async () => {
@@ -85,7 +90,11 @@ describe('F04 Courses & Batches page', () => {
     for (let index = 1; index <= 6; index += 1) await academicService.saveSubject(null, { name: `Paged Subject ${index}`, courseId: 'course-demo-1', active: true }, { branchId: 'demo-north' })
     const user = userEvent.setup()
     render(<App />)
+    await user.click(await screen.findByRole('tab',{name:'Subjects',exact:true}))
     expect(await screen.findByText('Paged Subject 1')).toBeInTheDocument()
+    expect(screen.getByLabelText('Subjects rows per page')).toHaveValue('10')
+    expect(screen.getByText('Paged Subject 6')).toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Subjects rows per page'), '5')
     expect(screen.queryByText('Paged Subject 6')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Subjects page 2' }))
     expect(await screen.findByText('Paged Subject 6')).toBeInTheDocument()
@@ -144,6 +153,7 @@ describe('F04 Courses & Batches page', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }))
     expect(await screen.findByRole('status')).toHaveTextContent('Academic stream “Disposable Stream UI” deleted.')
+    await user.click(screen.getByRole('tab',{name:'Subjects',exact:true}))
     await user.click(screen.getByRole('button', { name: 'Add Subject' }))
     await user.type(screen.getByLabelText('Subject name'), 'Disposable Subject UI')
     await user.click(screen.getByRole('button', { name: 'Save' }))

@@ -1,3 +1,4 @@
+import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 /**
  * Purpose: Will define Students Page for the Students area of the Academy frontend.
  * Module: Students
@@ -6,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { UsersRound, Loader2, AlertCircle, Search, RotateCcw } from 'lucide-react'
+import { UsersRound, Loader2, AlertCircle, Search } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card.jsx'
 import { Badge } from '../../components/ui/badge.jsx'
@@ -14,8 +15,6 @@ import { Button } from '../../components/ui/button.jsx'
 import { Input } from '../../components/ui/input.jsx'
 import StudentsTable from '../../components/Students/StudentsTable.jsx'
 import {
-  useTableSelection,
-  useColumnVisibility,
   TableToolbarActions,
   BulkActionBar,
 } from '../../components/Shared/TableUtilities.jsx'

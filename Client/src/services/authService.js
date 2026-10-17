@@ -1,3 +1,4 @@
+import { canAccess, PERMISSIONS } from '../constants/permissions.js'
 /**
  * Purpose: Will define auth Service for the services area of the Academy frontend.
  * Module: services
@@ -16,6 +17,17 @@ export const authService = {
     if (!user?.enabled) throw new Error('Choose a valid fictional demo account.')
     const branches = getAuthorizedBranches(user)
     const session = { user, branchId: branches.length === 1 ? branches[0].id : null }
+    saveMockSession(session)
+    return session
+  },
+  async switchAccount(userId) {
+    const current = readMockSession()
+    if (!current?.branchId || !canAccess(PERMISSIONS.USERS_MANAGE, current.user, current.branchId)) throw new Error('Only a Super Admin can switch staff accounts.')
+    const user = findDemoUser(userId)
+    const branches = getAuthorizedBranches(user)
+    if (!user?.enabled || !branches.length) throw new Error('Choose an active staff account with an authorized branch.')
+    const branchId = branches.some(branch => branch.id === current.branchId) ? current.branchId : branches.length === 1 ? branches[0].id : null
+    const session = { user, branchId }
     saveMockSession(session)
     return session
   },

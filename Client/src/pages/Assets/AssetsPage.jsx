@@ -1,5 +1,6 @@
+import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 import { useEffect, useMemo, useState } from 'react'
-import { Archive, BadgeCheck, ClipboardCheck, Download, Eye, Loader2, MapPin, PackagePlus, Pencil, Search, Wrench } from 'lucide-react'
+import { Archive, BadgeCheck, ClipboardCheck, Eye, Loader2, MapPin, PackagePlus, Pencil, Search, Wrench } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
@@ -14,8 +15,6 @@ import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import { getLocalDateOnly } from '../../utils/formatDate.js'
 import {
-  useTableSelection,
-  useColumnVisibility,
   TableToolbarActions,
   BulkActionBar,
 } from '../../components/Shared/TableUtilities.jsx'
@@ -120,7 +119,27 @@ export default function AssetsPage() {
   return <DashboardLayout><div className="space-y-5 print:p-0">
     <header className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wider text-primary">Campus Logistics · {branch?.name} · Active Inventory</p><h1 className="mt-0.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Academy Assets &amp; Inventory</h1><p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">Track branch equipment, condition, assignment and maintenance history.</p></div><div className="flex flex-wrap items-center gap-2 print:hidden"><TableToolbarActions onRefresh={() => setRefresh(x => x + 1)} columns={assetColumns} visibleColumns={columnVisibility.visibleColumns} onToggleColumn={columnVisibility.toggleColumn} onResetColumns={columnVisibility.resetColumns} onExportPdf={exportInventoryPdf} onExportCsv={exportInventory} onPrint={() => window.print()} exportScopeSummary={selection.getExportScope().summary} />{canManage && <Button size="sm" className="h-9 gap-1.5 shadow-sm" onClick={openCreate}><PackagePlus size={15} />Register New Asset</Button>}</div></header>
     {feedback && <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium">{feedback}</p>}
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[["Total Assets", assets.length, Archive, `${categories.length} saved categories`], ['Inventory Value', money(storedValue), BadgeCheck, `${valuedCount}/${assets.length} stored book values`], ['Needs Maintenance', needsMaintenance, Wrench, 'Saved condition/status records'], ['Working Condition', `${workingRate}%`, ClipboardCheck, `${working.length} non-retired assets`]].map(([label, value, Icon, note]) => <Card key={label} className="py-0 overflow-hidden border border-border/80 shadow-xs"><CardContent className="flex items-start justify-between p-4"><div><p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p><strong className="mt-1.5 block text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</strong><p className="mt-2 text-xs text-muted-foreground">{note}</p></div><span className="grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Icon size={19} /></span></CardContent></Card>)}</section>
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {[
+        ['Total Assets', assets.length, Archive, `${categories.length} saved categories`, 'kpi-maroon', 'bg-[#F9EBEE] text-[#940016] border-[#f0d5d9]'],
+        ['Inventory Value', money(storedValue), BadgeCheck, `${valuedCount}/${assets.length} stored book values`, 'kpi-emerald', 'bg-emerald-50 text-emerald-700 border-emerald-100'],
+        ['Needs Maintenance', needsMaintenance, Wrench, 'Saved condition/status records', 'kpi-amber', 'bg-amber-50 text-amber-700 border-amber-100'],
+        ['Working Condition', `${workingRate}%`, ClipboardCheck, `${working.length} non-retired assets`, 'kpi-sky', 'bg-sky-50 text-sky-700 border-sky-100']
+      ].map(([label, value, Icon, note, theme, iconStyle]) => (
+        <Card key={label} className={`top-kpi-card ${theme} py-0 overflow-hidden border shadow-xs`}>
+          <CardContent className="flex items-start justify-between p-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+              <strong className="mt-1.5 block text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</strong>
+              <p className="mt-2 text-xs text-muted-foreground">{note}</p>
+            </div>
+            <span className={`grid size-10 place-items-center rounded-xl border ${iconStyle}`}>
+              <Icon size={19} />
+            </span>
+          </CardContent>
+        </Card>
+      ))}
+    </section>
     <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]"><section className="min-w-0 space-y-3"><Card className="py-0 border border-border/80 shadow-xs"><CardContent className="space-y-3 p-3.5"><div className="flex flex-wrap items-center gap-1.5"><button type="button" className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${category === 'All' ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/40 text-muted-foreground hover:text-foreground'}`} onClick={() => setCategory('All')}>All Assets ({assets.length})</button>{categories.map(item => <button type="button" className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${category === item ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted/40 text-muted-foreground hover:text-foreground'}`} key={item} onClick={() => setCategory(item)}>{item}</button>)}</div><div className="grid gap-2 md:grid-cols-[minmax(12rem,1fr)_12rem_12rem_9rem]"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} /><Input className="pl-9 h-9 text-xs" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search asset tag, item, room..." /></label><select className="h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus:ring-1 focus:ring-ring" value={location} onChange={e => setLocation(e.target.value)}><option>All</option>{locations.map(item => <option key={item}>{item}</option>)}</select><select className="h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus:ring-1 focus:ring-ring" value={condition} onChange={e => setCondition(e.target.value)}><option>All</option>{['Excellent', 'Working', 'Needs Maintenance', 'Out of Service'].map(item => <option key={item}>{item}</option>)}</select><select className="h-9 rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus:ring-1 focus:ring-ring" value={sort} onChange={e => setSort(e.target.value)}><option value="code">Tag</option><option value="name">Name</option><option value="value">Book value</option></select></div></CardContent></Card>
       {selection.selectedCount > 0 && (
         <BulkActionBar

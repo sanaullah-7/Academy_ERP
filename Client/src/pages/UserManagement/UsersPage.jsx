@@ -1,3 +1,4 @@
+import { authService } from '../../services/authService.js'
 import { useEffect, useMemo, useState } from 'react'
 import { CirclePlus, Eye, KeyRound, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
@@ -15,6 +16,10 @@ import { TableToolbarActions } from '../../components/Shared/TableUtilities.jsx'
 const roles=Object.values(ROLES), blank={name:'',login:'',contact:'',enabled:true,assignments:[]}
 export default function UsersPage(){
  const [data,setData]=useState(null),[search,setSearch]=useState(''),[branch,setBranch]=useState('All'),[role,setRoleFilter]=useState('All'),[dialog,setDialog]=useState(false),[viewing,setViewing]=useState(null),[editing,setEditing]=useState(null),[form,setForm]=useState(blank),[message,setMessage]=useState(''),[error,setError]=useState(''),[page,setPage]=useState(1)
+ const [switching,setSwitching]=useState(null),[switchBusy,setSwitchBusy]=useState(false),[switchError,setSwitchError]=useState('')
+ async function switchAccount(){setSwitchBusy(true);setSwitchError('');try{await authService.switchAccount(switching.id);window.location.assign('/dashboard')}catch(e){setSwitchError(e.message);setSwitchBusy(false)}}
+ const [deleting,setDeleting]=useState(null),[deleteBusy,setDeleteBusy]=useState(false),[deleteError,setDeleteError]=useState('')
+ async function removeStaff(){setDeleteBusy(true);setDeleteError('');try{await organizationService.deleteUser(deleting.id);setDeleting(null);setMessage('Staff account deleted.');await load()}catch(e){setDeleteError(e.message)}finally{setDeleteBusy(false)}}
  const load=()=>organizationService.overview().then(setData,e=>setError(e.message));useEffect(()=>{void load()},[])
  const rows=useMemo(()=>data?.users.filter(u=>`${u.name} ${u.login??u.id} ${u.contact??''}`.toLowerCase().includes(search.toLowerCase())&&(branch==='All'||u.assignments.some(a=>a.branchId===branch))&&(role==='All'||u.assignments.some(a=>a.roles.includes(role))))??[],[data,search,branch,role])
  const open=item=>{setEditing(item??null);setForm(item?{name:item.name,login:item.login??item.id,contact:item.contact??'',enabled:item.enabled,assignments:item.assignments.map(a=>({...a,roles:[a.roles[0]]}))}:blank);setError('');setDialog(true)}
@@ -152,6 +157,8 @@ export default function UsersPage(){
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setViewing(u)}>
                         <Eye size={13} className="mr-1" />View
                       </Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={!u.enabled||!u.assignments.length} aria-label={`Switch to account ${u.name}`} onClick={()=>{setSwitching(u);setSwitchError('')}}>Open Account</Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" aria-label={`Delete staff ${u.name}`} onClick={()=>{setDeleting(u);setDeleteError('')}}>Delete</Button>
                       <Button size="sm" variant="outline" className="h-7 px-2 text-xs font-medium cursor-pointer" disabled={base} onClick={() => open(u)}>
                         Edit
                       </Button>
@@ -256,6 +263,18 @@ export default function UsersPage(){
             <Button type="submit" size="sm" className="h-8 text-xs cursor-pointer bg-[#940016] text-white hover:bg-[#7a0012]">Save Account</Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!switching} onOpenChange={open=>{if(!open&&!switchBusy)setSwitching(null)}}>
+      <DialogContent><DialogHeader><DialogTitle>Switch Staff Account</DialogTitle><DialogDescription>Sign in as {switching?.name}? Your current Super Admin session will end. Only this staff account's assigned branches, roles and tabs will be available. To return, log out and sign in as Super Admin again.</DialogDescription></DialogHeader>
+        {switchError&&<p role="alert">{switchError}</p>}
+        <DialogFooter><Button variant="outline" disabled={switchBusy} onClick={()=>setSwitching(null)}>Cancel</Button><Button disabled={switchBusy} onClick={switchAccount}>{switchBusy?'Switching...':'Switch Account'}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!deleting} onOpenChange={open=>{if(!open&&!deleteBusy)setDeleting(null)}}>
+      <DialogContent><DialogHeader><DialogTitle>Delete Staff Member</DialogTitle><DialogDescription>Are you sure you want to delete {deleting?.name} and their branch role assignments? Linked records are protected. This cannot be undone.</DialogDescription></DialogHeader>
+        {deleteError&&<p role="alert">{deleteError}</p>}
+        <DialogFooter><Button variant="outline" disabled={deleteBusy} onClick={()=>setDeleting(null)}>Cancel</Button><Button variant="destructive" disabled={deleteBusy} onClick={removeStaff}>{deleteBusy?'Deleting...':'Delete Staff'}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </div></DashboardLayout>

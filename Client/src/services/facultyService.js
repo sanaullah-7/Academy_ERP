@@ -1,3 +1,4 @@
+import { organizationService } from './organizationService.js'
 /**
  * Purpose: Will define faculty Service for the services area of the Academy frontend.
  * Module: services
@@ -114,7 +115,7 @@ async function listTeachers(query) {
           batchCount: assignedBatches.length,
           weeklyHours,
           studentReach,
-          assignments: teacherAssignments.map(a=>({...a,enrolledCount:batchMap.get(a.batchId)?.enrolledCount??0})),
+          assignments: teacherAssignments.map(a=>({...a,enrolledCount:batchMap.get(a.batchId)?.enrolledCount??0,subjectStudentCount:new Set(students.filter(student=>(student.enrollments||[]).some(enrollment=>enrollment.status==='Active'&&enrollment.branchId===branchId&&enrollment.batchId===a.batchId&&enrollment.subjectIds?.includes(a.subjectId))).map(student=>student.id)).size})),
           studentIds:[...reachedStudentIds],
         }
       })
@@ -123,6 +124,25 @@ async function listTeachers(query) {
 
 export const facultyService = {
   list: listTeachers,
+  async updateTeacher(id, record, query) {
+    return inScope(async branchId => {
+      const store=readOrganization()
+      const teacher=store.users.find(user=>user.id===id&&getBranchRoles(user,branchId).includes(ROLES.TEACHER))
+      if(!teacher)throw new MockDataError('NOT_FOUND','Only created faculty members can be edited here.')
+      if(!record.name?.trim()||!record.contact?.trim())throw new MockDataError('INVALID_RECORD','Name and contact are required.')
+      for(const key of ['name','contact','qualifications','specialization','department'])teacher[key]=String(record[key]??'').trim().slice(0,200)
+      writeOrganization(store)
+      return teacher
+    },query,PERMISSIONS.USERS_MANAGE)
+  },
+  async deleteTeacher(id, query) {
+    return inScope(async branchId => {
+      const teacher=getDemoUsers().find(user=>user.id===id&&getBranchRoles(user,branchId).includes(ROLES.TEACHER))
+      if(!teacher)throw new MockDataError('NOT_FOUND','Faculty member was not found. Reload saved records.')
+      await organizationService.deleteUser(id)
+      return teacher
+    },query,PERMISSIONS.USERS_MANAGE)
+  },
   async getById(id, query) {
     if (typeof id !== 'string' || !id.trim()) throw new MockDataError('INVALID_REQUEST', 'A valid teacher ID is required.')
     return inScope(async branchId => {
@@ -204,7 +224,7 @@ export const facultyService = {
         department: teacher.department || null,
         assignedSubjects,
         assignedBatches,
-        schedules: teacherAssignments,
+        schedules: teacherAssignments.map(assignment => ({ ...assignment, enrolledCount: batchMap.get(assignment.batchId)?.enrolledCount ?? 0 })),
         stats: {
           totalBatches: assignedBatches.length,
           weeklyHours,
@@ -303,7 +323,7 @@ export const facultyService = {
       const batch = await batchService.getById(batchId, { branchId })
       const students = await studentService.listDirectory({ branchId })
       return students.flatMap(student => (student.enrollments ?? [])
-        .filter(enrollment => enrollment.status === 'Active' && enrollment.branchId === branchId && enrollment.batchId === batch.id)
+        .filter(enrollment => enrollment.status === 'Active' && enrollment.branchId === branchId && enrollment.batchId === batch.id && (!query?.subjectId || enrollment.subjectIds?.includes(query.subjectId)))
         .map(enrollment => ({
           id: student.id,
           enrollmentId: enrollment.id,

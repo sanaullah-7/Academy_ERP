@@ -64,3 +64,17 @@ it('saves and edits through dialog handlers, shares academic projections and rem
  await authService.login({userId:'demo-owner'})
  await expect(facultyService.removeAssignment(extra.id,query)).rejects.toBeDefined()
 })
+
+it('shows only the selected teacher primary subject and rejects other subjects in persistence',async()=>{
+ const query={branchId:'demo-central'}
+ const teacher=await facultyService.createTeacher({name:'QA Biology Only',contact:'03000000061',specialization:'Biology'},query)
+ const stream=await academicService.saveStream(null,{name:'QA Subject Field',active:true},query)
+ const course=await academicService.saveCourse(null,{name:'QA Subject Course',streamId:stream.id,active:true},query)
+ const batch=await academicService.saveBatch(null,{name:'QA Subject Batch',courseId:course.id,active:true},query)
+ const biology=await academicService.saveSubject(null,{name:'Biology',courseId:course.id,active:true},query)
+ const chemistry=await academicService.saveSubject(null,{name:'Chemistry',courseId:course.id,active:true},query)
+ render(<AssignFacultyModal open onClose={()=>{}} course={course} initialTeacherId={teacher.id} teachers={[teacher]} batches={[batch]} subjects={[biology,chemistry]} branchId={query.branchId}/> )
+ expect(screen.getByRole('option',{name:'Biology'})).toBeInTheDocument()
+ expect(screen.queryByRole('option',{name:'Chemistry'})).not.toBeInTheDocument()
+ await expect(facultyService.assignFaculty({teacherId:teacher.id,courseId:course.id,batchId:batch.id,subjectId:chemistry.id,days:['Mon'],startTime:'08:00',endTime:'09:00',room:'QA'},query)).rejects.toMatchObject({code:'INVALID_REFERENCE'})
+})

@@ -1914,3 +1914,131 @@ F09-F13 functional QA evidence (2026-10-15): Assets/Reports, organization access
 Owner authorized main dev changes with UI styling frozen. Existing assignment dialog now selects saved field/course dependencies, supports saved-assignment edit/remove, and shares facultyService with Courses & Batches. Course detail callbacks retain batch/subject IDs. Removed fabricated faculty timetable/enrollment/KPI fallbacks; course/batch counts use unique active student IDs and faculty reach uses a union. Assignment writes require classes.manage, weekdays normalize and missing update IDs are rejected.
 
 Verification: focused handler integration proves create/edit, second assignment retention, conflict rejection, enrolled-vs-pending counts, academic projection, Admissions teacher/room rendering and selective removal. Existing Faculty workflow, daily clock, Dashboard, Admissions enrollment, academic configuration and financial service checks passed in focused runs. Targeted ESLint and one production build passed; existing large bundle warning remains. Browser NOT_RUN (no browser automation tooling available); owner browser acceptance pending. No commit/push or owner storage changes.
+
+
+## Staff deletion correction (2026-10-17) - IN_REVIEW
+Owner authorized built-in and created staff deletion through Faculty and Users. Shared permission-checked deletion preserves linked schedules/demo sessions/assets, blocks self/last branch administrator deletion and requires management access to all assigned branches. Deleted built-in identities persist through organization tombstones without resetting operational records. Users exposes explicit confirmation. Focused organization/Faculty tests: 13/13 PASS; targeted ESLint PASS; isolated Edge Users Cancel/Delete/refresh PASS. Owner browser acceptance pending; no commit/push.
+
+
+## Direct role dashboard (2026-10-17) - IN_REVIEW
+Removed Dashboard role-selection screen and top presentation role buttons at owner request. Dashboard resolves the current branch assigned role automatically (Super Admin, Owner, Receptionist, Teacher priority for multiple roles); sidebar authorization remains unchanged. Dashboard and financial regression tests 17/17 PASS; targeted ESLint PASS. Account impersonation/preview behavior requires clarification and is not implemented.
+
+
+## Explicit mock staff account switch (2026-10-17) - IN_REVIEW
+Owner clarified actual login switch. Users Open Account requires confirmation, then replaces the mock session with the enabled target staff identity and its authorized branch context. Target permissions apply without retained administrator access; returning requires ordinary demo login. Disabled/unassigned targets are rejected. Auth/Dashboard tests 42/42 PASS; targeted ESLint PASS; isolated Edge Cancel/Confirm/teacher tabs/refresh PASS. Corrected stale auth test reference-identity assertion to compare canonical user values. Production backend impersonation is not implemented. No owner storage changes, commit or push.
+
+
+Topbar compact-control adjustment (2026-10-17, IN_REVIEW): sidebar toggle and fullscreen controls now use borderless 32px sizing; desktop sidebar toggle moved 8px left. Existing handlers unchanged. Targeted Header ESLint and diff check PASS; visual browser verification NOT_RUN.
+
+
+Topbar follow-up (2026-10-17, IN_REVIEW): search hover retains card background; sidebar toggle centered across the sidebar/topbar boundary in both expanded and collapsed desktop states. Targeted ESLint PASS; isolated Edge computed hover background and both boundary-center checks PASS.
+
+
+Topbar layering correction (2026-10-17, IN_REVIEW): topbar z-index 30 clears sidebar layer 20 so the boundary toggle remains fully visible/clickable; search maximum width reduced to 384px. Targeted ESLint PASS; isolated Edge toggle hit-test and search width PASS.
+
+
+Sidebar motion correction (2026-10-17, IN_REVIEW): global active-button scale overrode the toggle centering transform and caused a press jump. Scoped override preserves centering while pressed; sidebar width/body margin transitions removed for immediate toggling. Isolated Edge press-position and instant-toggle checks PASS.
+
+
+Compact branch dropdown (2026-10-17, IN_REVIEW): owner-requested 176px maximum trigger with themed custom campus options, selected checkmark, outside click/Escape/Tab close and arrow/Home/End keyboard navigation. Existing authorized branch service unchanged. Dashboard/Students branch regression tests 28/28 PASS; targeted ESLint PASS; isolated Edge actual branch switch and keyboard close PASS. Sidebar easing now 320ms per owner follow-up.
+
+
+Global search input alignment (2026-10-17, IN_REVIEW): search icon and single-line ESC badge positioned inside input with reserved text padding. Targeted ESLint PASS; isolated Edge bounding checks PASS. Branch dropdown menu now matches trigger width per owner follow-up.
+
+
+Faculty class time/shift progress (2026-10-17, IN_REVIEW): saved class/assignment displays use 12-hour AM/PM and start-time Morning (before noon)/Evening labels. Shift cards retain actual seat-capacity reporting and add clock-derived scheduled-minutes elapsed progress, not claimed teaching/syllabus completion. Existing minute clock updates progress. Focused time/shift/Faculty tests 11/11 PASS. Targeted lint PASS on utilities, profile and schedule panel; existing unused imports in FacultyProfileModal and set-state-in-effect in FacultyClassesPage remain. Browser NOT_RUN. Native time entry remains browser/OS localized; stored HH:mm values unchanged.
+
+
+Faculty card/progress correction (2026-10-17, IN_REVIEW): timetable card header/room/timing bounded with single-line truncation/tooltips; student action on a separate contained row. Roster and full-profile assignment deletion now require Cancel/Delete dialogs (existing modal confirmation retained); single-date roster deletion uses class service. Weekend classes now contribute to actual Morning/Evening cards as well as explicitly described weekend summary. Clarified scheduled time elapsed versus enrolled/total seat occupancy; only today schedules count. Focused tests 11/11 PASS, helper/profile ESLint PASS; pre-existing roster set-state-in-effect lint error remains. Browser verification incomplete (fixture/selection timeouts), not claimed PASS.
+
+
+Dashboard class period labels (2026-10-17, IN_REVIEW): daily cards show Morning before noon, Afternoon noon to before 17:00, Evening from 17:00 based on saved start time; invalid time is explicit. Existing Faculty two-shift grouping unchanged. Focused time/Dashboard tests 14/14 PASS; targeted ESLint reports existing unused MoreVertical and feeService imports in Dashboard; browser NOT_RUN.
+
+
+Faculty session banner (2026-10-17, IN_REVIEW): compact nonwrapping status badge, working Schedule link, removed hardcoded In Progress. Status resolves selected teacher recurring/single-date saved classes for today and existing minute clock (Asia/Karachi); no classes shows explicit empty status. Focused Faculty/shift tests 11/11 PASS; existing roster effect lint issue remains; browser NOT_RUN.
+
+
+Faculty current-UI consolidation (2026-10-17, IN_REVIEW): removed session Schedule link and obsolete ClassSchedulePanel component/rendering; legacy schedule URL redirects to current Faculty directory, retaining saved sessions/services. Profile footer Batch Students replaced by permission-checked Add Class wired to existing assignment modal with selected teacher and new-assignment mode. Per-slot View Students retained. Syllabus row spacing adjusted; completion unavailable because no authoritative completed syllabus records exist. Faculty/Dashboard regressions 18/18 PASS; router lint PASS, existing roster set-state-in-effect lint issue remains. Browser NOT_RUN. No commit/push or saved data changes.
+
+
+Faculty relationship visibility (2026-10-17, IN_REVIEW): timetable cards show saved Batch name and no Active Slot badge (Dashboard selection remains screen-reader context). Full profile subjects/batches show saved Field > Course > Batch > Subject relationships and authoritative batch enrolled counts; schedule table includes field and batch student count. Counts explicitly describe batch enrollment, not subject attendance. Faculty/Dashboard tests 18/18 PASS; service/profile ESLint PASS; browser NOT_RUN. Existing roster lint issue unchanged.
+
+
+Faculty academic table consolidation (2026-10-17, IN_REVIEW): replaced separate Assigned subjects/batches profile cards with one full-width themed Academic Assignments table (Field, Course, Batch, Subject, Students). Repeated schedules for the same saved relationship share one summary row; timetable remains unchanged. Fixed columns/truncation/tooltips contain long content; student count explicitly denotes active batch enrollment. Browser visual acceptance pending.
+
+
+Saved academic subject filters (2026-10-17, IN_REVIEW): Faculty filter pills now derive active subjects from saved active courses in selected branch rather than a fixed subject list/name inference. Counts/filter membership use saved assignment subject IDs and unique teachers; duplicate subject names identify course. Navigation, refresh, window focus and cross-tab storage changes reload academic data. Focused Faculty tests 7/7 PASS including a newly saved custom subject/filter. Existing effect lint issue remains; browser NOT_RUN.
+
+
+Assignment conflict time display (2026-10-17, IN_REVIEW): teacher-overlap error formats existing saved class times in 12-hour AM/PM using shared formatter. Conflict detection and records unchanged.
+
+
+Subject-scoped class students (2026-10-17, IN_REVIEW): View Students passes selected assignment subject/batch to existing modal/service. Only Active same-branch same-batch enrollments explicitly containing that subject ID are shown; unknown subject fails closed. Class popup fixes selected batch and displays current branch/subject. Existing generic batch service remains available without subject filter. Focused faculty service tests 6/6 PASS including subject/pending/foreign-branch exclusion. Existing modal effect lint issue remains; browser NOT_RUN.
+
+
+Selected class status correction (2026-10-17, IN_REVIEW): status banner now resolves the clicked assignment/single-date occurrence by immutable ID, rather than prioritizing any in-progress class for the selected teacher. Uses existing daily resolver/clock; other weekdays or absent occurrences show Not scheduled today. Focused clock/selection tests cover completed/live/upcoming/starting-soon and missing selection. Browser acceptance pending.
+
+
+Subject-specific timetable count (2026-10-17, IN_REVIEW): roster class cards use unique active same-branch/same-batch enrollments explicitly selecting the assignment subject, matching View Students rather than entire batch population. No matching subject enrollment shows 0; single-date sessions without a saved subject ID show 0 instead of borrowing batch count. Existing batch capacity metrics unchanged. Focused Faculty tests 13/13 PASS; service ESLint PASS; browser NOT_RUN.
+
+
+Faculty professional details binding (2026-10-17, IN_REVIEW): replaced unconditional demo placeholder with saved qualification, specialization and department values. Missing fields explicitly show Not recorded; optional saved textual professional notes preserved. Faculty integration tests 8/8 PASS including persisted professional fields; profile/test ESLint PASS. Browser NOT_RUN.
+
+
+Add Faculty saved-subject selector (2026-10-17, IN_REVIEW): replaced fixed Primary Subject list with active saved subjects from active branch courses; loads on modal open and reloads on focus/storage changes. Themed compact listbox shows course context/checkmark, keyboard navigation, outside-click/Escape close and empty/error/loading states. New faculty must select a saved subject; legacy edit specialization preserved. Primary subject remains profile specialization, not an automatic teaching assignment. Focused Faculty tests 8/8 PASS including saving a custom academic subject into new faculty; targeted modal/test ESLint PASS. Browser NOT_RUN.
+
+
+Scrollbar visibility follow-up (2026-10-17, IN_REVIEW): visible scrollbar tracks hidden across workspace descendants and portaled dialogs, including dropdown lists; scrolling overflow and navigation remain functional. CSS-only; diff check PASS, browser NOT_RUN.
+
+
+Primary subject dropdown density (2026-10-17, IN_REVIEW): menu maximum height reduced to 160px, tighter item padding/gap and 11px option text; scroll behavior preserved. Targeted ESLint PASS.
+
+
+Primary-subject assignment filter (2026-10-17, IN_REVIEW): Add/Edit Class subject options match selected teacher saved primary specialization and selected course. Changing teacher clears stale subject; persistence rejects a mismatching subject for teachers with a recorded primary subject. Legacy teachers without primary subject retain existing selection behavior. No saved assignments removed. Focused dialog tests 2/2 PASS including Biology-only UI and mismatch rejection; existing Faculty workflow 8/8 PASS in combined run before focused addition; targeted ESLint PASS. Browser NOT_RUN.
+
+
+Courses/portfolio polish (2026-10-17, IN_REVIEW): removed Set Up QA Demo action and its page-only setup handler/dialog; existing saved data and shared demo service preserved. Add Course/Batch moved right opposite directory tabs. Portfolio container/cards use theme-based subtle gradients, compact metrics/links, uniform 168px cards; list allows exactly four cards (702px with gaps), scrolling only above four and no visible scrollbar. Courses page tests 10/10 PASS; targeted ESLint PASS; isolated Edge five-card case verified 702px viewport/880px scroll height and absent QA action. No owner storage changes or commit/push.
+
+
+Academic Subjects tab placement (2026-10-17, IN_REVIEW): moved existing subject table into Subjects tab beside Courses and Batches, with shared right-aligned tab-specific Add action. Existing subject actions, exports and pagination preserved; only selected directory table visible. Courses page tests 10/10 PASS; targeted ESLint PASS; isolated Edge tab visibility/placement and Add action checks PASS. Saved data unchanged.
+
+
+Academic directory table polish (2026-10-17, IN_REVIEW): Courses/Batches/Subjects default to 10 rows per page, selectable pagination retained. Shared scoped table styling uses theme tokens for compact uppercase headings, subtle alternating rows/hover and consistent cell spacing/dividers. Courses page tests 10/10 PASS; targeted ESLint PASS; isolated Edge confirmed 10-row defaults across all tabs with no horizontal overflow.
+
+
+
+
+Compact portfolio actions (2026-10-17, IN_REVIEW): three-dot actions use content-fit width, smaller 11px text and tighter spacing. Academic stream portfolio menu now shows only permitted Edit/Delete; View removed from that menu, stream-name view remains. Users without management receive no empty stream menu. Courses page tests 10/10 PASS; targeted ESLint PASS; browser NOT_RUN.
+
+
+Course details popup fit (2026-10-17, IN_REVIEW): scoped override removes shared 512px width cap for course popup (1040px desktop, viewport-bounded mobile), smaller title/tabs/padding, single-line nonshrinking tab labels and reserved close-button space. Isolated Edge width 1040px and all tab labels single-line PASS. Existing CourseDetailsModal unused-import/effect lint errors and dependency warning remain.
+
+
+Fees/Finance table pagination (2026-10-18, IN_REVIEW): shared compact pagination with range, bounded numbered pages, previous/next and 10/15/25/50 sizes; both default to 15. Filter/branch/page-size context resets page, result shrink clamps safely; exports/financial totals keep all matching records. Fees empty results retain controls. Focused financial regressions 5/5 PASS; targeted ESLint PASS; isolated Edge Finance selector/default PASS. No saved financial data changed.
+
+
+Finance reference cards and live metrics (2026-10-18, IN_REVIEW): four expanded theme-based cards show daily received/spent split, dynamic current-month revenue/expense totals, actual verified receipt/posted-expense counts, calculated net margin and previous-month net. No fabricated challan-collection/dues/healthy-status claims. Karachi date/month grouping handles UTC boundaries and zero revenue honestly. Refresh on expense save, focus, database storage events and minute timer (cleaned on unmount). Focused financial/metrics tests 7/7 PASS, targeted ESLint PASS. Isolated Edge real Post Expense updated current-month expense card from 0 to 123 using explicitly fictional test profile data; owner storage untouched. No commit/push.
+
+
+Dashboard Quick Operations compact layout (2026-10-18, IN_REVIEW): reduced section padding/gaps, action minimum height 80 to 64px, icon containers 40 to 32px, icons 19 to 16px and compact title/helper text. Existing navigation/permissions unchanged. Dashboard tests 12/12 PASS; existing unused MoreVertical/feeService lint errors remain. Browser NOT_RUN.
+
+
+Academic table relationship badges (2026-10-18, IN_REVIEW): field in Courses, course in Batches, and course/field in Subjects now use compact pastel pill badges with dot, subtle gradient/border and dark-mode colors. Stable identity hash keeps matching records consistent across tables; long names truncate with title. No data changes. Existing unused CalendarDays/UsersRound lint issues remain; browser NOT_RUN.
+
+
+Demo prospective registration and Admissions handoff (2026-10-18, IN_REVIEW): trial registration uses saved active academic fields/courses/batches in current branch, collects candidate/guardian/contact/date/time/notes and creates only demo inquiry. Existing-student picker omitted on this page. Registry derives actual field/course/batch/branch, guardian, requested/scheduled timing and teacher/room; removed guessed streams, fabricated dates/halls/admission numbers. Compact fixed-column table clips long text instead of overlaps/wrapping; details retain full records. Registered rows can schedule, scheduled rows mark attendance, eligible candidates open editable Admissions prefill. New-vs-existing admission handling corrected; pending and instant completion carry demo ID into existing atomic admission transaction, validate source branch/permissions and prevent repeated conversion. Demo linked status updates atomically with saved admission; existing approval/enrollment/challan/payment workflows preserved. Pending prefill cleared after successful save. Cards derive recorded attendance/conversion/pending totals, no invented rooms or future-date registration counts; focus/storage/minute refresh with cleanup.
+
+Verification: 37/37 focused Demo UI/service/financial tests PASS including atomic pending/duplicate protection and instant enrollment/payment projection. Demo/database targeted ESLint PASS; existing Admissions form lint issues remain (unused declarations and effects/memoization). One production build PASS with existing large-chunk warning. Isolated Edge real controls PASS for registration/table/field display/direct editable prefill/Pending save and separate schedule/attendance/Convert/instant enrollment/PKR500 partial payment. Fictional QA records only in disposable profile; owner storage untouched. Browser full export/role matrix not exhaustively repeated. No commit/push; owner acceptance pending.
+
+
+## QA-RELEASE-20261018 ? Owner-authorized stabilization and dev release (2026-10-18)
+
+Authorization: owner's supplied FINAL QUALITY ASSURANCE, ERROR CLEANUP & SAFE DEV PUSH request explicitly authorizes direct dev stabilization, inclusion of intended completed Codex/Antigravity work, one commit and a normal origin/dev push. No redesign, destructive cleanup, new packages or backend implementation authorized. Existing approved UI/theme/PDF templates and owner's storage preserved; artifacts remain untracked.
+
+Implemented: unused import/declaration cleanup; table selection/column hooks moved intact to a dedicated hook module to resolve Fast Refresh boundaries, preserving comments and consumers; unstable memo dependency removed; admission prefill resolves within the asynchronous reference load and preserves an explicitly unselected batch when editing an existing admission; course student loading derives from the matching request result and includes batch reference dependencies; batch-student state resets by record/open scope; dashboard navigation selection resolves once when faculty data is ready. Updated stale branch-dropdown/profile/retired-schedule test expectations without removing tests or disabling rules. Bound jsdom workers to two to prevent resource-contention timeouts; original timeouts/assertions retained. An encoding-write failure was recovered from the exact initial ESLint source snapshot before further checks; no owner code discarded.
+
+Verification: initial ESLint 50 errors/2 warnings; final full project lint PASS, zero errors/warnings. Initial full suite 412 passed/10 failed (422 tests, 53 files). Final full suite 421 passed/1 failed; the remaining stale native-select interaction in AdmissionCrud was corrected, then that complete test file passed 12/12, with targeted lint PASS. Thus all 422 tests have passing final evidence; no tests skipped/deleted and no additional full-suite run performed. Focused academic/faculty/demo/branch workflows passed apart from stale assertions subsequently resolved by the final run. Production build PASS; Server/server.js syntax PASS. No TypeScript check configured. git diff --check PASS. Source and untracked intended files reviewed; no secret-pattern matches in diff, no environment/generated/artifact files intended for staging.
+
+Browser: isolated Edge QA profile and separate disposable context only; module smoke covered Dashboard, Faculty, Admissions, Students, Fees, Finance, Demo Classes, Assets, Reports, Users, Settings, Branches and the correct Courses & Batches URL. Correct academic tab controls, course PDF download and CSV download passed; no runtime errors in successful smoke runs. A browser script initially used the wrong role for the academic tabs; the corrected check passed. Existing automated tests cover permissions/branch isolation, academic assignment/conflicts, admission/enrollment, financial totals/full-partial payments, PDF templates and CSV/selection behavior. Every browser role/device/export variant was not exhaustively repeated. This remains a mock frontend, not production backend/security validation.
+
+Known limitation: Vite reports a noncritical >500kB main-chunk warning (about 2.72MB minified, 1.10MB gzip, including synchronous PDF/logo code). Build succeeds; no threshold changes, warning suppression or risky route/export restructuring performed. Existing production integration and owner acceptance remain outside this stabilization. Release checks complete; commit/push execution is recorded in the final owner report after remote safety verification.

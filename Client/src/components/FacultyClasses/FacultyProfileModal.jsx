@@ -1,9 +1,9 @@
+import { classTimeLabel } from '../../utils/classTime.js'
 import { useState } from 'react'
 import {
   AlertCircle,
   BookOpen,
   Calendar,
-  CheckCircle2,
   Clock,
   GraduationCap,
   Layers3,
@@ -11,13 +11,12 @@ import {
   MapPin,
   Plus,
   Trash2,
-  User,
-  Users,
-  X,
+  MessageSquare,
+  Phone,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import { Button } from '../ui/button.jsx'
-import { Badge } from '../ui/badge.jsx'
+
 import { facultyService } from '../../services/facultyService.js'
 
 export default function FacultyProfileModal({
@@ -95,11 +94,26 @@ export default function FacultyProfileModal({
                       {teacher.accountStatus === 'Enabled' || teacher.enabled ? 'Active Faculty' : 'Disabled'}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground flex items-center gap-2">
-                    <span>{teacher.contact || 'No contact on file'}</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Phone size={12} className="text-slate-400" />
+                      {teacher.contact || 'No contact on file'}
+                    </span>
+                    {teacher.contact && (
+                      <a
+                        href={`https://wa.me/${teacher.contact.replace(/[^0-9]/g, '').startsWith('0') ? '92' + teacher.contact.replace(/[^0-9]/g, '').slice(1) : teacher.contact.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Assalam-o-Alaikum ${teacher.name}, regarding The Scholar Coaching Academy classes:`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer shadow-2xs"
+                        title="Chat on WhatsApp"
+                      >
+                        <MessageSquare size={11} className="text-emerald-600" />
+                        <span>WhatsApp Connect</span>
+                      </a>
+                    )}
                     <span>•</span>
                     <span>Role: Faculty Instructor</span>
-                  </p>
+                  </div>
                 </div>
               </div>
 
@@ -210,7 +224,7 @@ export default function FacultyProfileModal({
                             </span>
                             <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                               <Clock size={11} />
-                              {slot.startTime} – {slot.endTime}
+                              {classTimeLabel(slot.startTime, slot.endTime)}
                             </span>
                           </td>
                           <td className="px-3.5 py-2.5">

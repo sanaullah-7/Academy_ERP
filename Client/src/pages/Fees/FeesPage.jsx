@@ -1,6 +1,7 @@
-/** Purpose: Branch-scoped DEMO challan and verified payment workflow. */
-import { useEffect, useMemo, useState } from 'react'
-import { Banknote, CircleAlert, Download, Loader2, Printer, ReceiptText, RefreshCw, Search } from 'lucide-react'
+import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
+import Pagination from '../../components/Shared/Pagination.jsx'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Banknote, CircleAlert, Download, Loader2, MoreVertical, Printer, ReceiptText, RefreshCw, Search } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
 import { Badge } from '../../components/ui/badge.jsx'
@@ -13,11 +14,10 @@ import { PERMISSIONS } from '../../constants/permissions.js'
 import { financialService } from '../../services/financialService.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf, exportChallanPdf, exportReceiptPdf } from '../../utils/pdfHelpers.js'
+import tsaLogo from '../../assets/images/tsa-logo.png'
 import { getLocalDateOnly } from '../../utils/formatDate.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  useTableSelection,
-  useColumnVisibility,
   TableToolbarActions,
   BulkActionBar,
 } from '../../components/Shared/TableUtilities.jsx'
@@ -36,6 +36,115 @@ const feeColumns = [
 
 const today = getLocalDateOnly
 const money = value => new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(value)
+
+function FeeActionMenu({ item, paymentItem, canCollect, onChallan, onCollect, onReceipt, openUp = false }) {
+  const [open, setOpen] = useState(false)
+  const [openUpwards, setOpenUpwards] = useState(openUp)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleClickOutside)
+    return () => document.removeEventListener('pointerdown', handleClickOutside)
+  }, [open])
+
+  const toggleMenu = () => {
+    if (!open && menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      if (openUp || spaceBelow < 160) {
+        setOpenUpwards(true)
+      } else {
+        setOpenUpwards(false)
+      }
+    }
+    setOpen(v => !v)
+  }
+
+  return (
+    <div
+      ref={menuRef}
+      className={`relative inline-flex items-center justify-center text-center ${open ? 'z-50' : 'z-auto'}`}
+      onClick={e => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        aria-label={`Actions for ${item.studentName}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={toggleMenu}
+        className="grid size-6 place-items-center rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-slate-200"
+      >
+        <MoreVertical size={14} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label={`Actions for ${item.studentName}`}
+          className={`absolute right-0 z-50 w-36 rounded-xl border border-slate-200/90 bg-white p-1 shadow-lg ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95 text-left ${
+            openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
+          onKeyDown={e => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              setOpen(false)
+            }
+          }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+            onClick={() => {
+              setOpen(false)
+              onChallan()
+            }}
+          >
+            <ReceiptText size={13} className="text-[#940016]" />
+            <span>Challan</span>
+          </button>
+
+          {item.balance > 0 && canCollect && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-[#940016] hover:bg-[#F9EBEE] rounded-lg cursor-pointer transition-colors"
+              onClick={() => {
+                setOpen(false)
+                onCollect()
+              }}
+            >
+              <Banknote size={13} className="text-[#940016]" />
+              <span>Collect Fee</span>
+            </button>
+          )}
+
+          {paymentItem && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors"
+              onClick={() => {
+                setOpen(false)
+                onReceipt()
+              }}
+            >
+              <Printer size={13} className="text-emerald-600" />
+              <span>Receipt</span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function FeesPage() {
   const { branchId, branch, scopeKey } = useBranch(), { can } = usePermissions()
   const location=useLocation(), navigate=useNavigate()
@@ -47,6 +156,20 @@ export default function FeesPage() {
   const highlightedChallanId=selectedBranchId===branchId?selectedChallanId:''
   useEffect(()=>{if(highlightedChallanId&&data)document.getElementById(`fee-row-${highlightedChallanId}`)?.scrollIntoView?.({block:'center'})},[highlightedChallanId,data])
   const rows=useMemo(()=>{const needle=search.trim().toLowerCase(); return (data?.challans??[]).filter(x=>(status==='All'||x.status===status||(status==='Due'&&['Unpaid','Partial'].includes(x.status)))&&(!needle||`${x.studentName} ${x.reference} ${x.courseName} ${x.batchName}`.toLowerCase().includes(needle)))},[data,search,status])
+  const statusCounts = useMemo(() => {
+    const challans = data?.challans ?? []
+    return {
+      All: challans.length,
+      Paid: challans.filter(x => x.status === 'Paid').length,
+      Due: challans.filter(x => ['Unpaid', 'Partial'].includes(x.status)).length,
+      Overdue: challans.filter(x => x.status === 'Overdue').length,
+    }
+  }, [data])
+  const [pageState,setPageState]=useState({key:'',page:1})
+  const [pageSize,setPageSize]=useState(15)
+  const pageKey=`${branchId}|${search}|${status}|${pageSize}`
+  const page=Math.min(pageState.key===pageKey?pageState.page:1,Math.max(1,Math.ceil(rows.length/pageSize)))
+  const pageRows=rows.slice((page-1)*pageSize,page*pageSize)
   const totals={collected:(data?.payments??[]).reduce((s,x)=>s+x.amount,0),outstanding:(data?.challans??[]).reduce((s,x)=>s+x.balance,0),overdue:(data?.challans??[]).filter(x=>x.status==='Overdue').reduce((s,x)=>s+x.balance,0),today:(data?.payments??[]).filter(x=>x.paidAt.slice(0,10)===today()).reduce((s,x)=>s+x.amount,0)}
   async function submitChallan(e){e.preventDefault();setBusy(true);setError('');try{await financialService.createChallan({...challan,amount:Number(challan.amount)},{branchId});setDialog(null);setMessage('Challan issued successfully.');setRequest(x=>x+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
   async function submitPayment(e){e.preventDefault();setBusy(true);setError('');try{await financialService.recordPayment({...payment,amount:Number(payment.amount)},{branchId});setDialog(null);setMessage('Verified payment and receipt saved. Use the Receipt action when you want to view it.');setRequest(x=>x+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
@@ -105,10 +228,10 @@ export default function FeesPage() {
   if(!current)return <DashboardLayout><p role="status" className="flex items-center gap-2 p-8"><Loader2 className="animate-spin"/>Loading fee records...</p></DashboardLayout>
   if(current.error)return <DashboardLayout><p role="alert" className="p-8 text-destructive">{current.error} <Button onClick={()=>setRequest(x=>x+1)}>Retry</Button></p></DashboardLayout>
   const renderStatus = (st) => {
-    if (st === 'Paid') return <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/70 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"><span className="size-1.5 rounded-full bg-emerald-600" />Paid</span>
-    if (st === 'Partial') return <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700"><span className="size-1.5 rounded-full bg-amber-500" />Partial</span>
-    if (st === 'Overdue') return <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700"><span className="size-1.5 rounded-full bg-rose-600" />Overdue</span>
-    return <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700"><span className="size-1.5 rounded-full bg-slate-500" />{st}</span>
+    if (st === 'Paid') return <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 whitespace-nowrap"><span className="size-1 rounded-full bg-emerald-600" />Paid</span>
+    if (st === 'Partial') return <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/70 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 whitespace-nowrap"><span className="size-1 rounded-full bg-amber-500" />Partial</span>
+    if (st === 'Overdue') return <span className="inline-flex items-center gap-1 rounded-full border border-rose-200/70 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 whitespace-nowrap"><span className="size-1 rounded-full bg-rose-600" />Overdue</span>
+    return <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700 whitespace-nowrap"><span className="size-1 rounded-full bg-slate-500" />{st}</span>
   }
 
   return <DashboardLayout><div className="space-y-5">
@@ -137,12 +260,12 @@ export default function FeesPage() {
     {exportError&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{exportError}</p>}
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
-        ['Total Collected', totals.collected, Banknote, 'text-emerald-700 bg-emerald-50 border-emerald-200/60'],
-        ['Outstanding Dues', totals.outstanding, ReceiptText, 'text-amber-700 bg-amber-50 border-amber-200/60'],
-        ['Overdue Dues', totals.overdue, CircleAlert, 'text-rose-700 bg-rose-50 border-rose-200/60'],
-        ["Today's Counter Inflow", totals.today, Banknote, 'text-primary bg-[#F9EBEE] border-[#f0d5d9]']
-      ].map(([label, value, Icon, tone]) => (
-        <Card key={label} className="py-0 overflow-hidden border border-border/80 shadow-xs">
+        ['Total Collected', totals.collected, Banknote, 'text-emerald-700 bg-emerald-50 border-emerald-200/60', 'kpi-emerald'],
+        ['Outstanding Dues', totals.outstanding, ReceiptText, 'text-amber-700 bg-amber-50 border-amber-200/60', 'kpi-amber'],
+        ['Overdue Dues', totals.overdue, CircleAlert, 'text-rose-700 bg-rose-50 border-rose-200/60', 'kpi-maroon'],
+        ["Today's Counter Inflow", totals.today, Banknote, 'text-primary bg-[#F9EBEE] border-[#f0d5d9]', 'kpi-sky']
+      ].map(([label, value, Icon, tone, theme]) => (
+        <Card key={label} className={`top-kpi-card ${theme} py-0 overflow-hidden border shadow-xs`}>
           <CardContent className="flex items-center justify-between p-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
@@ -160,17 +283,34 @@ export default function FeesPage() {
           <Input className="pl-9 h-9 text-xs" placeholder="Search student, course or challan..." value={search} onChange={e=>setSearch(e.target.value)}/>
         </label>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
-            {['All','Paid','Due','Overdue'].map(x=>(
-              <button
-                key={x}
-                type="button"
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${status === x ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={()=>setStatus(x)}
-              >
-                {x}
-              </button>
-            ))}
+          <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-slate-50/80 p-1">
+            {['All', 'Paid', 'Due', 'Overdue'].map(x => {
+              const isCurrent = status === x
+              const count = statusCounts[x] ?? 0
+              return (
+                <button
+                  key={x}
+                  type="button"
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-[#940016] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+                  }`}
+                  onClick={() => setStatus(x)}
+                >
+                  <span>{x}</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      isCurrent
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
           <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={()=>{setSearch('');setStatus('All')}}>
             <RefreshCw size={13}/>
@@ -191,20 +331,172 @@ export default function FeesPage() {
         deleteDisabledMessage="Financial records and challans cannot be bulk-deleted (Audit protection)"
       />
     )}
-    {rows.length===0?<div className="rounded-xl border border-dashed border-border/80 p-10 text-center text-xs text-muted-foreground">No challans match this view.</div>:<div className="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs"><table className="w-full min-w-[850px] text-left text-sm"><thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-wide dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200"><tr><th scope="col" className="w-10 px-3 py-2.5 text-center"><input type="checkbox" aria-label="Select all challans" checked={selection.isAllSelected} onChange={selection.toggleSelectAll} className="size-3.5 rounded border-gray-300 text-[#940016] focus:ring-[#940016] cursor-pointer"/></th>{columnVisibility.isVisible('student')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Student / Roll</th>}{columnVisibility.isVisible('courseBatch')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Course &amp; Batch</th>}{columnVisibility.isVisible('description')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Description</th>}{columnVisibility.isVisible('totalFee')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Total Fee</th>}{columnVisibility.isVisible('paid')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Paid</th>}{columnVisibility.isVisible('remaining')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Remaining</th>}{columnVisibility.isVisible('dueDate')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Due Date</th>}{columnVisibility.isVisible('status')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Status</th>}{columnVisibility.isVisible('actions')&&<th className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">Actions</th>}</tr></thead><tbody className="divide-y divide-border/50">{rows.map(x=>{const isRowSelected=selection.isSelected(x.id);return(<tr id={`fee-row-${x.id}`} key={x.id} className={`${isRowSelected?'bg-[#F9EBEE]/50':highlightedChallanId===x.id?'bg-[#F9EBEE]/60 ring-2 ring-inset ring-[#940016]':'hover:bg-[#F9EBEE]/20 transition-colors'}`}><td className="w-10 px-3 py-2.5 text-center" onClick={e=>e.stopPropagation()}><input type="checkbox" aria-label={`Select challan for ${x.studentName}`} checked={isRowSelected} onChange={()=>selection.toggleSelect(x.id)} className="size-3.5 rounded border-gray-300 text-[#940016] focus:ring-[#940016] cursor-pointer"/></td>{columnVisibility.isVisible('student')&&<td className="px-3.5 py-2.5"><strong className="text-foreground font-semibold">{x.studentName}</strong>{highlightedChallanId===x.id&&<Badge className="ml-2 text-[10px]">Selected payment</Badge>}<small className="block text-xs text-muted-foreground">Student #{x.studentNumber??'—'} · {x.reference}</small></td>}{columnVisibility.isVisible('courseBatch')&&<td className="px-3.5 py-2.5 font-medium text-xs">{x.courseName}<small className="block text-muted-foreground">{x.batchName}</small></td>}{columnVisibility.isVisible('description')&&<td className="px-3.5 py-2.5 text-xs text-muted-foreground">{x.description}</td>}{columnVisibility.isVisible('totalFee')&&<td className="px-3.5 py-2.5 font-semibold tabular-nums text-foreground"><div>{money(x.amount)}</div>{x.discountAmount>0&&<span className="inline-block text-[10px] font-normal text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded mt-0.5">-{money(x.discountAmount)} concession</span>}</td>}{columnVisibility.isVisible('paid')&&<td className="px-3.5 py-2.5 font-semibold tabular-nums text-emerald-700">{money(x.paidAmount)}</td>}{columnVisibility.isVisible('remaining')&&<td className="px-3.5 py-2.5 font-semibold tabular-nums text-red-600">{money(x.balance)}</td>}{columnVisibility.isVisible('dueDate')&&<td className="px-3.5 py-2.5 text-xs text-muted-foreground">{x.dueDate}</td>}{columnVisibility.isVisible('status')&&<td className="px-3.5 py-2.5">{renderStatus(x.status)}</td>}{columnVisibility.isVisible('actions')&&<td className="px-3.5 py-2.5"><div className="flex gap-1.5"><Button size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={()=>setDialog({type:'viewChallan',item:x})}>Challan</Button>{x.balance>0&&can(PERMISSIONS.FEES_COLLECT)&&<Button size="sm" className="h-7 px-2.5 text-xs shadow-xs" onClick={()=>openPayment(x)}>Collect</Button>}{data.payments.find(p=>p.challanId===x.id)&&<Button size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={()=>setDialog({type:'receipt',item:data.payments.find(p=>p.challanId===x.id)})}>Receipt</Button>}</div></td>}</tr>)})}</tbody></table></div>}
+    {rows.length === 0 ? (
+      <div className="rounded-xl border border-dashed border-border/80 p-10 text-center text-xs text-muted-foreground">
+        No challans match this view.
+        <div className="mt-4 text-left"><Pagination label="Fees" page={page} rows={pageSize} total={0} onPage={value=>setPageState({key:pageKey,page:value})} onRows={setPageSize}/></div>
+      </div>
+    ) : (
+      <div className="rounded-xl border border-border/80 bg-card shadow-xs overflow-visible">
+        <table className="w-full text-left text-[11px] border-collapse">
+          <thead className="bg-slate-50/90 border-b border-slate-200 text-[10px] font-bold text-slate-700 tracking-wider uppercase dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200">
+            <tr>
+              <th scope="col" className="w-8 px-2 py-2 text-center">
+                <input
+                  type="checkbox"
+                  aria-label="Select all challans"
+                  checked={selection.isAllSelected}
+                  onChange={selection.toggleSelectAll}
+                  className="size-3.5 rounded border-gray-300 text-[#940016] focus:ring-[#940016] cursor-pointer"
+                />
+              </th>
+              {columnVisibility.isVisible('student') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Student / Roll</th>
+              )}
+              {columnVisibility.isVisible('courseBatch') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Course &amp; Batch</th>
+              )}
+              {columnVisibility.isVisible('description') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Description</th>
+              )}
+              {columnVisibility.isVisible('totalFee') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Total Fee</th>
+              )}
+              {columnVisibility.isVisible('paid') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Paid</th>
+              )}
+              {columnVisibility.isVisible('remaining') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Remaining</th>
+              )}
+              {columnVisibility.isVisible('dueDate') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Due Date</th>
+              )}
+              {columnVisibility.isVisible('status') && (
+                <th scope="col" className="px-2.5 py-2 font-bold text-slate-700">Status</th>
+              )}
+              {columnVisibility.isVisible('actions') && (
+                <th scope="col" className="w-10 px-2 py-2 text-center font-bold text-slate-700">Actions</th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {pageRows.map((x, index) => {
+              const isRowSelected = selection.isSelected(x.id)
+              const paymentItem = data.payments.find(p => p.challanId === x.id)
+              return (
+                <tr
+                  id={`fee-row-${x.id}`}
+                  key={x.id}
+                  className={`${
+                    isRowSelected
+                      ? 'bg-[#F9EBEE]/50'
+                      : highlightedChallanId === x.id
+                      ? 'bg-[#F9EBEE]/60 ring-2 ring-inset ring-[#940016]'
+                      : 'hover:bg-[#F9EBEE]/20 transition-colors'
+                  }`}
+                >
+                  <td className="w-8 px-2 py-2 text-center" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select challan for ${x.studentName}`}
+                      checked={isRowSelected}
+                      onChange={() => selection.toggleSelect(x.id)}
+                      className="size-3.5 rounded border-gray-300 text-[#940016] focus:ring-[#940016] cursor-pointer"
+                    />
+                  </td>
+                  {columnVisibility.isVisible('student') && (
+                    <td className="px-2.5 py-2">
+                      <strong className="text-slate-900 font-bold block text-[11px] hover:text-[#940016] transition-colors leading-tight">
+                        {x.studentName}
+                      </strong>
+                      {highlightedChallanId === x.id && (
+                        <Badge className="mt-0.5 text-[8.5px] bg-[#940016] text-white">Selected payment</Badge>
+                      )}
+                      <small className="block text-[9.5px] text-muted-foreground mt-0.5 whitespace-nowrap">
+                        #{x.studentNumber ?? '—'} · <span className="font-mono">{x.reference}</span>
+                      </small>
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('courseBatch') && (
+                    <td className="px-2.5 py-2">
+                      <span className="font-semibold text-slate-800 block text-[11px] leading-tight">{x.courseName}</span>
+                      <small className="block text-[9.5px] text-muted-foreground mt-0.5 whitespace-nowrap">{x.batchName}</small>
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('description') && (
+                    <td className="px-2.5 py-2 text-[10.5px] text-slate-500 max-w-[130px] truncate" title={x.description}>
+                      {x.description}
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('totalFee') && (
+                    <td className="px-2.5 py-2 whitespace-nowrap">
+                      <div className="flex flex-col items-start">
+                        <span className="font-bold tabular-nums text-slate-900 text-[11px]">{money(x.amount)}</span>
+                        {x.discountAmount > 0 && (
+                          <span className="mt-0.5 text-[8.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1 py-0.2 rounded whitespace-nowrap">
+                            -{money(x.discountAmount)} disc
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('paid') && (
+                    <td className="px-2.5 py-2 whitespace-nowrap font-bold tabular-nums text-emerald-700 text-[11px]">
+                      {money(x.paidAmount)}
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('remaining') && (
+                    <td className={`px-2.5 py-2 whitespace-nowrap font-bold tabular-nums text-[11px] ${x.balance > 0 ? 'text-rose-600' : 'text-slate-500'}`}>
+                      {money(x.balance)}
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('dueDate') && (
+                    <td className="px-2.5 py-2 whitespace-nowrap text-[10px] font-mono text-slate-600">
+                      {x.dueDate}
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('status') && (
+                    <td className="px-2.5 py-2 whitespace-nowrap">
+                      {renderStatus(x.status)}
+                    </td>
+                  )}
+                  {columnVisibility.isVisible('actions') && (
+                    <td className="w-10 px-2 py-2 text-center whitespace-nowrap">
+                      <FeeActionMenu
+                        item={x}
+                        paymentItem={paymentItem}
+                        canCollect={can(PERMISSIONS.FEES_COLLECT)}
+                        onChallan={() => setDialog({ type: 'viewChallan', item: x })}
+                        onCollect={() => openPayment(x)}
+                        onReceipt={() => setDialog({ type: 'receipt', item: paymentItem })}
+                        openUp={index >= Math.max(0, pageRows.length - 2) && pageRows.length > 1}
+                      />
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        <Pagination label="Fees" page={page} rows={pageSize} total={rows.length} onPage={value=>setPageState({key:pageKey,page:value})} onRows={setPageSize}/>
+      </div>
+    )}
     <Dialog open={!!dialog} onOpenChange={open=>!open&&!busy&&setDialog(null)}><DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto"><DialogTitle>{dialog?.type==='challan'?'Generate Challan':dialog?.type==='payment'?'Collect Payment':dialog?.type==='receipt'?'Verified Receipt':'Challan'}</DialogTitle><DialogDescription>Branch-scoped fictional DEMO financial record.</DialogDescription>{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
       {dialog?.type==='challan'&&<form onSubmit={submitChallan} className="grid gap-3"><select required className="min-h-11 rounded-md border px-3" value={challan.enrollmentId} onChange={e=>chooseEnrollment(e.target.value)}><option value="">Select enrolled student</option>{data.enrollments.filter(x=>!data.challans.some(challanRecord=>challanRecord.enrollmentId===x.id)).map(x=><option value={x.id} key={x.id}>{x.studentName} · {x.courseName} · {x.batchName}{Number.isFinite(x.netFee??x.configuredFee)?` · ${money(x.netFee??x.configuredFee)}`:''}</option>)}</select><Input required placeholder="Fee description" value={challan.description} onChange={e=>setChallan({...challan,description:e.target.value})}/><Input required min="1" type="number" placeholder="Amount PKR" value={challan.amount} readOnly={Number.isFinite(data.enrollments.find(item=>item.id===challan.enrollmentId)?.netFee??data.enrollments.find(item=>item.id===challan.enrollmentId)?.configuredFee)} onChange={e=>setChallan({...challan,amount:e.target.value})}/>{Number.isFinite(data.enrollments.find(item=>item.id===challan.enrollmentId)?.netFee??data.enrollments.find(item=>item.id===challan.enrollmentId)?.configuredFee)&&<p className="text-xs text-muted-foreground">Amount is the confirmed net fee saved with this enrollment.</p>}<label>Issue date<Input required type="date" value={challan.issueDate} onChange={e=>setChallan({...challan,issueDate:e.target.value})}/></label><label>Due date<Input required type="date" value={challan.dueDate} onChange={e=>setChallan({...challan,dueDate:e.target.value})}/></label><Button type="submit" disabled={busy}>{busy?'Saving...':'Issue Challan'}</Button></form>}
       {dialog?.type==='payment'&&<form onSubmit={submitPayment} className="grid gap-3"><p>Outstanding: <strong>{money(dialog.item.balance)}</strong></p><Input required min="1" max={dialog.item.balance} type="number" value={payment.amount} onChange={e=>setPayment({...payment,amount:e.target.value})}/><select className="min-h-11 rounded-md border px-3" value={payment.method} onChange={e=>setPayment({...payment,method:e.target.value})}>{['Cash','Bank Transfer','Mobile Wallet','EasyPaisa'].map(x=><option key={x}>{x}</option>)}</select><Button type="submit" disabled={busy}>{busy?'Recording...':'Record Verified Payment'}</Button></form>}
       {['viewChallan','receipt'].includes(dialog?.type)&&(
         <div className="rounded-xl border border-border/80 bg-slate-50/50 p-5 space-y-4 print:p-8">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#940016]">The Scholar Coaching Academy</p>
-              <h2 className="text-lg font-bold text-foreground">{dialog.type==='receipt'?'Official Fee Payment Receipt':'Student Fee Challan & Invoice'}</h2>
-              <p className="text-xs text-muted-foreground">Campus: {branch?.name ?? 'Main Campus'}</p>
+          <div className="flex items-center gap-3 border-b border-border/80 pb-4">
+            <img src={tsaLogo} alt="TSA Logo" className="size-14 object-contain rounded shrink-0 bg-white p-1 border border-slate-200 shadow-2xs" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black uppercase tracking-wider text-[#940016]">THE SCHOLAR COACHING ACADEMY</p>
+              <h2 className="text-base font-bold text-foreground truncate">
+                {dialog.type==='receipt'?'Official Fee Payment Receipt':'Student Fee Challan & Invoice'}
+              </h2>
+              <p className="text-[11px] text-muted-foreground">Official Management & Academic Information System • Campus: {branch?.name ?? 'Main Campus'}</p>
             </div>
-            <Badge className={dialog.type==='receipt' ? 'bg-emerald-600 text-white' : 'bg-[#940016] text-white'}>
-              {dialog.type==='receipt' ? 'VERIFIED RECEIPT' : (dialog.item.status || 'CHALLAN').toUpperCase()}
+            <Badge className={dialog.type==='receipt' ? 'bg-emerald-600 text-white shrink-0' : 'bg-[#940016] text-white shrink-0'}>
+              {dialog.type==='receipt' ? '✓ VERIFIED RECEIPT' : (dialog.item.status || 'CHALLAN').toUpperCase()}
             </Badge>
           </div>
 
@@ -239,6 +531,16 @@ export default function FeesPage() {
               </div>
             </div>
           )}
+
+          {/* Printable Signature & Stamp Area */}
+          <div className="hidden print:flex items-center justify-between pt-10 text-xs text-muted-foreground">
+            <div className="text-center w-48 border-t border-slate-400 pt-1">
+              Student / Depositor Signature
+            </div>
+            <div className="text-center w-56 border-t border-slate-400 pt-1">
+              Authorized Accounts Officer / Cashier
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60 print:hidden">
             {dialog.type==='viewChallan' && (

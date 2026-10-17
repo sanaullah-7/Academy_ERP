@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
@@ -85,5 +85,22 @@ describe('F08 Demo Classes Page — UI Component Integration', () => {
     expect(screen.queryByRole('button', { name: /Register Demo/i })).not.toBeInTheDocument()
     const hamzaElements = await screen.findAllByText('Hamza Malik')
     expect(hamzaElements.length).toBeGreaterThan(0)
+  })
+
+  it('navigates directly to Admissions tab with prefilled candidate data on Convert click', async () => {
+    const user = userEvent.setup()
+    await signIn('demo-admin', 'demo-central')
+    render(<App />)
+
+    await screen.findAllByText('Hamza Malik')
+
+    // Find the row action button specifically, not the 'Converted' tab
+    const actionConvertBtn = screen.getAllByRole('button', { name: /^Convert$/i })[0]
+    expect(actionConvertBtn).toBeInTheDocument()
+
+    await user.click(actionConvertBtn)
+
+    expect(await screen.findByRole('heading', { name: /Student Admissions/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /New Student Admission/i })).toBeInTheDocument()
   })
 })

@@ -21,6 +21,72 @@ async function signIn(userId = 'demo-admin', branchId = 'demo-central') {
 }
 
 describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
+  it('renders persisted professional details on the faculty profile',async()=>{
+    await signIn()
+    const teacher=await facultyService.createTeacher({name:'QA Professional Faculty',contact:'03000000041',qualifications:'QA MSc Botany',specialization:'QA Plant Sciences',department:'QA Science Department'},{branchId:'demo-central'})
+    history.replaceState(null,'',`/faculty/${teacher.id}`)
+    render(<App/>)
+    expect(await screen.findByText('QA MSc Botany')).toBeInTheDocument()
+    expect(screen.getByText('QA Plant Sciences')).toBeInTheDocument()
+    expect(screen.getByText('QA Science Department')).toBeInTheDocument()
+    expect(screen.queryByText(/not present in the current DEMO profile records/)).not.toBeInTheDocument()
+  })
+
+  it('loads subject filter pills from saved academic records and filters by assignment IDs', async()=>{
+    await signIn()
+    const query={branchId:'demo-central'}
+    const stream=await academicService.saveStream(null,{name:'QA Filter Field',active:true},query)
+    const course=await academicService.saveCourse(null,{name:'QA Filter Course',streamId:stream.id,active:true},query)
+    await academicService.saveSubject(null,{name:'QA Saved Botany',courseId:course.id,active:true},query)
+    render(<App/>)
+    const pill=await screen.findByRole('button',{name:/QA Saved Botany/})
+    await userEvent.setup().click(pill)
+    expect(screen.queryByRole('link',{name:'Demo Teacher'})).not.toBeInTheDocument()
+    const user=userEvent.setup()
+    await user.click(screen.getByRole('button',{name:/Add Faculty Member/}))
+    await user.click(await screen.findByRole('button',{name:'Primary Subject',exact:true}))
+    await user.click(await screen.findByRole('option',{name:/QA Saved Botany/}))
+    await user.type(screen.getByPlaceholderText(/Prof\. Tariq Mahmood/),'QA Saved Subject Faculty')
+    await user.type(screen.getByPlaceholderText(/0301-4455667/),'03000000051')
+    await user.click(screen.getByRole('button',{name:'Add Instructor',exact:true}))
+    await waitFor(async()=>expect((await facultyService.list(query)).some(teacher=>teacher.name==='QA Saved Subject Faculty'&&teacher.specialization==='QA Saved Botany')).toBe(true))
+
+  })
+
+  it('edits a created faculty member and confirms deletion through roster controls', async()=>{
+    await signIn()
+    const query={branchId:'demo-central'}
+    const teacher=await facultyService.createTeacher({name:'QA Editable Faculty',contact:'03000000001'},query)
+    const user=userEvent.setup()
+    render(<App/> )
+    await user.click(await screen.findByRole('button',{name:'Edit faculty QA Editable Faculty'}))
+    const name=screen.getByPlaceholderText(/Prof\. Tariq Mahmood/)
+    await user.clear(name);await user.type(name,'QA Edited Faculty')
+    await user.click(screen.getByRole('button',{name:'Save Instructor'}))
+    expect(await screen.findByRole('link',{name:'QA Edited Faculty'})).toBeInTheDocument()
+    expect((await facultyService.getById(teacher.id,query)).name).toBe('QA Edited Faculty')
+    await user.click(screen.getByRole('button',{name:'Delete faculty QA Edited Faculty'}))
+    await user.click(screen.getByRole('button',{name:'Delete Faculty',exact:true}))
+    await waitFor(()=>expect(screen.queryByRole('link',{name:'QA Edited Faculty'})).not.toBeInTheDocument())
+    await expect(facultyService.getById(teacher.id,query)).rejects.toMatchObject({code:'NOT_FOUND'})
+  })
+  it('loads saved academic choices and assignments in the full profile assignment dialog', async () => {
+    await signIn()
+    const query={branchId:'demo-central'}
+    const stream=await academicService.saveStream(null,{name:'QA Profile Field',active:true},query)
+    const course=await academicService.saveCourse(null,{name:'QA Profile Course',streamId:stream.id,active:true},query)
+    const batch=await academicService.saveBatch(null,{name:'QA Profile Batch',courseId:course.id,active:true},query)
+    const subject=await academicService.saveSubject(null,{name:'QA Profile Subject',courseId:course.id,active:true},query)
+    await facultyService.assignFaculty({teacherId:'demo-teacher',courseId:course.id,batchId:batch.id,subjectId:subject.id,days:['Mon'],startTime:'10:00',endTime:'11:00',room:'QA Profile Room'},query)
+    history.replaceState(null,'','/faculty/demo-teacher')
+    render(<App/> )
+    const user=userEvent.setup()
+    await user.click(await screen.findByRole('button',{name:'Assign to Batch & Subject'}))
+    expect(screen.getByRole('option',{name:'QA Profile Field'})).toBeInTheDocument()
+    expect(screen.getByRole('option',{name:'QA Profile Course'})).toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Saved assignment'),screen.getByRole('option',{name:'QA Profile Subject / QA Profile Batch / 10:00'}))
+    expect(screen.getByLabelText('Room / Lab')).toHaveValue('QA Profile Room')
+  })
   it('renders circular Refresh, PDF, and CSV toolbar buttons and triggers reload on refresh', async () => {
     await signIn()
     const listSpy = vi.spyOn(facultyService, 'list')
@@ -98,6 +164,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
 
   it('adds a new faculty member, updates the roster, and selects their profile', async () => {
     await signIn()
+    await academicService.saveSubject(null,{name:'Biology',courseId:'course-demo-2',active:true},{branchId:'demo-central'})
     const user = userEvent.setup()
     render(<App />)
 
@@ -109,6 +176,8 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     expect(await screen.findByRole('heading', { name: 'Add Faculty Member' })).toBeInTheDocument()
 
     // Fill form
+    await user.click(await screen.findByRole('button',{name:'Primary Subject',exact:true}))
+    await user.click(await screen.findByRole('option',{name:/Biology/}))
     await user.type(screen.getByPlaceholderText(/Prof\. Tariq Mahmood/i), 'Dr. Ayesha Malik')
     await user.type(screen.getByPlaceholderText(/M\.Phil Chemistry/i), 'Ph.D Molecular Biology')
     await user.type(screen.getByPlaceholderText(/0301-4455667/i), '0300-8889999')

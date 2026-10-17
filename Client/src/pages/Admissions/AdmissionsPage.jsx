@@ -1,3 +1,4 @@
+import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 /**
  * Purpose: Will define Admissions Page for the Admissions area of the Academy frontend.
  * Module: Admissions
@@ -7,20 +8,18 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader } from '../../components/ui/card.jsx'
-import { Badge } from '../../components/ui/badge.jsx'
+
 import { Button } from '../../components/ui/button.jsx'
 import { Search, Filter, Plus, ClipboardList, Loader2, AlertCircle } from 'lucide-react'
 import { admissionService } from '../../services/admissionService.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { Input } from '../../components/ui/input.jsx'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AdmissionActions from '../../components/Admissions/AdmissionActions.jsx'
 import NewAdmissionForm from '../../components/Admissions/NewAdmissionForm.jsx'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
 import {
-  useTableSelection,
-  useColumnVisibility,
   TableToolbarActions,
   BulkActionBar,
 } from '../../components/Shared/TableUtilities.jsx'
@@ -43,6 +42,7 @@ export default function AdmissionsPage() {
   const newAdmissionTrigger = useRef(null)
   const newAdmissionSection = useRef(null)
   const { state: routeState } = useLocation()
+  const navigate=useNavigate()
   const [actionFeedback, setActionFeedback] = useState(null)
   const [successRecordId, setSuccessRecordId] = useState(routeState?.createdBranchId === branchId ? routeState.createdAdmissionInternalId : null)
   const [admissions, setAdmissions] = useState([])
@@ -353,7 +353,18 @@ export default function AdmissionsPage() {
         </Card>
         {canCreate && <section ref={newAdmissionSection} tabIndex={-1} aria-labelledby="new-student-admission-heading" className="scroll-mt-4 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <h2 id="new-student-admission-heading" className="mb-3 text-lg font-bold sm:text-xl text-foreground">New Student Admission</h2>
-          <NewAdmissionForm key={`${branchId}-${formVersion}`} onSuccess={(result) => {
+          {routeState?.prefillAdmission && (
+            <div className="mb-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                <span>
+                  Direct Conversion Active: Candidate <strong>{routeState.prefillAdmission.studentName}</strong> details prefilled from Demo Class. Adjust any fields below and confirm enrollment.
+                </span>
+              </div>
+            </div>
+          )}
+          <NewAdmissionForm key={`${branchId}-${formVersion}`} admission={routeState?.prefillAdmission} onSuccess={(result) => {
+            if(routeState?.prefillAdmission?.demoId) navigate('/admissions',{replace:true,state:null})
             setActionFeedback(null)
             setSuccessRecordId(result.id)
             setRefreshTrigger(previous => previous + 1)

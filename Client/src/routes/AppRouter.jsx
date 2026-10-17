@@ -47,7 +47,7 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.FACULTY_CLASSES} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FACULTY_SUBJECTS} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage section="subjects" /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FACULTY_BATCHES} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyClassesPage section="batches" /></ProtectedRoute>} />
-        <Route path={ROUTE_PATHS.CLASS_SCHEDULE} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><FacultyClassesPage section="schedule" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.CLASS_SCHEDULE} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><Navigate to={ROUTE_PATHS.FACULTY_CLASSES} replace /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.CLASS_STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.CLASSES_VIEW}><ClassDetailsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FACULTY_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.FACULTY_VIEW}><FacultyProfilePage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><Navigate to={ROUTE_PATHS.ADMISSIONS} replace state={{ focusNewAdmission: true }} /></ProtectedRoute>} />

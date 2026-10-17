@@ -28,7 +28,7 @@ export const getDemoBranches = () => [...DEMO_BRANCHES, ...readOrganization().br
 export const getDemoUsers = () => {
   const store = readOrganization()
   const base = DEMO_USERS.map(user => ({ ...user, ...(store.profileOverrides?.[user.id] ?? {}), assignments: store.assignmentOverrides[user.id]?.length ? [...user.assignments, ...store.assignmentOverrides[user.id]] : user.assignments }))
-  return [...base, ...store.users]
+  return [...base, ...store.users].filter(user => !store.deletedUserIds.includes(user.id))
 }
 export const findDemoUser = id => getDemoUsers().find(user => user.id === id)
 

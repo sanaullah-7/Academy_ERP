@@ -14,6 +14,7 @@ export default function DemoRegistrationForm({
   students = [],
   busy = false,
   error = '',
+  branchName,
 }) {
   const formId = useId()
   const today = getLocalDateOnly()
@@ -22,6 +23,7 @@ export default function DemoRegistrationForm({
   const [studentName, setStudentName] = useState('')
   const [guardianName, setGuardianName] = useState('')
   const [guardianContact, setGuardianContact] = useState('')
+  const [field, setField] = useState('')
   const [courseId, setCourseId] = useState('')
   const [preferredBatchId, setPreferredBatchId] = useState('')
   const [requestedDate, setRequestedDate] = useState(today)
@@ -42,10 +44,11 @@ export default function DemoRegistrationForm({
 
   const handleCourseChange = (id) => {
     setCourseId(id)
+    setField(courses.find(course=>course.id===id)?.streamName || 'Unassigned')
     setPreferredBatchId('')
   }
 
-  const courseBatches = batches.filter(b => b.courseId === courseId)
+  const courseBatches = batches.filter(b => b.courseId === courseId && b.active !== false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -94,7 +97,8 @@ export default function DemoRegistrationForm({
             Register Demo Class Inquiry
           </DialogTitle>
           <DialogDescription>
-            Register prospective student inquiry. Does not create an admission or active enrollment.
+            Register a trial candidate only; admission and enrollment happen later.
+            <span className="mt-1 block font-medium">Branch: {branchName || 'Current branch'}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -170,6 +174,7 @@ export default function DemoRegistrationForm({
               />
             </div>
 
+            <div><label className="block text-sm font-medium mb-1" htmlFor="demoField">Academic Field</label><select id="demoField" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={field} onChange={event=>{setField(event.target.value);setCourseId('');setPreferredBatchId('')}}><option value="">Select field</option>{[...new Set(courses.filter(course=>course.active!==false).map(course=>course.streamName||'Unassigned'))].map(name=><option key={name}>{name}</option>)}</select></div>
             <div>
               <label htmlFor="courseSelect" className="block text-sm font-medium mb-1">
                 Interested Course / Program <span className="text-destructive">*</span>
@@ -182,7 +187,7 @@ export default function DemoRegistrationForm({
                 onChange={(e) => handleCourseChange(e.target.value)}
               >
                 <option value="">-- Select Course --</option>
-                {courses.map(c => (
+                {courses.filter(course=>course.active!==false&&(!field||(course.streamName||'Unassigned')===field)).map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

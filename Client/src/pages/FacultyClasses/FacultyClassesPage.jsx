@@ -1,3 +1,10 @@
+import { useTableSelection } from '../../hooks/useTableUtilities.js'
+import BatchStudentsModal from '../../components/FacultyClasses/BatchStudentsModal.jsx'
+import { selectedClassStatus } from '../../utils/selectedClassStatus.js'
+import { classTimeLabel } from '../../utils/classTime.js'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx'
+import { shiftDistribution } from '../../utils/shiftDistribution.js'
+import { classScheduleService, resolveDailyClasses } from '../../services/classScheduleService.js'
 /**
  * Purpose: Faculty & Classes management page for The Scholar Coaching Academy (TSA) ERP.
  * Module: FacultyClasses
@@ -24,8 +31,9 @@ import {
   Trash2,
   UserCheck,
   UserPlus,
-  Users,
+  Plus,
   UsersRound,
+  MessageSquare,
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
@@ -38,14 +46,11 @@ import { PERMISSIONS } from '../../constants/permissions.js'
 import { academicService } from '../../services/academicService.js'
 import { facultyService } from '../../services/facultyService.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
-import ClassSchedulePanel from '../../components/FacultyClasses/ClassSchedulePanel.jsx'
 import AssignFacultyModal from '../../components/CoursesBatches/AssignFacultyModal.jsx'
 import AddFacultyModal from '../../components/FacultyClasses/AddFacultyModal.jsx'
-import BatchStudentsModal from '../../components/FacultyClasses/BatchStudentsModal.jsx'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import {
-  useTableSelection,
   TableToolbarActions,
   BulkActionBar,
 } from '../../components/Shared/TableUtilities.jsx'
@@ -375,9 +380,52 @@ function enrichTeacher(rawTeacher) {
   const department = rawTeacher.department || meta.department || `${inferredSubject} Department`
   const contact = rawTeacher.contact || meta.contact || '0300-0000000'
 
-  // Construct real slots from live assignments if present, else fallback to enriched template
+  // Construct real slots from live assignments and single-date sessions if present, else fallback to enriched template
   const realAssignments = rawTeacher.assignments || []
-  const slots = realAssignments.map(a=>({id:a.id,assignmentId:a.id,course:a.courseName,batch:a.batchName,subject:a.subjectName,room:a.room||'Not configured',days:a.days.join(', '),time:`${a.startTime} - ${a.endTime}`,students:a.enrolledCount??0,isReal:true}))
+  const realSessions = rawTeacher.sessions || []
+
+  const assignmentSlots = realAssignments.map((a) => ({
+    id: a.id,
+    assignmentId: a.id,
+    batchId: a.batchId,
+    courseId: a.courseId,
+    subjectId: a.subjectId,
+    course: a.courseName || 'Course',
+    batch: a.batchName || 'Batch',
+    subject: a.subjectName || 'Subject',
+    room: a.room || 'Not configured',
+    days: Array.isArray(a.days) ? a.days.join(', ') : (a.days || 'Regular'),
+    time: classTimeLabel(a.startTime, a.endTime),
+    startTime: a.startTime,
+    endTime: a.endTime,
+    students: a.subjectStudentCount ?? 0,
+    isReal: true,
+  }))
+
+  const sessionSlots = realSessions.map((s) => ({
+    id: s.id,
+    assignmentId: s.id,
+    classId: s.id,
+    batchId: s.batchId,
+    courseId: s.courseId,
+    subjectId: s.subjectId,
+    course: s.courseName || 'Class Session',
+    batch: s.batchName || 'Session',
+    subject: s.subject || 'Subject',
+    room: s.location || 'Not configured',
+    days: s.classDate || 'Today',
+    time: classTimeLabel(s.startTime, s.endTime),
+    startTime: s.startTime,
+    endTime: s.endTime,
+    students: s.subjectStudentCount ?? 0,
+    isReal: true,
+    isSession: true,
+  }))
+
+  let slots = [...assignmentSlots, ...sessionSlots]
+  if (slots.length === 0 && meta.slots) {
+    slots = meta.slots
+  }
 
   const coursesList = rawTeacher.assignedBatches?.map((b) => b.courseName).filter(Boolean) || []
   const coursesText =
@@ -403,7 +451,8 @@ function enrichTeacher(rawTeacher) {
     studentReach,
     weeklyHours,
     batchCount,
-    syllabusPace: meta.syllabusPace || 82,
+    // No completed-topic/lecture records exist yet; schedule time is not syllabus completion.
+    syllabusPace: null,
     slots,
   }
 }
@@ -421,30 +470,43 @@ export default function FacultyClassesPage({ section = 'directory' }) {
   // Filters and Selection
   const [search, setSearch] = useState('')
   const [activeSubject, setActiveSubject] = useState('All Faculty')
-  const [selectedTeacherId, setSelectedTeacherId] = useState(null)
+  const [handledNavigation, setHandledNavigation] = useState(null)
+  const [selectedTeacherId, setSelectedTeacherId] = useState(() => location.state?.teacherId || null)
+  const [selectedSlotId, setSelectedSlotId] = useState(() => location.state?.assignmentId || location.state?.classId || null)
 
+  const [shiftClock,setShiftClock] = useState(()=>new Date())
+  useEffect(()=>{const timer=window.setInterval(()=>setShiftClock(new Date()),60000);return()=>window.clearInterval(timer)},[])
+  const [editingFaculty,setEditingFaculty]=useState(null)
+  const [deletingFaculty,setDeletingFaculty]=useState(null)
+  const [deletingAssignment,setDeletingAssignment]=useState(null)
+  const [facultyError,setFacultyError]=useState('')
+  const [deleteBusy,setDeleteBusy]=useState(false)
   // Modals state
   const [addFacultyOpen, setAddFacultyOpen] = useState(false)
-  const [assignModalConfig, setAssignModalConfig] = useState(null)
   const [batchStudentsConfig, setBatchStudentsConfig] = useState(null)
+  const [assignModalConfig, setAssignModalConfig] = useState(null)
 
   useEffect(() => {
     let active = true
     if (!branchId) return () => { active = false }
 
     const load = async () => {
-      const [teachers, overview] = await Promise.all([
+      const [teachers, overview, savedSessions] = await Promise.all([
         facultyService.list({ branchId }),
+        // Keep explicit dated classes alongside the recurring faculty timetable.
         academicService.overview({ branchId }).catch(() => ({ courses: [], batches: [], subjects: [] })),
+        classScheduleService.list({branchId}),
       ])
       const courses = overview.courses || []
       const batches = overview.batches || []
       const subjects = overview.subjects || []
+      const sessions = await Promise.all(savedSessions.map(async session => ({ ...session, subjectStudentCount: session.subjectId ? (await facultyService.listClassStudents(session.batchId, { branchId, subjectId: session.subjectId })).length : 0 })))
+
       const batchAssignments =
         section === 'batches' ? await facultyService.listBatchAssignments({ branchId }) : null
       const subjectAssignments =
         section === 'subjects' ? await facultyService.listSubjectAssignments({ branchId }) : null
-      return { teachers, courses, batches, subjects, streams:overview.streams||[], batchAssignments, subjectAssignments }
+      return { teachers, courses, batches, subjects, sessions, streams:overview.streams||[], batchAssignments, subjectAssignments }
     }
 
     load().then(
@@ -470,40 +532,71 @@ export default function FacultyClassesPage({ section = 'directory' }) {
   // Enriched teachers list
   const enrichedTeachers = useMemo(() => {
     if (!data?.teachers) return []
-    return data.teachers.map(enrichTeacher)
-  }, [data])
-
-  // Subject counts for filter pills
-  const subjectPillCounts = useMemo(() => {
-    const counts = {
-      'All Faculty': enrichedTeachers.length,
-      Biology: 0,
-      Chemistry: 0,
-      Physics: 0,
-      Mathematics: 0,
-      'English & Reasoning': 0,
-    }
-    enrichedTeachers.forEach((t) => {
-      if (counts[t.subject] !== undefined) {
-        counts[t.subject]++
-      } else if (t.subject.includes('Bio')) {
-        counts['Biology']++
-      } else if (t.subject.includes('Chem')) {
-        counts['Chemistry']++
-      } else if (t.subject.includes('Phys')) {
-        counts['Physics']++
-      } else if (t.subject.includes('Math')) {
-        counts['Mathematics']++
-      } else if (
-        t.subject.includes('English') ||
-        t.subject.includes('Reasoning') ||
-        t.subject.includes('CS')
-      ) {
-        counts['English & Reasoning']++
-      }
+    return data.teachers.map((t) => {
+      const teacherSessions = (data.sessions || []).filter(
+        (s) => s.teacherId === t.id && (!branchId || s.branchId === branchId)
+      )
+      return enrichTeacher({ ...t, sessions: teacherSessions })
     })
-    return counts
-  }, [enrichedTeachers])
+  }, [data, branchId])
+
+  // Synchronize selection when navigated from dashboard or when location.state is present.
+  // Resolve once data is ready so subsequent manual selections remain independent.
+  if (location.state && handledNavigation !== location.state && enrichedTeachers.length) {
+    const navState = location.state
+    setHandledNavigation(navState)
+
+    let targetTeacher = null
+    if (navState.teacherId) {
+      targetTeacher = enrichedTeachers.find((t) => t.id === navState.teacherId)
+    }
+    if (!targetTeacher && navState.assignmentId) {
+      targetTeacher = enrichedTeachers.find((t) =>
+        (t.assignments || []).some((a) => a.id === navState.assignmentId) ||
+        (t.slots || []).some((s) => s.assignmentId === navState.assignmentId || s.id === navState.assignmentId)
+      )
+    }
+    if (!targetTeacher && navState.classId) {
+      targetTeacher = enrichedTeachers.find((t) =>
+        (t.slots || []).some((s) => s.id === navState.classId || s.assignmentId === navState.classId)
+      )
+    }
+    if (!targetTeacher && navState.teacherName) {
+      const cleanTargetName = navState.teacherName.toLowerCase().replace(/\s*\([a-z0-9\s]+\)$/, '').trim()
+      targetTeacher = enrichedTeachers.find((t) =>
+        t.name?.toLowerCase().includes(cleanTargetName) ||
+        t.displayName?.toLowerCase().includes(cleanTargetName)
+      )
+    }
+    if (!targetTeacher && navState.subject) {
+      const subLower = navState.subject.toLowerCase()
+      targetTeacher = enrichedTeachers.find((t) =>
+        t.subject?.toLowerCase().includes(subLower) ||
+        (t.slots || []).some((s) => s.subject?.toLowerCase().includes(subLower))
+      )
+    }
+
+    if (targetTeacher) {
+      setSelectedTeacherId(targetTeacher.id)
+      setActiveSubject('All Faculty')
+    }
+
+    const slotId = navState.assignmentId || navState.classId
+    if (slotId) {
+      setSelectedSlotId(slotId)
+    }
+  }
+
+  // Saved subject IDs preserve course relationships, including same-name subjects.
+  const subjectFilters = useMemo(() => {
+    const subjects = (data?.subjects || []).filter(subject => subject.active !== false && data?.courses?.some(course => course.id === subject.courseId && course.active !== false))
+    return [{ id: 'All Faculty', label: 'All Faculty' }, ...subjects.map(subject => ({
+      id: subject.id,
+      label: subjects.filter(other => other.name === subject.name).length > 1 ? `${subject.name} - ${data.courses.find(course => course.id === subject.courseId)?.name}` : subject.name,
+    }))]
+  }, [data])
+  const selectedSubject = subjectFilters.some(subject => subject.id === activeSubject) ? activeSubject : 'All Faculty'
+  const subjectPillCounts = useMemo(() => Object.fromEntries(subjectFilters.map(subject => [subject.id, subject.id === 'All Faculty' ? enrichedTeachers.length : enrichedTeachers.filter(teacher => teacher.assignments?.some(assignment => assignment.subjectId === subject.id)).length])), [subjectFilters, enrichedTeachers])
 
   // Filtered teachers for roster
   const visibleTeachers = useMemo(() => {
@@ -517,20 +610,11 @@ export default function FacultyClassesPage({ section = 'directory' }) {
         teacher.coursesText.toLowerCase().includes(needle) ||
         teacher.shiftsText.toLowerCase().includes(needle)
 
-      let matchesSubject = true
-      if (activeSubject !== 'All Faculty') {
-        matchesSubject =
-          teacher.subject === activeSubject ||
-          (activeSubject === 'English & Reasoning' &&
-            (teacher.subject.includes('English') ||
-              teacher.subject.includes('CS') ||
-              teacher.subject.includes('Reasoning'))) ||
-          teacher.subject.toLowerCase().includes(activeSubject.toLowerCase())
-      }
+      const matchesSubject = selectedSubject === 'All Faculty' || teacher.assignments?.some(assignment => assignment.subjectId === selectedSubject)
 
       return matchesSearch && matchesSubject
     })
-  }, [enrichedTeachers, search, activeSubject])
+  }, [enrichedTeachers, search, selectedSubject])
 
   // Table selection hook for bulk select, export scope, and checkboxes
   const {
@@ -550,12 +634,37 @@ export default function FacultyClassesPage({ section = 'directory' }) {
       const found = enrichedTeachers.find((t) => t.id === selectedTeacherId)
       if (found) return found
     }
+    const teacherWithSlot = enrichedTeachers.find((t) => (t.slots || []).some((s) => s.isReal || s.isSession))
     return (
+      teacherWithSlot ||
       enrichedTeachers.find((t) => t.id === 'teacher-naeem') ||
       enrichedTeachers[0] ||
       null
     )
   }, [enrichedTeachers, selectedTeacherId])
+
+  const activeSlot = useMemo(() => {
+    if (!selectedTeacher?.slots?.length) return null
+    if (selectedSlotId) {
+      const found = selectedTeacher.slots.find(
+        (s) => s.id === selectedSlotId || s.assignmentId === selectedSlotId || s.classId === selectedSlotId
+      )
+      if (found) return found
+    }
+    if (location.state?.subject) {
+      const subLower = location.state.subject.toLowerCase()
+      const found = selectedTeacher.slots.find((s) => s.subject?.toLowerCase().includes(subLower))
+      if (found) return found
+    }
+    return selectedTeacher.slots[0] || null
+  }, [selectedTeacher, selectedSlotId, location.state])
+
+  const shiftCards = useMemo(()=>shiftDistribution({assignments:data?.teachers?.flatMap(t=>t.assignments||[]),sessions:data?.sessions,academic:{courses:data?.courses,batches:data?.batches,subjects:data?.subjects},branchId,now:shiftClock}),[data,branchId,shiftClock])
+
+  const teacherSessionStatus = useMemo(() => {
+    const slots = resolveDailyClasses({ assignments: selectedTeacher?.assignments || [], sessions: (data?.sessions || []).filter(session => session.teacherId === selectedTeacher?.id), academic: { courses: data?.courses, batches: data?.batches, subjects: data?.subjects }, branchId, now: shiftClock })
+    return selectedClassStatus(activeSlot, slots, shiftClock)
+  }, [activeSlot, selectedTeacher, data, branchId, shiftClock])
 
   // KPI Metrics calculations
   const totalInstructors = data?.teachers?.length || 0
@@ -570,6 +679,16 @@ export default function FacultyClassesPage({ section = 'directory' }) {
   }, [enrichedTeachers])
 
   const retry = () => setRetryCount((v) => v + 1)
+  useEffect(() => {
+    const refreshAcademic = () => setRetryCount(value => value + 1)
+    window.addEventListener('focus', refreshAcademic)
+    window.addEventListener('storage', refreshAcademic)
+    return () => {
+      window.removeEventListener('focus', refreshAcademic)
+      window.removeEventListener('storage', refreshAcademic)
+    }
+  }, [])
+
 
   // Export functions respecting selection scope
   const handleExportCsv = () => {
@@ -637,19 +756,21 @@ export default function FacultyClassesPage({ section = 'directory' }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              Faculty &amp; Classes
+              {section === 'subjects' ? 'Teacher Subject Assignments' : section === 'batches' ? 'Teacher Batch Assignments' : section === 'schedule' ? 'Class Schedule' : 'Faculty & Classes'}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              Manage teaching instructors, course subject allocations, weekly timetables, and student batch loads.
+              {section === 'directory'
+                ? 'Manage teaching instructors, course subject allocations, weekly timetables, and student batch loads.'
+                : `Authorized branch view for ${branch?.name ?? 'the selected branch'}.`}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {canManage && (
+            {canManage && section === 'directory' && (
               <Button
                 type="button"
                 size="sm"
-                onClick={() => setAddFacultyOpen(true)}
+                onClick={() => {setEditingFaculty(null);setAddFacultyOpen(true)}}
                 className="h-8.5 text-xs px-3.5 gap-1.5 bg-[#940016] text-white hover:bg-[#7a0012] shadow-xs cursor-pointer"
               >
                 <UserPlus size={14} />
@@ -659,7 +780,6 @@ export default function FacultyClassesPage({ section = 'directory' }) {
           </div>
         </div>
 
-        {/* Backward compatible tabs rendered ONLY when non-directory subroute is visited */}
         {section !== 'directory' && <ModuleNav section={section} />}
 
         <State loading={!current} error={current?.error} retry={retry}>
@@ -667,9 +787,9 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             <>
               {/* SUBJECT FILTER PILLS */}
               <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-                {['All Faculty', 'Biology', 'Chemistry', 'Physics', 'Mathematics', 'English & Reasoning'].map(
-                  (subjectKey) => {
-                    const isActive = activeSubject === subjectKey
+                {subjectFilters.map(
+                  ({ id: subjectKey, label }) => {
+                    const isActive = selectedSubject === subjectKey
                     const count = subjectPillCounts[subjectKey] ?? 0
                     return (
                       <button
@@ -682,7 +802,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                             : 'bg-white border border-border/80 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                       >
-                        <span>{subjectKey}</span>
+                        <span>{label}</span>
                         <span
                           className={`text-[11px] font-medium ${
                             isActive ? 'text-white/90' : 'text-slate-400'
@@ -699,7 +819,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
               {/* 4 COMPACT KPI CARDS */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {/* 1. Total Instructors */}
-                <Card className="rounded-xl border border-border/80 bg-white p-4 shadow-xs">
+                <Card className="top-kpi-card kpi-maroon rounded-xl border p-4 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -713,14 +833,14 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         <span>Saved branch faculty</span>
                       </div>
                     </div>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F9EBEE] text-[#940016]">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F9EBEE] text-[#940016] border border-[#f0d5d9]">
                       <UserCheck size={18} />
                     </div>
                   </div>
                 </Card>
 
                 {/* 2. Daily Lecture Slots */}
-                <Card className="rounded-xl border border-border/80 bg-white p-4 shadow-xs">
+                <Card className="top-kpi-card kpi-emerald rounded-xl border p-4 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -733,14 +853,14 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         Today's saved assignments
                       </p>
                     </div>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
                       <CalendarDays size={18} />
                     </div>
                   </div>
                 </Card>
 
                 {/* 3. Student Reach */}
-                <Card className="rounded-xl border border-border/80 bg-white p-4 shadow-xs">
+                <Card className="top-kpi-card kpi-sky rounded-xl border p-4 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -753,14 +873,14 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         Enrolled MDCAT &amp; FSc
                       </p>
                     </div>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-700 border border-sky-100">
                       <UsersRound size={18} />
                     </div>
                   </div>
                 </Card>
 
                 {/* 4. Active Classrooms */}
-                <Card className="rounded-xl border border-border/80 bg-white p-4 shadow-xs">
+                <Card className="top-kpi-card kpi-amber rounded-xl border p-4 shadow-xs">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -773,7 +893,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         Lecture halls in use
                       </p>
                     </div>
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
                       <DoorOpen size={18} />
                     </div>
                   </div>
@@ -953,6 +1073,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                                   </p>
                                 </div>
 
+                                {can(PERMISSIONS.USERS_MANAGE)&&<div className="flex items-center gap-1" onClick={e=>e.stopPropagation()}><Button size="sm" variant="outline" aria-label={`Edit faculty ${teacher.name}`} onClick={()=>{setEditingFaculty(teacher);setAddFacultyOpen(true)}}><Edit2 size={13}/></Button><Button size="sm" variant="outline" aria-label={`Delete faculty ${teacher.name}`} onClick={()=>{setFacultyError('');setDeletingFaculty(teacher)}}><Trash2 size={13}/></Button></div>}
                                 <div>
                                   {isSelectedRow ? (
                                     <Button
@@ -1030,76 +1151,29 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         <span>Campus Shift Distribution Overview</span>
                       </div>
                       <span className="text-xs text-muted-foreground font-medium">
-                        Mon - Sat Real-time allocations
+                        Today &middot; Asia/Karachi
                       </span>
                     </div>
 
+                    <p className="mt-2 text-[10px] text-muted-foreground">Today only. Time elapsed is scheduled time, not attendance or syllabus completion. Weekend is a summary of the same morning/evening classes.</p>
                     <div className="mt-3.5 grid grid-cols-1 gap-3 md:grid-cols-3">
-                      {/* Morning Shift */}
-                      <div className="rounded-xl border border-border/80 bg-slate-50/60 p-3">
+                      {shiftCards.map(shift=><div key={shift.label} className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-slate-50/60 p-3">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-900">Morning Shift</span>
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            08:00 – 01:30 PM
-                          </span>
+                          <span className="min-w-0 truncate font-bold text-slate-900" title={shift.label}>{shift.label}</span>
+                          <span className="min-w-0 truncate font-mono text-[10px] text-muted-foreground" title={shift.time}>{shift.time}</span>
                         </div>
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          14 Lectures daily • 8 Batches active
-                        </p>
+                        <p className="mt-1.5 text-xs text-muted-foreground">{shift.lectures} Lectures today &middot; {shift.batches} Batches active</p>
+                        <div className="mt-2 text-[11px] text-muted-foreground">Class time elapsed <strong>{shift.lectures?`${shift.progress}%`:"No classes today"}</strong><div role="progressbar" aria-label={`${shift.label} scheduled time elapsed`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={shift.progress} className="mt-1 h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-primary" style={{width:`${shift.progress}%`}} /></div></div>
                         <div className="mt-3">
                           <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-                            <span>Lab &amp; Lecture usage</span>
-                            <span className="font-bold text-slate-900">85% Capacity</span>
+                            <span>Seats filled</span>
+                            <span className="font-bold text-slate-900" title={shift.percentage===null?'Configure capacity for every linked batch.':`${shift.enrolled} enrolled / ${shift.capacity} configured seats`}>{shift.percentage===null?'Capacity not configured':`${shift.enrolled}/${shift.capacity} (${shift.percentage}%)`}</span>
                           </div>
                           <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200">
-                            <div className="h-1.5 rounded-full bg-[#940016]" style={{ width: '85%' }} />
+                            <div className="h-1.5 rounded-full bg-[#940016]" style={{width:`${Math.min(100,shift.percentage??0)}%`}} />
                           </div>
                         </div>
-                      </div>
-
-                      {/* Evening Shift */}
-                      <div className="rounded-xl border border-border/80 bg-slate-50/60 p-3">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-900">Evening Shift</span>
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            03:30 – 08:30 PM
-                          </span>
-                        </div>
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          10 Lectures daily • 6 Batches active
-                        </p>
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-                            <span>Lab &amp; Lecture usage</span>
-                            <span className="font-bold text-slate-900">70% Capacity</span>
-                          </div>
-                          <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200">
-                            <div className="h-1.5 rounded-full bg-[#940016]" style={{ width: '70%' }} />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Crash & Weekend */}
-                      <div className="rounded-xl border border-border/80 bg-slate-50/60 p-3">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-900">Crash &amp; Weekend</span>
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            Sat &amp; Sun Intensive
-                          </span>
-                        </div>
-                        <p className="mt-1.5 text-xs text-muted-foreground">
-                          4 Long sessions • 2 Batches
-                        </p>
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-                            <span>Lab &amp; Lecture usage</span>
-                            <span className="font-bold text-slate-900">45% Capacity</span>
-                          </div>
-                          <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200">
-                            <div className="h-1.5 rounded-full bg-[#940016]" style={{ width: '45%' }} />
-                          </div>
-                        </div>
-                      </div>
+                      </div>)}
                     </div>
                   </Card>
                 </div>
@@ -1126,21 +1200,46 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                             <p className="text-xs text-slate-600 font-medium">
                               {selectedTeacher.department}
                             </p>
-                            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Phone size={12} className="text-slate-400" />
-                              <span>{selectedTeacher.contact}</span>
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Phone size={12} className="text-slate-400" />
+                                <span>{selectedTeacher.contact}</span>
+                              </p>
+                              {selectedTeacher.contact && (
+                                <a
+                                  href={`https://wa.me/${selectedTeacher.contact.replace(/[^0-9]/g, '').startsWith('0') ? '92' + selectedTeacher.contact.replace(/[^0-9]/g, '').slice(1) : selectedTeacher.contact.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Assalam-o-Alaikum ${selectedTeacher.displayName}, regarding The Scholar Coaching Academy classes:`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer shadow-2xs"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <MessageSquare size={11} className="text-emerald-600" />
+                                  <span>WhatsApp</span>
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/faculty/${encodeURIComponent(selectedTeacher.id)}`)}
-                          className="size-8 p-0 text-muted-foreground hover:text-slate-900 cursor-pointer"
-                        >
-                          <MoreVertical size={16} />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/faculty/${encodeURIComponent(selectedTeacher.id)}`)}
+                            className="h-7 px-2.5 text-xs font-semibold text-[#940016] border-[#f0d5d9] bg-[#F9EBEE]/60 hover:bg-[#F9EBEE] cursor-pointer"
+                          >
+                            Full Profile →
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/faculty/${encodeURIComponent(selectedTeacher.id)}`)}
+                            className="size-7 p-0 text-muted-foreground hover:text-slate-900 cursor-pointer"
+                            title="Open Full Profile"
+                          >
+                            <MoreVertical size={16} />
+                          </Button>
+                        </div>
                       </div>
 
                       {/* 3 Metrics Box Row */}
@@ -1165,19 +1264,11 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         </div>
                       </div>
 
-                      {/* Current Session Status Banner */}
-                      <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2 border border-border/70">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>Current Session Status</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
-                            In Progress
-                          </span>
-                          <span className="rounded-md bg-white border border-border/70 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                            Schedule
-                          </span>
+                      {/* Current status derives from today's saved teacher schedule. */}
+                      <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border/70 bg-slate-50/80 px-2.5 py-2">
+                        <span className="min-w-0 truncate text-[11px] font-semibold text-slate-800" title="Today's saved class schedule status">Selected class status</span>
+                        <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+                          <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${teacherSessionStatus.type==='in-progress'?'bg-emerald-100 text-emerald-800':'bg-muted text-muted-foreground'}`} title="Based on saved class times in Asia/Karachi">{teacherSessionStatus.label}</span>
                         </div>
                       </div>
 
@@ -1194,50 +1285,73 @@ export default function FacultyClassesPage({ section = 'directory' }) {
 
                         {selectedTeacher.slots && selectedTeacher.slots.length > 0 ? (
                           <div className="space-y-2">
-                            {selectedTeacher.slots.map((slot) => (
-                              <div
-                                key={slot.id}
-                                className="group rounded-xl border border-border/70 bg-white p-3 hover:border-slate-300 transition-colors"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-xs text-slate-900">
-                                    {slot.course}
-                                  </span>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 border border-slate-200">
-                                      {slot.room}
+                            {selectedTeacher.slots.map((slot) => {
+                              const isSelected = activeSlot?.id === slot.id
+                              return (
+                                <div
+                                  key={slot.id}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => setSelectedSlotId(slot.id)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault()
+                                      setSelectedSlotId(slot.id)
+                                    }
+                                  }}
+                                  className={`group min-w-0 overflow-hidden rounded-xl border p-3 transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'border-[#940016] bg-[#940016]/[0.035] ring-2 ring-[#940016]/20 shadow-xs'
+                                      : 'border-border/70 bg-white hover:border-[#940016]/40 hover:bg-slate-50/70'
+                                  }`}
+                                >
+                                  <div className="flex min-w-0 items-center justify-between gap-2">
+                                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                      <span title={slot.course} className="min-w-0 truncate font-bold text-xs text-slate-900">
+                                        {slot.course}
+                                      </span>
+                                      {(location.state?.fromDashboard || location.state?.classId) && isSelected && <span className="sr-only">Selected from dashboard</span>}
+                                    </div>
+                                    <div className="flex min-w-0 max-w-[40%] items-center gap-1.5">
+                                      <span title={slot.room} className="min-w-0 truncate rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 border border-slate-200">
+                                        {slot.room}
+                                      </span>
+                                      {canManage && slot.assignmentId && (
+                                        <button
+                                          type="button"
+                                          title="Remove class assignment"
+                                          aria-label={`Remove assignment for ${slot.course}`}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setFacultyError('')
+                                            setDeletingAssignment(slot)
+                                          }}
+                                          className="text-slate-400 hover:text-red-600 p-0.5 rounded transition-colors cursor-pointer"
+                                        >
+                                          <Trash2 size={13} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <p className="mt-1 truncate text-[10px] font-medium text-muted-foreground" title={slot.batch}>Batch: {slot.batch}</p>
+                                  <p title={slot.subject} className="mt-1 truncate text-xs text-slate-600 font-medium">
+                                    {slot.subject}
+                                  </p>
+                                  <div className="mt-2.5 flex min-w-0 flex-col gap-2 text-[10px] text-muted-foreground">
+                                    <span className="flex min-w-0 items-center gap-1.5 font-medium text-slate-700">
+                                      <Clock size={12} className="text-slate-400" />
+                                      <span className="truncate" title={`${slot.days} - ${slot.time}`}>{slot.days} • {slot.time}</span>
                                     </span>
-                                    {canManage && slot.assignmentId && (
-                                      <button
-                                        type="button"
-                                        title="Remove class assignment"
-                                        aria-label={`Remove assignment for ${slot.course}`}
-                                        onClick={async (e) => {
-                                          e.stopPropagation()
-                                          await facultyService.removeAssignment(slot.assignmentId, { branchId })
-                                          retry()
-                                        }}
-                                        className="text-slate-400 hover:text-red-600 p-0.5 rounded transition-colors cursor-pointer"
-                                      >
-                                        <Trash2 size={13} />
-                                      </button>
-                                    )}
+                                    <div className="flex w-full items-center justify-between gap-2 whitespace-nowrap">
+                                      <span className="font-semibold text-slate-800">
+                                        {slot.students} Students
+                                      </span>
+                                      {slot.batchId && <Button type="button" variant="ghost" size="xs" className="h-6 px-1.5 text-[11px] font-medium text-[#940016] hover:bg-[#940016]/10 cursor-pointer" onClick={event=>{event.stopPropagation();setBatchStudentsConfig({open:true,teacher:selectedTeacher,initialBatchId:slot.batchId,subjectId:slot.subjectId,subjectName:slot.subject,subjectOnly:true})}}>View Students</Button>}
+                                    </div>
                                   </div>
                                 </div>
-                                <p className="mt-0.5 text-xs text-slate-600 font-medium">
-                                  {slot.subject}
-                                </p>
-                                <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Clock size={12} />
-                                    <span>{slot.days} • {slot.time}</span>
-                                  </span>
-                                  <span className="font-semibold text-slate-800">
-                                    {slot.students} Students
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                         ) : (
                           <div className="py-6 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
@@ -1248,18 +1362,18 @@ export default function FacultyClassesPage({ section = 'directory' }) {
 
                       {/* Syllabus Progress */}
                       <div className="space-y-1.5 pt-1 border-t border-border/60">
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
                           <span className="text-muted-foreground font-medium">
-                            Lecture Syllabus Pace (Term 1)
+                            Lecture Syllabus Progress
                           </span>
                           <span className="font-bold text-emerald-700">
-                            {selectedTeacher.syllabusPace}% on schedule
+                            Completion not recorded
                           </span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-slate-200">
                           <div
                             className="h-1.5 rounded-full bg-emerald-600"
-                            style={{ width: `${selectedTeacher.syllabusPace}%` }}
+                            style={{ width: '0%' }}
                           />
                         </div>
                       </div>
@@ -1280,16 +1394,12 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                             </Button>
                           )}
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setBatchStudentsConfig({ open: true, teacher: selectedTeacher })}
-                            className="h-8.5 text-xs font-semibold gap-1.5 border-border/80 hover:bg-slate-50 cursor-pointer"
-                          >
-                            <Users size={13} />
-                            <span>Batch Students</span>
-                          </Button>
+                          {canManage && <Button
+                            type="button" variant="outline" size="sm"
+                            onClick={() => setAssignModalConfig({ open: true, teacher: selectedTeacher, addNew: true })}
+                            className="h-8.5 text-xs font-semibold gap-1.5 border-border/80 hover:bg-slate-50 cursor-pointer">
+                            <Plus size={13} /><span>Add Class</span>
+                          </Button>}
                         </div>
 
                         <Button
@@ -1313,7 +1423,6 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             </>
           )}
 
-          {/* Backward-Compatible Subroute Handlers */}
           {data && section === 'subjects' && (
             <SectionCard title="Saved subject assignments" icon={BookOpen}>
               <p className="text-sm text-muted-foreground">
@@ -1338,19 +1447,12 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                   {data.batchAssignments.map((batch) => (
                     <article key={batch.id} className="min-w-0 rounded-lg border p-4">
                       <h2 className="break-words font-semibold">{batch.name}</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">Course: {batch.courseName}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Course: {batch.courseName}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Teacher assignment:{' '}
-                        {batch.teacherAssignments.length
-                          ? batch.teacherAssignments.join(', ')
-                          : 'None saved'}
+                        Teacher assignment: {batch.teacherAssignments.length ? batch.teacherAssignments.join(', ') : 'None saved'}
                       </p>
                       <Button asChild className="mt-3" variant="outline">
-                        <Link to={`/faculty/classes/${encodeURIComponent(batch.id)}`}>
-                          View enrolled students
-                        </Link>
+                        <Link to={`/faculty/classes/${encodeURIComponent(batch.id)}`}>View enrolled students</Link>
                       </Button>
                     </article>
                   ))}
@@ -1362,20 +1464,13 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             </SectionCard>
           )}
 
-          {data && section === 'schedule' && (
-            <ClassSchedulePanel
-              branchId={branchId}
-              batches={data.batches}
-              teachers={data.teachers}
-              requestedClassId={location.state?.classId}
-              onReload={retry}
-            />
-          )}
+
         </State>
 
         {/* MODALS */}
         {addFacultyOpen && (
           <AddFacultyModal
+            teacher={editingFaculty}
             open={addFacultyOpen}
             onClose={() => setAddFacultyOpen(false)}
             branchId={branchId}
@@ -1386,6 +1481,8 @@ export default function FacultyClassesPage({ section = 'directory' }) {
           />
         )}
 
+        {deletingAssignment&&<Dialog open onOpenChange={open=>{if(!open&&!deleteBusy)setDeletingAssignment(null)}}><DialogContent><DialogHeader><DialogTitle>Remove Class Assignment</DialogTitle><DialogDescription>Remove {deletingAssignment.subject} from {deletingAssignment.course}? Other assignments will be kept.</DialogDescription></DialogHeader>{facultyError&&<p role="alert">{facultyError}</p>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={deleteBusy} onClick={()=>setDeletingAssignment(null)}>Cancel</Button><Button variant="destructive" disabled={deleteBusy} onClick={async()=>{setDeleteBusy(true);try{if(deletingAssignment.isSession)await classScheduleService.delete(deletingAssignment.classId,{branchId});else await facultyService.removeAssignment(deletingAssignment.assignmentId,{branchId});setDeletingAssignment(null);retry()}catch(error){setFacultyError(error.message)}finally{setDeleteBusy(false)}}}>Delete Assignment</Button></div></DialogContent></Dialog>}
+        {deletingFaculty&&<Dialog open onOpenChange={open=>{if(!open&&!deleteBusy)setDeletingFaculty(null)}}><DialogContent><DialogHeader><DialogTitle>Delete Faculty Member</DialogTitle><DialogDescription>Delete {deletingFaculty.name}? Linked records are protected. This cannot be undone.</DialogDescription></DialogHeader>{facultyError&&<p role="alert">{facultyError}</p>}<div className="flex justify-end gap-2"><Button variant="outline" disabled={deleteBusy} onClick={()=>setDeletingFaculty(null)}>Cancel</Button><Button variant="destructive" disabled={deleteBusy} onClick={async()=>{setDeleteBusy(true);try{await facultyService.deleteTeacher(deletingFaculty.id,{branchId});setDeletingFaculty(null);setSelectedTeacherId(null);retry()}catch(error){setFacultyError(error.message)}finally{setDeleteBusy(false)}}}>Delete Faculty</Button></div></DialogContent></Dialog>}
         {assignModalConfig && (
           <AssignFacultyModal
             open={assignModalConfig.open}
@@ -1395,7 +1492,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             subjects={data?.subjects || []}
             courses={data?.courses || []}
             streams={data?.streams || []}
-            assignments={assignModalConfig.teacher?.assignments || []}
+            assignments={assignModalConfig.addNew ? [] : assignModalConfig.teacher?.assignments || []}
             branchId={branchId}
             initialTeacherId={assignModalConfig.teacher?.id}
             onAssigned={() => {
@@ -1404,15 +1501,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             }}
           />
         )}
-
-        {batchStudentsConfig && (
-          <BatchStudentsModal
-            open={batchStudentsConfig.open}
-            onClose={() => setBatchStudentsConfig(null)}
-            teacher={batchStudentsConfig.teacher}
-            branchId={branchId}
-          />
-        )}
+        {batchStudentsConfig && <BatchStudentsModal open={batchStudentsConfig.open} onClose={()=>setBatchStudentsConfig(null)} teacher={batchStudentsConfig.teacher} initialBatchId={batchStudentsConfig.initialBatchId} subjectId={batchStudentsConfig.subjectId} subjectName={batchStudentsConfig.subjectName} subjectOnly={batchStudentsConfig.subjectOnly} branchId={branchId}/>}
       </div>
     </DashboardLayout>
   )

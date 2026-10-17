@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
@@ -10,6 +10,7 @@ export default function ConvertToAdmissionDialog({
   open,
   onClose,
   onSubmit,
+  onDirectConvert,
   demo = null,
   busy = false,
   error = '',
@@ -161,7 +162,20 @@ export default function ConvertToAdmissionDialog({
                 <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={busy} className="bg-purple-600 hover:bg-purple-700 text-white">
+                {onDirectConvert && demo && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      onClose()
+                      onDirectConvert(demo)
+                    }}
+                    className="border-[#940016] text-[#940016] hover:bg-[#F9EBEE]/60 cursor-pointer"
+                  >
+                    Open Full Admission Form ↗
+                  </Button>
+                )}
+                <Button type="submit" disabled={busy} className="bg-[#940016] hover:bg-[#72000E] text-white cursor-pointer">
                   {busy ? 'Converting...' : 'Create Pending Admission'}
                 </Button>
               </DialogFooter>

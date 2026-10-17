@@ -45,7 +45,8 @@ export default function AssignFacultyModal({
   const [error, setError] = useState('')
 
   const courseBatches = batches.filter(b => b.courseId === courseId && b.active !== false)
-  const courseSubjects = subjects.filter(s => s.courseId === courseId && s.active !== false)
+  const primarySubject = teachers.find(teacher => teacher.id === teacherId)?.specialization?.trim().toLowerCase()
+  const courseSubjects = subjects.filter(s => s.courseId === courseId && s.active !== false && (!primarySubject || s.name.trim().toLowerCase() === primarySubject))
 
   const toggleDay = day => {
     setDays(prev => (prev.includes(day) ? (prev.length > 1 ? prev.filter(d => d !== day) : prev) : [...prev, day]))
@@ -126,7 +127,7 @@ export default function AssignFacultyModal({
               aria-label="Select Faculty Member"
               className="h-10 w-full rounded-lg border border-input bg-background px-3 text-xs font-medium focus:ring-2 focus:ring-ring"
               value={teacherId}
-              onChange={e => setTeacherId(e.target.value)}
+              onChange={e => {setTeacherId(e.target.value);setSubjectId('')}}
               disabled={submitting}
             >
               <option value="">Select teacher...</option>

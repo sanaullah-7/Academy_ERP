@@ -1,7 +1,8 @@
+import { classPeriod } from '../../utils/classTime.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { AlertCircle, ArrowRight, Banknote, CalendarDays, CheckCircle2, Clock3, CreditCard, DoorOpen, GraduationCap, Loader2, MapPin, MoreVertical, ReceiptText, RefreshCw, Search, TrendingDown, UserPlus, UserRound, Users } from 'lucide-react'
+import { AlertCircle, ArrowRight, Banknote, CalendarDays, CheckCircle2, Clock3, CreditCard, DoorOpen, GraduationCap, Loader2, MapPin, ReceiptText, RefreshCw, Search, TrendingDown, UserPlus, UserRound, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader } from '../ui/card.jsx'
 import { Badge } from '../ui/badge.jsx'
@@ -13,7 +14,7 @@ import { usePermissions } from '../../hooks/usePermissions.js'
 import { admissionService } from '../../services/admissionService.js'
 import { studentService } from '../../services/studentService.js'
 import { academicService } from '../../services/academicService.js'
-import { feeService } from '../../services/feeService.js'
+
 import { classScheduleService, resolveDailyClasses } from '../../services/classScheduleService.js'
 import { facultyService } from '../../services/facultyService.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
@@ -111,7 +112,7 @@ function CashflowChart({ period, periodLabel, range, payments, expenses }) {
       {[['Inflow', inflow], ['Burn', burn], ['Net Margin', inflow-burn]].map(([label, value]) => <div key={label}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{periodLabel} {label}</p><p className={`mt-1 font-bold ${value<0?'text-red-700':'text-foreground'}`}>{money(value)}</p></div>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-4 text-sm"><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-primary" />Revenue</span><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-blue-200" />Expenses</span></div><Badge variant="outline">{periodLabel}</Badge></div>
-    <div className="relative h-44 w-full sm:h-48" aria-label={`Revenue and expenses chart for ${periodLabel}`}>
+    <div className="relative h-52 w-full sm:h-60" aria-label={`Revenue and expenses chart for ${periodLabel}`}>
       <ResponsiveContainer width="100%" height="100%"><BarChart data={records} margin={{ top: 16, right: 8, left: -8, bottom: 0 }}><CartesianGrid vertical={false} strokeDasharray="4 4" stroke="var(--border)" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><Tooltip formatter={value=>money(value)} /><Bar dataKey="revenue" name="Revenue" fill="var(--dashboard-revenue)" radius={[5, 5, 0, 0]} /><Bar dataKey="expenses" name="Expenses" fill="#bfdbfe" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer>
       {!hasData&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="max-w-sm rounded-xl border bg-card/95 px-5 py-4 text-center shadow-sm"><p className="font-semibold">No financial records for {periodLabel.toLowerCase()}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Verified receipts and posted expenses will appear automatically.</p></div></div>}
     </div>
@@ -378,9 +379,9 @@ export default function SuperAdminDashboard() {
               </div>
 
               <aside className="grid min-w-0 content-start gap-4">
-                <Card className="border-border/70 shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><CardHeader><div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Quick Operations</h2><span className="text-xs text-muted-foreground">Fast desk</span></div></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="secondary" className="h-auto min-h-20 justify-start rounded-xl border border-primary/20 bg-primary/5 px-4 text-left hover:bg-primary/10" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-10 place-items-center rounded-lg bg-primary text-white shadow-xs"><UserPlus size={19} aria-hidden="true" /></span><span><strong className="block">New Admission</strong><small className="font-normal text-muted-foreground">Student registration</small></span></Button>
-                  {[{ title: 'Collect Fee', note: 'Open Fees', icon: ReceiptText, path: ROUTE_PATHS.FEES, style: 'border-blue-100 bg-blue-50/70 hover:bg-blue-100/70', iconStyle: 'bg-blue-100 text-blue-700' }, { title: 'Record Expense', note: 'Open Finance', icon: CreditCard, path: ROUTE_PATHS.FINANCE, style: 'border-amber-100 bg-amber-50/70 hover:bg-amber-100/70', iconStyle: 'bg-amber-100 text-amber-700' }, { title: 'Add Demo', note: 'Open Demo Classes', icon: DoorOpen, path: ROUTE_PATHS.DEMO_CLASSES, style: 'border-violet-100 bg-violet-50/70 hover:bg-violet-100/70', iconStyle: 'bg-violet-100 text-violet-700' }].map(item => <Button key={item.title} variant="secondary" className={`h-auto min-h-20 justify-start rounded-xl border px-4 text-left ${item.style}`} onClick={() => navigate(item.path)}><span className={`grid size-10 place-items-center rounded-lg ${item.iconStyle}`}><item.icon size={19} aria-hidden="true" /></span><span><strong className="block">{item.title}</strong><small className="font-normal text-muted-foreground">{item.note}</small></span></Button>)}
+                <Card className="border-border/70 shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><CardHeader className="px-4 pb-2 pt-3"><div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Quick Operations</h2><span className="text-[10px] text-muted-foreground">Fast desk</span></div></CardHeader><CardContent className="grid gap-2 px-4 pb-3 pt-1 sm:grid-cols-2">
+                  <Button variant="secondary" className="h-auto min-h-16 justify-start rounded-lg border border-primary/20 bg-primary/5 gap-2 px-2.5 py-2 text-left hover:bg-primary/10" disabled={!canCreateAdmission} onClick={() => navigate(ROUTE_PATHS.NEW_ADMISSION)}><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-white shadow-xs"><UserPlus size={16} aria-hidden="true" /></span><span className="min-w-0"><strong className="block text-xs leading-tight">New Admission</strong><small className="mt-0.5 block text-[10px] font-normal leading-tight text-muted-foreground">Student registration</small></span></Button>
+                  {[{ title: 'Collect Fee', note: 'Open Fees', icon: ReceiptText, path: ROUTE_PATHS.FEES, style: 'border-blue-100 bg-blue-50/70 hover:bg-blue-100/70', iconStyle: 'bg-blue-100 text-blue-700' }, { title: 'Record Expense', note: 'Open Finance', icon: CreditCard, path: ROUTE_PATHS.FINANCE, style: 'border-amber-100 bg-amber-50/70 hover:bg-amber-100/70', iconStyle: 'bg-amber-100 text-amber-700' }, { title: 'Add Demo', note: 'Open Demo Classes', icon: DoorOpen, path: ROUTE_PATHS.DEMO_CLASSES, style: 'border-violet-100 bg-violet-50/70 hover:bg-violet-100/70', iconStyle: 'bg-violet-100 text-violet-700' }].map(item => <Button key={item.title} variant="secondary" className={`h-auto min-h-16 justify-start rounded-lg border gap-2 px-2.5 py-2 text-left ${item.style}`} onClick={() => navigate(item.path)}><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${item.iconStyle}`}><item.icon size={16} aria-hidden="true" /></span><span className="min-w-0"><strong className="block text-xs leading-tight">{item.title}</strong><small className="mt-0.5 block text-[10px] font-normal leading-tight text-muted-foreground">{item.note}</small></span></Button>)}
                 </CardContent></Card>
 
                 <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
@@ -399,12 +400,24 @@ export default function SuperAdminDashboard() {
                           key={item.id}
                           type="button"
                           aria-label={`Open ${item.subject} in Class Schedule`}
-                          onClick={() => navigate(ROUTE_PATHS.CLASS_SCHEDULE, { state: { classId: item.id } })}
+                          onClick={() => navigate(ROUTE_PATHS.FACULTY_CLASSES, {
+                            state: {
+                              classId: item.id,
+                              assignmentId: item.assignmentId,
+                              teacherId: item.teacherId,
+                              teacherName: item.teacherName,
+                              subject: item.subject,
+                              batchId: item.batchId,
+                              courseId: item.courseId,
+                              fromDashboard: true,
+                            },
+                          })}
                           className="dashboard-class-slot group w-full rounded-2xl border p-3 text-left text-slate-950 shadow-[0_2px_10px_rgba(15,23,42,0.045)] transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:p-3.5"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                               <strong className="text-sm font-bold text-slate-950 sm:text-[15px]">{item.subject}</strong>
+                              <span className="inline-flex shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{classPeriod(item.startTime)}</span>
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-tight ${getBatchBadgeColor(item.batchName, index)}`}>{item.batchName}</span>
                             </div>
                             <div className="text-right shrink-0">

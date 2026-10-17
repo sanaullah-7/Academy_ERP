@@ -18,7 +18,6 @@ import {
   CalendarDays,
   ReceiptText,
   Phone,
-  MapPin,
   Users,
   CheckCircle2,
   Clock,
@@ -28,12 +27,8 @@ import {
   Zap,
   BookOpen,
   History,
-  Sparkles,
-  ShieldCheck,
   Layers,
-  FileText,
-  Send,
-} from 'lucide-react'
+  } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Badge } from '../../components/ui/badge.jsx'
 import { Button } from '../../components/ui/button.jsx'
