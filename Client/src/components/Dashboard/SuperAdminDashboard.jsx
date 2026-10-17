@@ -108,7 +108,7 @@ function CashflowChart({ period, periodLabel, range, payments, expenses }) {
   const burn = records.reduce((sum,item)=>sum+item.expenses,0)
   const hasData = inflow > 0 || burn > 0
   return <div className="space-y-3">
-    <div className="grid gap-2 rounded-xl bg-muted/40 p-2.5 sm:grid-cols-3">
+    <div className="mobile-chart-summary grid gap-2 rounded-xl bg-muted/40 p-2.5 sm:grid-cols-3">
       {[['Inflow', inflow], ['Burn', burn], ['Net Margin', inflow-burn]].map(([label, value]) => <div key={label}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{periodLabel} {label}</p><p className={`mt-1 font-bold ${value<0?'text-red-700':'text-foreground'}`}>{money(value)}</p></div>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-4 text-sm"><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-primary" />Revenue</span><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-blue-200" />Expenses</span></div><Badge variant="outline">{periodLabel}</Badge></div>

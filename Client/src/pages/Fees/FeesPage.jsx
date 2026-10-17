@@ -283,7 +283,7 @@ export default function FeesPage() {
           <Input className="pl-9 h-9 text-xs" placeholder="Search student, course or challan..." value={search} onChange={e=>setSearch(e.target.value)}/>
         </label>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-slate-50/80 p-1">
+          <div className="mobile-fee-status flex items-center gap-1 rounded-xl border border-border/70 bg-slate-50/80 p-1">
             {['All', 'Paid', 'Due', 'Overdue'].map(x => {
               const isCurrent = status === x
               const count = statusCounts[x] ?? 0

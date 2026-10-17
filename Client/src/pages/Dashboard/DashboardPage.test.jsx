@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
@@ -8,14 +8,24 @@ import { demoWorkflowService } from '../../services/demoWorkflowService.js'
 
 
 beforeEach(() => window.history.replaceState(null, '', '/dashboard'))
+afterEach(() => vi.useRealTimers())
 
 describe('approved shared dashboard skeleton', () => {
-  it('loads a persisted active-branch class created today after navigation and refresh', async () => {
+  it.each([
+    ['2026-10-18T18:58:00Z', '2026-10-18'],
+    ['2026-10-18T19:01:00Z', '2026-10-19'],
+  ])('loads a persisted active-branch class created today after navigation and refresh (%s)', async (instant, academyDate) => {
+    // Freeze only Date: UI/service timers remain real. Cover both sides of academy
+    // midnight so host/CI timezone cannot silently move the fixture to yesterday.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(instant))
     await authService.login({ userId: 'demo-admin' })
     await authService.selectBranch('demo-admin', 'demo-central')
     const now = new Date()
-    const classDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    await classScheduleService.create({ subject: 'Dashboard Biology', batchId: 'batch-demo-course-demo-2', teacherId: 'demo-teacher', classDate, startTime: '00:00', endTime: '23:59', location: 'Lecture Hall 2' }, { branchId: 'demo-central' })
+    const classDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+    expect(classDate).toBe(academyDate)
+    const savedClass = await classScheduleService.create({ subject: 'Dashboard Biology', batchId: 'batch-demo-course-demo-2', teacherId: 'demo-teacher', classDate, startTime: '00:00', endTime: '23:59', location: 'Lecture Hall 2' }, { branchId: 'demo-central' })
+    expect(await classScheduleService.getById(savedClass.id, { branchId: 'demo-central' })).toMatchObject({ subject: 'Dashboard Biology', classDate: academyDate, branchId: 'demo-central' })
     window.history.replaceState(null, '', '/faculty/schedule')
     const first = render(<App />)
     expect(await screen.findByText('Dashboard Biology')).toBeInTheDocument()

@@ -902,3 +902,8 @@ For the DEMO frontend, an admission's configured fee is derived from exactly one
 ## 2026-10-18 ? CONFIRMED owner authorization for final QA and safe dev push
 
 Owner explicitly authorized direct-dev stabilization and release of intended completed Codex/Antigravity work in one new commit followed by a normal origin/dev push. Preserve all existing approved UI and owner records; exclude artifacts/generated/secrets, preserve local history, stop on unexpected remote commits, and do not suppress diagnostics or remove tests. Noncritical build notices may be documented when no safe behavior-preserving fix exists. QA-RELEASE-20261018 evidence is recorded in PROGRESS.md; no new backend/security/business policy is authorized.
+
+
+## 2026-10-18 - CONFIRMED mobile-only scope, desktop preservation and no push
+
+Owner explicitly authorized MOBILE-20261018 directly on dev from c86724a: premium presentation for widths up to767px across existing ERP modules, preserving exact desktop/laptop at768px+ and existing business/data/permission/export behavior. Reuse existing navigation and dependencies, keep artifacts and owner records, verify disposable-browser mobile matrix plus desktop before/after screenshots. Unlike the prior QA release, this task explicitly forbids commit/push until separately approved. Delivery remains IN_REVIEW pending owner mobile acceptance.

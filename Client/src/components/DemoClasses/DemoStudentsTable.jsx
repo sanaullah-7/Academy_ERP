@@ -263,7 +263,7 @@ export default function DemoStudentsTable({
         </div>
 
         {/* Right: Search Input & Stream Select */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="mobile-demo-filters flex items-center gap-2 shrink-0">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 size-3.5 text-slate-400 pointer-events-none" />
             <input

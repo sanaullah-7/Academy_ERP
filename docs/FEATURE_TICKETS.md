@@ -2042,3 +2042,16 @@ Verification: initial ESLint 50 errors/2 warnings; final full project lint PASS,
 Browser: isolated Edge QA profile and separate disposable context only; module smoke covered Dashboard, Faculty, Admissions, Students, Fees, Finance, Demo Classes, Assets, Reports, Users, Settings, Branches and the correct Courses & Batches URL. Correct academic tab controls, course PDF download and CSV download passed; no runtime errors in successful smoke runs. A browser script initially used the wrong role for the academic tabs; the corrected check passed. Existing automated tests cover permissions/branch isolation, academic assignment/conflicts, admission/enrollment, financial totals/full-partial payments, PDF templates and CSV/selection behavior. Every browser role/device/export variant was not exhaustively repeated. This remains a mock frontend, not production backend/security validation.
 
 Known limitation: Vite reports a noncritical >500kB main-chunk warning (about 2.72MB minified, 1.10MB gzip, including synchronous PDF/logo code). Build succeeds; no threshold changes, warning suppression or risky route/export restructuring performed. Existing production integration and owner acceptance remain outside this stabilization. Release checks complete; commit/push execution is recorded in the final owner report after remote safety verification.
+
+
+## MOBILE-20261018 - Premium mobile-only ERP presentation
+
+Authorization: owner's PREMIUM MOBILE-ONLY RESPONSIVE TRANSFORMATION request, 2026-10-18. Status IN_REVIEW. Scope is up to 767px, preserving every 768px+ computed desktop result and existing business workflow.
+
+Acceptance evidence:
+- Shared compact safe-area-aware topbar/drawer; existing navigation, search, branch/account/profile/logout retained. Drawer identity/logo fitted, navigation scrolls internally and closes after selection.
+- Compact two-column KPI layouts where practical; narrow Finance cards remain one column. Existing card data and calculations unchanged.
+- Existing mobile record layouts retained; remaining tables scroll internally with all columns, sorting/filtering/selection/export functions retained. Table row action menus stay reachable; pagination uses larger tap targets.
+- Dialogs use viewport-relative heights, bounded grid tracks, internal scrolling, single-column form grids and readable inputs. Fixed challan-preview intrinsic grid overflow; unchanged PDF/print templates. Inline Admissions stays in-page with non-sticky summary below its form.
+- Faculty roster/detail design stacks on mobile; selecting a record reveals/focuses the existing detail panel only below 768px. Desktop selection stays unchanged.
+- Target browser matrix and actual workflow evidence in PROGRESS.md. Final full Vitest 422/422 PASS, targeted 29/29 PASS, ESLint PASS, build PASS. Existing large-chunk notice remains. No dependencies or backend/service changes. Owner acceptance pending; no commit/push.

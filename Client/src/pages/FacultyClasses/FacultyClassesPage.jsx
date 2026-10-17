@@ -729,6 +729,19 @@ export default function FacultyClassesPage({ section = 'directory' }) {
     })
   }
 
+  // On phones, reveal the existing detail panel after choosing a roster record.
+  // Desktop selection and the saved assignment workflow remain unchanged.
+  const revealTeacher = teacherId => {
+    setSelectedTeacherId(teacherId)
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      requestAnimationFrame(() => {
+        const panel = document.getElementById('faculty-mobile-details')
+        panel?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+        panel?.focus({ preventScroll: true })
+      })
+    }
+  }
+
   // Print timetable for selected teacher (separate from directory report)
   const handlePrintTimetable = () => {
     if (!selectedTeacher) return
@@ -996,8 +1009,8 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                           return (
                             <div
                               key={teacher.id}
-                              onClick={() => setSelectedTeacherId(teacher.id)}
-                              className={`flex flex-col gap-3 p-4 transition-all sm:flex-row sm:items-center sm:justify-between cursor-pointer ${
+                              onClick={() => revealTeacher(teacher.id)}
+                              className={`mobile-faculty-row flex flex-col gap-3 p-4 transition-all sm:flex-row sm:items-center sm:justify-between cursor-pointer ${
                                 isSelectedRow
                                   ? 'border-l-4 border-l-[#940016] bg-[#F9EBEE]/35'
                                   : 'hover:bg-slate-50/70 border-l-4 border-l-transparent'
@@ -1090,7 +1103,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                                       variant="outline"
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        setSelectedTeacherId(teacher.id)
+                                        revealTeacher(teacher.id)
                                       }}
                                       className="h-7 px-3 text-xs font-medium text-slate-700 border-border/80 hover:bg-slate-100 cursor-pointer"
                                     >
@@ -1179,7 +1192,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                 </div>
 
                 {/* RIGHT COLUMN: SELECTED TEACHER DETAIL PANEL (~35%) */}
-                <div className="lg:col-span-5 xl:col-span-4">
+                <div id="faculty-mobile-details" tabIndex={-1} className="lg:col-span-5 xl:col-span-4">
                   {selectedTeacher ? (
                     <Card className="rounded-xl border border-border/80 bg-white p-5 shadow-xs space-y-4">
                       {/* Teacher Profile Card Header */}

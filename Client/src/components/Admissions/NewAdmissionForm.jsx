@@ -390,7 +390,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
     } catch (error) { setSubmitError(error.message || 'Failed to submit application.'); inFlight.current = false; setSubmitting(false) } finally { onPendingChange?.(false) }
   }
 
-  return <form onSubmit={submit} noValidate aria-busy={submitting} className="w-full">
+  return <form data-mobile-form="admission" onSubmit={submit} noValidate aria-busy={submitting} className="w-full">
     <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5">
       <div className="min-w-0 space-y-4">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
