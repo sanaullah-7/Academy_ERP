@@ -25,7 +25,6 @@ import { facultyService } from '../../services/facultyService.js'
 import CourseDetailsModal from '../../components/CoursesBatches/CourseDetailsModal.jsx'
 import AssignFacultyModal from '../../components/CoursesBatches/AssignFacultyModal.jsx'
 
-const selectClass = 'min-h-11 rounded-md border border-input bg-background px-3 text-sm'
 
 export default function CoursesBatchesPage() {
   const { branchId, currentBranch } = useBranch()
@@ -243,7 +242,7 @@ export default function CoursesBatchesPage() {
         allSubjects={subjects}
         branchId={branchId}
         canManage={canManage}
-        onAssignFaculty={courseItem => setAssignModalConfig({ open: true, course: courseItem || selectedCourseForDetails, initialBatchId: null, initialSubjectId: null })}
+        onAssignFaculty={(courseItem, batchId, subjectId) => setAssignModalConfig({ open: true, course: courseItem || selectedCourseForDetails, initialBatchId: batchId || null, initialSubjectId: subjectId || null })}
       />
     )}
     {assignModalConfig && (
@@ -251,6 +250,7 @@ export default function CoursesBatchesPage() {
         open={!!assignModalConfig}
         onClose={() => setAssignModalConfig(null)}
         course={assignModalConfig.course}
+        assignments={assignModalConfig.course?.assignments || []}
         initialBatchId={assignModalConfig.initialBatchId}
         initialSubjectId={assignModalConfig.initialSubjectId}
         teachers={teachers}
@@ -258,6 +258,7 @@ export default function CoursesBatchesPage() {
         subjects={subjects}
         branchId={branchId}
         onAssigned={() => {
+          setSelectedCourseForDetails(null)
           setReload(v => v + 1)
           setAssignModalConfig(null)
           setMessage('Faculty assignment saved successfully.')

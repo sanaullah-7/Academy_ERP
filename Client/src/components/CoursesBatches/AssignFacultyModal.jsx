@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertCircle, Calendar, Check, Clock, Loader2, MapPin, User, Users } from 'lucide-react'
+import { AlertCircle, Loader2, Users } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
@@ -17,6 +17,10 @@ export default function AssignFacultyModal({
   open,
   onClose,
   course,
+  courses = [],
+  streams = [],
+  initialAssignment = null,
+  assignments = [],
   initialTeacherId = null,
   initialBatchId = null,
   initialSubjectId = null,
@@ -26,19 +30,22 @@ export default function AssignFacultyModal({
   branchId,
   onAssigned,
 }) {
-  const [teacherId, setTeacherId] = useState(initialTeacherId || teachers[0]?.id || '')
-  const [batchId, setBatchId] = useState(initialBatchId || batches[0]?.id || '')
-  const [subjectId, setSubjectId] = useState(initialSubjectId || subjects[0]?.id || '')
-  const [days, setDays] = useState(['Mon', 'Wed', 'Fri'])
-  const [startTime, setStartTime] = useState('08:00')
-  const [endTime, setEndTime] = useState('09:30')
-  const [room, setRoom] = useState('Hall 1 (Main Lab)')
-  const [notes, setNotes] = useState('')
+  const [teacherId, setTeacherId] = useState(initialAssignment?.teacherId || initialTeacherId || '')
+  const [courseId,setCourseId] = useState(initialAssignment?.courseId || course?.id || '')
+  const [streamId,setStreamId] = useState(courses.find(c=>c.id===(initialAssignment?.courseId || course?.id))?.streamId || '')
+  const [editingId,setEditingId] = useState(initialAssignment?.id || '')
+  const [batchId, setBatchId] = useState(initialAssignment?.batchId || initialBatchId || '')
+  const [subjectId, setSubjectId] = useState(initialAssignment?.subjectId || initialSubjectId || '')
+  const [days, setDays] = useState(initialAssignment?.days || [])
+  const [startTime, setStartTime] = useState(initialAssignment?.startTime || '')
+  const [endTime, setEndTime] = useState(initialAssignment?.endTime || '')
+  const [room, setRoom] = useState(initialAssignment?.room || '')
+  const [notes, setNotes] = useState(initialAssignment?.notes || '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const courseBatches = batches.filter(b => !course || b.courseId === course.id)
-  const courseSubjects = subjects.filter(s => !course || s.courseId === course.id)
+  const courseBatches = batches.filter(b => b.courseId === courseId && b.active !== false)
+  const courseSubjects = subjects.filter(s => s.courseId === courseId && s.active !== false)
 
   const toggleDay = day => {
     setDays(prev => (prev.includes(day) ? (prev.length > 1 ? prev.filter(d => d !== day) : prev) : [...prev, day]))
@@ -62,8 +69,9 @@ export default function AssignFacultyModal({
 
     setSubmitting(true)
     try {
-      const activeCourseId = course?.id || courseBatches.find(b => b.id === batchId)?.courseId
-      const assignment = await facultyService.assignFaculty(
+      const activeCourseId = courseId
+      if(!courseBatches.some(b=>b.id===batchId)||!courseSubjects.some(s=>s.id===subjectId))throw new Error('Choose a batch and subject belonging to the selected course.')
+      const assignment = await (editingId ? (record,query)=>facultyService.updateAssignment(editingId,record,query) : facultyService.assignFaculty)(
         {
           teacherId,
           courseId: activeCourseId,
@@ -107,6 +115,8 @@ export default function AssignFacultyModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          {!course && <><label className="block text-xs font-semibold">Academic Field<select aria-label="Academic Field" className="h-10 w-full rounded-lg border border-input bg-background px-3 text-xs" value={streamId} onChange={e=>{setStreamId(e.target.value);setCourseId('');setBatchId('');setSubjectId('')}}><option value="">Select field...</option>{streams.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label className="block text-xs font-semibold">Course<select aria-label="Course" className="h-10 w-full rounded-lg border border-input bg-background px-3 text-xs" value={courseId} onChange={e=>{setCourseId(e.target.value);setBatchId('');setSubjectId('')}}><option value="">Select course...</option>{courses.filter(c=>c.active!==false&&(!streamId||c.streamId===streamId)).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label></>}
+          {assignments.length>0 && <label className="block text-xs font-semibold">Saved assignment<select aria-label="Saved assignment" className="h-10 w-full rounded-lg border border-input bg-background px-3 text-xs" value={editingId} onChange={e=>{const a=assignments.find(a=>a.id===e.target.value);setEditingId(a?.id||'');if(a){setTeacherId(a.teacherId);setCourseId(a.courseId);setStreamId(courses.find(c=>c.id===a.courseId)?.streamId||'');setBatchId(a.batchId);setSubjectId(a.subjectId);setDays(a.days);setStartTime(a.startTime);setEndTime(a.endTime);setRoom(a.room);setNotes(a.notes||'')}}}><option value="">Add new assignment</option>{assignments.map(a=><option key={a.id} value={a.id}>{a.subjectName} / {a.batchName} / {a.startTime}</option>)}</select></label>}
           {/* Teacher Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-900 mb-1">
@@ -218,6 +228,7 @@ export default function AssignFacultyModal({
                 Start Time <span className="text-destructive">*</span>
               </label>
               <Input
+                aria-label="Start Time"
                 type="time"
                 className="h-10 text-xs"
                 value={startTime}
@@ -230,6 +241,7 @@ export default function AssignFacultyModal({
                 End Time <span className="text-destructive">*</span>
               </label>
               <Input
+                aria-label="End Time"
                 type="time"
                 className="h-10 text-xs"
                 value={endTime}
@@ -243,6 +255,7 @@ export default function AssignFacultyModal({
               </label>
               <Input
                 type="text"
+                aria-label="Room / Lab"
                 placeholder="e.g. Hall 1"
                 className="h-10 text-xs"
                 value={room}
@@ -268,6 +281,7 @@ export default function AssignFacultyModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
+            {editingId && <Button type="button" variant="outline" size="sm" disabled={submitting} onClick={async()=>{setSubmitting(true);try{await facultyService.removeAssignment(editingId,{branchId});onAssigned?.();onClose()}catch(err){setError(err.message)}finally{setSubmitting(false)}}}>Remove Assignment</Button>}
             <Button type="button" variant="outline" size="sm" disabled={submitting} onClick={onClose}>
               Cancel
             </Button>

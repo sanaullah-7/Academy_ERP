@@ -377,32 +377,7 @@ function enrichTeacher(rawTeacher) {
 
   // Construct real slots from live assignments if present, else fallback to enriched template
   const realAssignments = rawTeacher.assignments || []
-  const slots = realAssignments.length > 0
-    ? realAssignments.map((a, idx) => ({
-        id: a.id || `slot-live-${idx}`,
-        assignmentId: a.id,
-        course: a.courseName || 'Assigned Course',
-        batch: a.batchName || 'Assigned Batch',
-        subject: a.subjectName ? `${a.subjectName} (${a.notes || 'Core Syllabus'})` : 'Assigned Subject',
-        room: a.room || 'Room 101',
-        days: Array.isArray(a.days) ? a.days.join(', ') : a.days || 'Mon - Fri',
-        time: a.startTime && a.endTime ? `${a.startTime} - ${a.endTime}` : '09:00 AM - 10:30 AM',
-        students: a.enrolledCount || 60,
-        isReal: true,
-      }))
-    : (meta.slots || [
-        {
-          id: `slot-def-${rawTeacher.id}`,
-          course: rawTeacher.assignedBatches?.[0]?.courseName || 'MDCAT 2026',
-          batch: rawTeacher.assignedBatches?.[0]?.name || 'Morning Batch',
-          subject: `${inferredSubject} Foundations`,
-          room: 'Room 201',
-          days: 'Mon - Fri',
-          time: '09:15 AM - 10:30 AM',
-          students: 90,
-          isReal: false,
-        },
-      ])
+  const slots = realAssignments.map(a=>({id:a.id,assignmentId:a.id,course:a.courseName,batch:a.batchName,subject:a.subjectName,room:a.room||'Not configured',days:a.days.join(', '),time:`${a.startTime} - ${a.endTime}`,students:a.enrolledCount??0,isReal:true}))
 
   const coursesList = rawTeacher.assignedBatches?.map((b) => b.courseName).filter(Boolean) || []
   const coursesText =
@@ -412,20 +387,9 @@ function enrichTeacher(rawTeacher) {
   const shiftsText =
     batchesList.length > 0 ? batchesList.join(', ') : meta.shiftsText || 'Morning A, Evening A'
 
-  const studentReach =
-    rawTeacher.studentReach > 0
-      ? rawTeacher.studentReach
-      : meta.defaultReach || 150
-
-  const weeklyHours =
-    rawTeacher.weeklyHours > 0
-      ? rawTeacher.weeklyHours
-      : meta.defaultWeeklyHours || 15.0
-
-  const batchCount =
-    rawTeacher.assignedBatches?.length > 0
-      ? rawTeacher.assignedBatches.length
-      : meta.slots?.length || slots.length || 2
+  const studentReach = rawTeacher.studentReach ?? 0
+  const weeklyHours = rawTeacher.weeklyHours ?? 0
+  const batchCount = rawTeacher.assignedBatches?.length ?? 0
 
   return {
     ...rawTeacher,
@@ -480,7 +444,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
         section === 'batches' ? await facultyService.listBatchAssignments({ branchId }) : null
       const subjectAssignments =
         section === 'subjects' ? await facultyService.listSubjectAssignments({ branchId }) : null
-      return { teachers, courses, batches, subjects, batchAssignments, subjectAssignments }
+      return { teachers, courses, batches, subjects, streams:overview.streams||[], batchAssignments, subjectAssignments }
     }
 
     load().then(
@@ -596,16 +560,13 @@ export default function FacultyClassesPage({ section = 'directory' }) {
   // KPI Metrics calculations
   const totalInstructors = data?.teachers?.length || 0
   const totalDailySlots = useMemo(() => {
-    let slotsSum = 0
-    enrichedTeachers.forEach((t) => {
-      slotsSum += t.slots?.length || 0
-    })
-    return slotsSum > 0 ? slotsSum * 3 : 28
+    const weekday=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Karachi',weekday:'short'}).format(new Date())
+    return enrichedTeachers.reduce((sum,t)=>sum+(t.assignments||[]).filter(a=>a.days.some(d=>d.slice(0,3).toLowerCase()===weekday.toLowerCase())).length,0)
   }, [enrichedTeachers])
 
   const totalStudentReach = useMemo(() => {
-    const sum = enrichedTeachers.reduce((acc, t) => acc + (t.studentReach || 0), 0)
-    return sum > 0 ? sum.toLocaleString('en-US') : '1,248'
+
+    return new Set(enrichedTeachers.flatMap(t=>t.studentIds||[])).size.toLocaleString('en-US')
   }, [enrichedTeachers])
 
   const retry = () => setRetryCount((v) => v + 1)
@@ -749,7 +710,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                       </p>
                       <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
                         <span className="size-1.5 rounded-full bg-emerald-500" />
-                        <span>100% On-Duty Today</span>
+                        <span>Saved branch faculty</span>
                       </div>
                     </div>
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F9EBEE] text-[#940016]">
@@ -769,7 +730,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         {totalDailySlots}
                       </p>
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Across 2 daily shifts
+                        Today's saved assignments
                       </p>
                     </div>
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
@@ -806,7 +767,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                         ACTIVE CLASSROOMS
                       </p>
                       <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-                        6 <span className="text-sm font-semibold text-muted-foreground">/ 8</span>
+                        {new Set(enrichedTeachers.flatMap(t=>(t.assignments||[]).filter(a=>a.days.some(d=>d.slice(0,3).toLowerCase()===new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Karachi',weekday:'short'}).format(new Date()).toLowerCase())).map(a=>a.room?.trim().toLowerCase())).filter(Boolean)).size}
                       </p>
                       <p className="mt-2 text-xs text-muted-foreground">
                         Lecture halls in use
@@ -1432,6 +1393,9 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             teachers={data?.teachers || []}
             batches={data?.batches || []}
             subjects={data?.subjects || []}
+            courses={data?.courses || []}
+            streams={data?.streams || []}
+            assignments={assignModalConfig.teacher?.assignments || []}
             branchId={branchId}
             initialTeacherId={assignModalConfig.teacher?.id}
             onAssigned={() => {

@@ -6,7 +6,7 @@
 
 import { PERMISSIONS, canAccess } from '../constants/permissions.js'
 import { ROLES, getBranchRoles } from '../constants/roles.js'
-import { DEMO_USERS, getDemoUsers } from '../mock/authFixtures.js'
+import { getDemoUsers } from '../mock/authFixtures.js'
 import { readOrganization, writeOrganization } from '../mock/mockOrganization.js'
 import { MockDataError } from '../mock/mockDatabase.js'
 import { mockApi } from '../mock/mockApi.js'
@@ -40,9 +40,8 @@ async function listTeachers(query) {
     } catch {
       assignments = []
     }
-    const [batches, courses, students] = await Promise.all([
+    const [batches, students] = await Promise.all([
       batchService.list({ branchId }).catch(() => []),
-      courseService.list({ branchId }).catch(() => []),
       studentService.listDirectory({ branchId }).catch(() => []),
     ])
     const batchMap = new Map(batches.map(b => [b.id, b]))
@@ -115,7 +114,8 @@ async function listTeachers(query) {
           batchCount: assignedBatches.length,
           weeklyHours,
           studentReach,
-          assignments: teacherAssignments,
+          assignments: teacherAssignments.map(a=>({...a,enrolledCount:batchMap.get(a.batchId)?.enrolledCount??0})),
+          studentIds:[...reachedStudentIds],
         }
       })
   }, query)
@@ -132,7 +132,7 @@ export const facultyService = {
       })
       if (!teacher) throw new MockDataError('NOT_FOUND', 'Faculty record was not found in the selected branch.')
 
-      let assignments = []
+      let assignments
       try {
         assignments = await mockApi.facultyAssignmentOperation('list', { query: { branchId } })
       } catch {
@@ -239,11 +239,11 @@ export const facultyService = {
       }
       writeOrganization(org)
       return newTeacher
-    }, query, PERMISSIONS.FACULTY_VIEW)
+    }, query, PERMISSIONS.CLASSES_MANAGE)
   },
   async listSubjectAssignments(query) {
     return inScope(async branchId => {
-      let assignments = []
+      let assignments
       try {
         assignments = await mockApi.facultyAssignmentOperation('list', { query: { branchId } })
       } catch {
@@ -257,7 +257,7 @@ export const facultyService = {
   },
   async listBatchAssignments(query) {
     return inScope(async branchId => {
-      let assignments = []
+      let assignments
       try {
         assignments = await mockApi.facultyAssignmentOperation('list', { query: { branchId } })
       } catch {
@@ -280,17 +280,17 @@ export const facultyService = {
   async assignFaculty(record, query) {
     return inScope(async branchId => {
       return mockApi.facultyAssignmentOperation('create', { record, query: { branchId } })
-    }, query, PERMISSIONS.FACULTY_VIEW)
+    }, query, PERMISSIONS.CLASSES_MANAGE)
   },
   async updateAssignment(id, record, query) {
     return inScope(async branchId => {
       return mockApi.facultyAssignmentOperation('update', { id, record, query: { branchId } })
-    }, query, PERMISSIONS.FACULTY_VIEW)
+    }, query, PERMISSIONS.CLASSES_MANAGE)
   },
   async removeAssignment(id, query) {
     return inScope(async branchId => {
       return mockApi.facultyAssignmentOperation('delete', { id, query: { branchId } })
-    }, query, PERMISSIONS.FACULTY_VIEW)
+    }, query, PERMISSIONS.CLASSES_MANAGE)
   },
   async listAssignments(query) {
     return inScope(async branchId => {

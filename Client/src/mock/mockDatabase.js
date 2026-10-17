@@ -530,7 +530,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
         streamName: branchStreams.find(stream => stream.id === course.streamId)?.name ?? 'Unassigned',
         batchCount: branchBatches.filter(batch => batch.courseId === course.id).length,
         subjectCount: branchSubjects.filter(subject => subject.courseId === course.id).length,
-        enrolledCount: data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').length,
+        enrolledCount: new Set(data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.courseId === course.id && enrollment.status === 'Active').map(e=>e.studentId)).size,
         assignments: courseAssignments.map(a => {
           const teacher = getDemoUsers().find(u => u.id === a.teacherId)
           const subject = branchSubjects.find(s => s.id === a.subjectId)
@@ -545,7 +545,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       }
     }
     const presentBatch = batch => {
-      const enrolledCount = data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').length
+      const enrolledCount = new Set(data.enrollments.filter(enrollment => enrollment.branchId === query.branchId && enrollment.batchId === batch.id && enrollment.status === 'Active').map(e=>e.studentId)).size
       const batchAssignments = (data.facultyAssignments ?? []).filter(a => a.branchId === query.branchId && a.batchId === batch.id)
       const teachers = batchAssignments.map(a => {
         const teacher = getDemoUsers().find(u => u.id === a.teacherId)
@@ -1592,7 +1592,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const session = readMockSession()
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     const mutating = ['create', 'update', 'delete'].includes(operation)
-    const permission = mutating ? PERMISSIONS.FACULTY_VIEW : PERMISSIONS.FACULTY_VIEW
+    const permission = mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
     if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for faculty assignments.')
 
     const data = read(!mutating, !mutating)
@@ -1633,6 +1633,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     try { generatedId = makeId() } catch { fail('ID_GENERATION_FAILED', 'Assignment ID could not be generated.') }
     if (index < 0 && collections.some(key => (data[key] ?? []).some(item => item.id === generatedId))) fail('ID_CONFLICT', 'Assignment ID conflicts with saved data.')
 
+    if(operation === 'update' && index < 0) fail('NOT_FOUND', 'Faculty assignment was not found.')
     const candidate = {
       ...(index >= 0 ? data.facultyAssignments[index] : {}),
       ...record,
@@ -1641,6 +1642,9 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       createdAt: index >= 0 ? data.facultyAssignments[index].createdAt : (record?.createdAt ?? new Date().toISOString()),
     }
 
+    if(!Array.isArray(candidate.days))fail('INVALID_RECORD','Choose valid weekdays.')
+    candidate.days = [...new Set((candidate.days||[]).map(day=>String(day).trim().slice(0,3).toLowerCase()).map(day=>({mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'})[day]))]
+    if(candidate.days.some(day=>!day))fail('INVALID_RECORD','Choose valid weekdays.')
     validateRecord(candidate, 'facultyAssignments')
 
     const course = data.courses.find(c => c.id === candidate.courseId && c.branchId === query.branchId)
@@ -1660,7 +1664,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       item.id !== candidate.id &&
       item.branchId === query.branchId &&
       item.teacherId === candidate.teacherId &&
-      item.days.some(d => candidate.days.includes(d)) &&
+      item.days.some(d => candidate.days.some(day=>day.toLowerCase()===String(d).trim().slice(0,3).toLowerCase())) &&
       candidate.startTime < item.endTime &&
       candidate.endTime > item.startTime
     )
@@ -1675,7 +1679,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       item.id !== candidate.id &&
       item.branchId === query.branchId &&
       item.room.trim().toLowerCase() === candidate.room.trim().toLowerCase() &&
-      item.days.some(d => candidate.days.includes(d)) &&
+      item.days.some(d => candidate.days.some(day=>day.toLowerCase()===String(d).trim().slice(0,3).toLowerCase())) &&
       candidate.startTime < item.endTime &&
       candidate.endTime > item.startTime
     )
@@ -1744,7 +1748,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     }
 
     // Fee calculation
-    let configuredFee = 0
+    let configuredFee
     const subjectIds = Array.isArray(record.subjectIds) ? [...new Set(record.subjectIds)] : []
     if (course.pricingMode === 'course') {
       configuredFee = Number.isFinite(course.feeAmount) ? course.feeAmount : 0
