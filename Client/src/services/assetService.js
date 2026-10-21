@@ -6,7 +6,7 @@ async function scope(query) {
   const started = await authService.getSession()
   return async () => {
     const current = await authService.getSession()
-    if (!started?.user || current?.user?.id !== started.user.id || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active DEMO session or branch changed.')
+    if (!started?.user || current?.user?.id !== started.user.id || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active session or branch changed.')
   }
 }
 const operation = async (name, args, query) => mockApi.assetOperation(name, { ...args, query }, await scope(query))

@@ -32,7 +32,7 @@ describe('F02-006 enrollment confirmation', () => {
     const dialog = await screen.findByRole('dialog', { name: `Enroll Student DEMO Admission ${admission.displayAdmissionId}` })
     expect(within(dialog).getByText(new RegExp(input.studentName))).toBeInTheDocument()
     expect(within(dialog).getByText(input.course)).toBeInTheDocument()
-    expect(within(dialog).getByText('Demo Central Campus')).toBeInTheDocument()
+    expect(within(dialog).getByText('Central Campus')).toBeInTheDocument()
     const confirm = within(dialog).getByRole('button', { name: 'Confirm Enrollment' })
     expect(confirm).toBeEnabled()
     await user.click(confirm)

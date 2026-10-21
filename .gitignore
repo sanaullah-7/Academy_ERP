@@ -25,6 +25,7 @@ private-data/
 
 # Test outputs
 coverage/
+artifacts/
 server.pid
 student-response.json
 students-response.json

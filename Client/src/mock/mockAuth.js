@@ -1,3 +1,4 @@
+import { clearPageResources } from '../services/localPageResources.js'
 /**
  * Purpose: Will define mock Auth for the mock area of the Academy frontend.
  * Module: mock
@@ -26,16 +27,17 @@ export function readMockSession() {
     try { session = validateMockSession(JSON.parse(raw)) } catch { session = null }
     if (!session) window.localStorage.removeItem(MOCK_SESSION_KEY)
     return session
-  } catch { throw new Error('Browser storage is unavailable. Please try the demo again when storage is enabled.') }
+  } catch { throw new Error('Browser storage is unavailable. Please try again when storage is enabled.') }
 }
 
 export function saveMockSession(session) {
   try {
     window.localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({ version: 1, userId: session.user.id, branchId: session.branchId }))
-  } catch { throw new Error('The demo session could not be saved. Please enable browser storage.') }
+  } catch { throw new Error('The session could not be saved. Please enable browser storage.') }
 }
 
 export function clearMockSession() {
+  clearPageResources()
   try { window.localStorage.removeItem(MOCK_SESSION_KEY) }
-  catch { throw new Error('Saved demo session could not be cleared. Enable browser storage before refreshing.') }
+  catch { throw new Error('Saved session could not be cleared. Enable browser storage before refreshing.') }
 }

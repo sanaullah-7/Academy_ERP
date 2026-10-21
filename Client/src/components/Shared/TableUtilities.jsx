@@ -12,6 +12,7 @@ import {
   Filter,
   Plus,
   FileSpreadsheet,
+  FileText,
   ShieldAlert,
   Trash2,
 } from 'lucide-react'
@@ -134,11 +135,12 @@ export function TableToolbarActions({
   showExport = true,
   exportScopeSummary = '',
   className = '',
+  showLabels = false,
 }) {
   const pdfHandler = onExportPdf || onPrint
 
   return (
-    <div className={`flex items-center gap-1.5 shrink-0 ${className}`}>
+    <div className={`flex items-center gap-1.5 shrink-0 ${className} print:hidden`}>
       {showFilter && onToggleFilter && (
         <button
           type="button"
@@ -195,11 +197,12 @@ export function TableToolbarActions({
           aria-label="Print or save PDF"
           title={exportScopeSummary ? `Download PDF (${exportScopeSummary})` : 'Download PDF Document'}
           onClick={pdfHandler}
-          className="grid size-8 place-items-center rounded-full border border-rose-300 bg-rose-50 text-rose-600 transition-colors hover:border-rose-400 hover:bg-rose-100/80 cursor-pointer shadow-2xs"
+          className={`${showLabels ? 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold' : 'grid size-8 place-items-center rounded-full'} border border-rose-300 bg-rose-50 text-rose-600 transition-colors hover:border-rose-400 hover:bg-rose-100/80 cursor-pointer shadow-2xs`}
         >
-          <span className="flex items-center justify-center rounded bg-rose-600 px-1 py-0.5 text-[9px] font-black tracking-tight text-white leading-none">
+          {showLabels ? <FileText size={14} aria-hidden="true" /> : <span className="flex items-center justify-center rounded bg-rose-600 px-1 py-0.5 text-[9px] font-black tracking-tight text-white leading-none">
             PDF
-          </span>
+          </span>}
+          {showLabels && <span>PDF</span>}
         </button>
       )}
 
@@ -209,9 +212,10 @@ export function TableToolbarActions({
           aria-label="Export CSV"
           title={exportScopeSummary ? `Export CSV (${exportScopeSummary})` : 'Export CSV'}
           onClick={onExportCsv}
-          className="grid size-8 place-items-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-100/80 cursor-pointer shadow-2xs"
+          className={`${showLabels ? 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold' : 'grid size-8 place-items-center rounded-full'} border border-emerald-300 bg-emerald-50 text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-100/80 cursor-pointer shadow-2xs`}
         >
           <FileSpreadsheet size={15} />
+          {showLabels && <span>Excel</span>}
         </button>
       )}
     </div>

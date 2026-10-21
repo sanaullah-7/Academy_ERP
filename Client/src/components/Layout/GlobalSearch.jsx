@@ -15,7 +15,7 @@ import { demoClassService } from '../../services/demoClassService.js'
 import { assetService } from '../../services/assetService.js'
 
 const navigation = [
-  ['Dashboard', ROUTE_PATHS.DASHBOARD, PERMISSIONS.WORKSPACE_VIEW, LayoutDashboard],
+  ['Dashboard', ROUTE_PATHS.DASHBOARD, PERMISSIONS.DASHBOARD_VIEW, LayoutDashboard],
   ['Admissions', ROUTE_PATHS.ADMISSIONS, PERMISSIONS.ADMISSIONS_VIEW, ClipboardList],
   ['Students', ROUTE_PATHS.STUDENTS, PERMISSIONS.STUDENTS_VIEW, UsersRound],
   ['Courses & Batches', ROUTE_PATHS.COURSES_BATCHES, PERMISSIONS.COURSES_VIEW, BookOpen],
@@ -28,7 +28,7 @@ const item = (group,label,meta,path,Icon,keywords='') => ({ group,label,meta,pat
 export default function GlobalSearch({ open, onOpenChange }) {
   const navigate=useNavigate(),{branchId}=useBranch(),{can}=usePermissions()
   const allowed={
-    [PERMISSIONS.WORKSPACE_VIEW]:can(PERMISSIONS.WORKSPACE_VIEW),
+    [PERMISSIONS.DASHBOARD_VIEW]:can(PERMISSIONS.DASHBOARD_VIEW),
     [PERMISSIONS.STUDENTS_VIEW]:can(PERMISSIONS.STUDENTS_VIEW),
     [PERMISSIONS.ADMISSIONS_VIEW]:can(PERMISSIONS.ADMISSIONS_VIEW),
     [PERMISSIONS.COURSES_VIEW]:can(PERMISSIONS.COURSES_VIEW),

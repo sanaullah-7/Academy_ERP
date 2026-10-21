@@ -1,3 +1,5 @@
+import { formatTime, formatTimestamp, formatTimeRange } from '../../utils/timeFormat.js'
+import { classTimeLabel } from '../../utils/classTime.js'
 import { Button } from '../ui/button.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
 import DemoStatusBadge from './DemoStatusBadge.jsx'
@@ -58,7 +60,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
               <p className="text-xs uppercase font-medium text-muted-foreground">Registration Inquiry</p>
               <p className="font-medium text-foreground mt-1">Requested: {demo.requestedDate}</p>
               <p className="text-xs text-muted-foreground">
-                Slot: {demo.requestedTime || 'Flexible'} · Registered: {demo.createdAt}
+                Slot: {formatTime(demo.requestedTime, 'Flexible')} · Registered: {formatTimestamp(demo.createdAt)}
               </p>
             </div>
 
@@ -79,7 +81,17 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
               Scheduled Trial Class Session
             </h4>
 
-            {demo.scheduledSession ? (
+            {demo.requestedClasses?.length > 0 ? (
+            <section className="space-y-2 rounded-xl border p-4" aria-label="Requested demo classes">
+              <h4 className="text-sm font-semibold">Selected demo classes ({demo.requestedClasses.length})</h4>
+              {demo.requestedClasses.map(item => <div key={item.key} className="rounded-lg bg-muted/30 p-2 text-xs">
+                <p className="font-semibold">{item.subject}</p>
+                <p>{item.teacherName} &middot; {item.room}</p>
+                <p>{item.classDate} &middot; {classTimeLabel(item.startTime, item.endTime)}</p>
+              </div>)}
+            </section>
+            ) : demo.scheduledSession ? (
+
               <div className="grid gap-3 sm:grid-cols-2 pt-1 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Date & Timing</p>
@@ -87,7 +99,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
                     {demo.scheduledSession.classDate}
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock size={13} /> {demo.scheduledSession.startTime} – {demo.scheduledSession.endTime}
+                    <Clock size={13} /> {formatTimeRange(demo.scheduledSession.startTime, demo.scheduledSession.endTime)}
                   </p>
                 </div>
 
@@ -115,7 +127,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic py-1">
-                No session scheduled yet. This inquiry is pending schedule confirmation.
+                No saved classes were selected for this inquiry.
               </p>
             )}
           </div>
@@ -194,7 +206,7 @@ export default function DemoDetailsDialog({ open, onClose, demo = null }) {
                   </div>
                   <div className="text-right shrink-0 text-muted-foreground">
                     <p className="font-medium">{event.actorName || event.actorUserId || 'Staff'}</p>
-                    <p>{event.occurredAt?.slice(0, 16).replace('T', ' ')}</p>
+                    <p>{formatTimestamp(event.occurredAt)}</p>
                   </div>
                 </div>
               ))}

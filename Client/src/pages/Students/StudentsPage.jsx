@@ -1,3 +1,4 @@
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 /**
  * Purpose: Will define Students Page for the Students area of the Academy frontend.
@@ -41,19 +42,20 @@ export default function StudentsPage() {
   const { branchId, scopeKey } = useBranch()
   const location = useLocation()
   const highlightStudentId = location.state?.highlightStudentId || location.state?.studentId
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(() => peekPageResource('students', { scopeKey, retry: 0 }))
   const [retry, setRetry] = useState(0)
   const [filters, setFilters] = useState(emptyFilters)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     if (branchId) Promise.all([
       studentService.listDirectory({ branchId }),
       courseService.list({ branchId }),
       batchService.list({ branchId }),
     ]).then(([students, courses, batches]) => {
-      if (active) setResult({ scopeKey, retry, students, courses, batches })
+      if (active) setResult(rememberPageResource('students', { scopeKey, retry, students, courses, batches }, loadVersion))
     }, error => {
       if (active) setResult({ scopeKey, retry, error: error.message })
     })

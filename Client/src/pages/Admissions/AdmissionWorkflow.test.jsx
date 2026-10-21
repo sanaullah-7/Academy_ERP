@@ -88,7 +88,7 @@ describe('shared DEMO inline admission workflow', () => {
   it('preserves auth and branch-scoped routing during popup use', async () => {
     history.replaceState(null, '', '/admissions/new')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Demo login' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
     expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBeNull()
   })
 })

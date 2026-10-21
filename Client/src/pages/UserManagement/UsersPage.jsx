@@ -1,6 +1,7 @@
-import { authService } from '../../services/authService.js'
-import { useEffect, useMemo, useState } from 'react'
-import { CirclePlus, Eye, KeyRound, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
+import { useBranch } from '../../hooks/useBranch.js'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CirclePlus, Eye, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
@@ -9,22 +10,20 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { organizationService } from '../../services/organizationService.js'
 import { DEMO_USERS } from '../../mock/authFixtures.js'
 import { ROLE_LABELS, ROLES } from '../../constants/roles.js'
-import { canAccess, PERMISSIONS } from '../../constants/permissions.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import { TableToolbarActions } from '../../components/Shared/TableUtilities.jsx'
 const roles=Object.values(ROLES), blank={name:'',login:'',contact:'',enabled:true,assignments:[]}
 export default function UsersPage(){
- const [data,setData]=useState(null),[search,setSearch]=useState(''),[branch,setBranch]=useState('All'),[role,setRoleFilter]=useState('All'),[dialog,setDialog]=useState(false),[viewing,setViewing]=useState(null),[editing,setEditing]=useState(null),[form,setForm]=useState(blank),[message,setMessage]=useState(''),[error,setError]=useState(''),[page,setPage]=useState(1)
- const [switching,setSwitching]=useState(null),[switchBusy,setSwitchBusy]=useState(false),[switchError,setSwitchError]=useState('')
- async function switchAccount(){setSwitchBusy(true);setSwitchError('');try{await authService.switchAccount(switching.id);window.location.assign('/dashboard')}catch(e){setSwitchError(e.message);setSwitchBusy(false)}}
+ const {branchId,branch:currentBranch}=useBranch()
+ const [data,setData]=useState(() => peekPageResource(`users:${branchId}`)),[search,setSearch]=useState(''),[branch,setBranch]=useState('All'),[role,setRoleFilter]=useState('All'),[dialog,setDialog]=useState(false),[viewing,setViewing]=useState(null),[editing,setEditing]=useState(null),[form,setForm]=useState(blank),[message,setMessage]=useState(''),[error,setError]=useState(''),[page,setPage]=useState(1)
  const [deleting,setDeleting]=useState(null),[deleteBusy,setDeleteBusy]=useState(false),[deleteError,setDeleteError]=useState('')
- async function removeStaff(){setDeleteBusy(true);setDeleteError('');try{await organizationService.deleteUser(deleting.id);setDeleting(null);setMessage('Staff account deleted.');await load()}catch(e){setDeleteError(e.message)}finally{setDeleteBusy(false)}}
- const load=()=>organizationService.overview().then(setData,e=>setError(e.message));useEffect(()=>{void load()},[])
+ async function removeStaff(){setDeleteBusy(true);setDeleteError('');try{await organizationService.deleteUser(deleting.id);setDeleting(null);setMessage('Staff login and role access removed. Faculty profile and related records are preserved.');await load()}catch(e){setDeleteError(e.message)}finally{setDeleteBusy(false)}}
+ const load=useCallback(()=>{const loadVersion=capturePageVersion();return organizationService.staffOverview().then(data=>setData(rememberPageResource(`users:${branchId}`,data,loadVersion)),e=>setError(e.message))},[branchId]);useEffect(()=>{void load()},[load])
  const rows=useMemo(()=>data?.users.filter(u=>`${u.name} ${u.login??u.id} ${u.contact??''}`.toLowerCase().includes(search.toLowerCase())&&(branch==='All'||u.assignments.some(a=>a.branchId===branch))&&(role==='All'||u.assignments.some(a=>a.roles.includes(role))))??[],[data,search,branch,role])
- const open=item=>{setEditing(item??null);setForm(item?{name:item.name,login:item.login??item.id,contact:item.contact??'',enabled:item.enabled,assignments:item.assignments.map(a=>({...a,roles:[a.roles[0]]}))}:blank);setError('');setDialog(true)}
+ const open=item=>{setEditing(item??null);setForm(item?{name:item.name,login:item.login??item.id,contact:item.contact??'',enabled:item.enabled,assignments:item.assignments.map(a=>({...a,roles:[a.roles[0]]}))}:{...blank,assignments:[{branchId,roles:[ROLES.RECEPTIONIST]}]});setError('');setDialog(true)}
  const pages=Math.max(1,Math.ceil(rows.length/8)),visible=rows.slice((Math.min(page,pages)-1)*8,Math.min(page,pages)*8)
- const assignment=id=>form.assignments.find(a=>a.branchId===id); const setAssigned=(id,on)=>setForm({...form,assignments:on?[...form.assignments,{branchId:id,roles:[ROLES.RECEPTIONIST]}]:form.assignments.filter(a=>a.branchId!==id)});const setRole=(id,value)=>setForm({...form,assignments:form.assignments.map(a=>a.branchId===id?{...a,roles:[value]}:a)})
+ const assignment=id=>form.assignments.find(a=>a.branchId===id); const setRole=(id,value)=>setForm({...form,assignments:form.assignments.map(a=>a.branchId===id?{...a,roles:[value]}:a)})
  async function save(e){e.preventDefault();try{await organizationService.saveUser(form,editing?.id);setDialog(false);setMessage(editing?'Staff account updated.':'Staff account created.');load()}catch(x){setError(x.message)}} async function toggle(item){try{await organizationService.toggleUser(item.id);setMessage('Account status updated.');load()}catch(x){setMessage(x.message)}}
  function exportUsers() {
    downloadCsv(
@@ -59,10 +58,7 @@ export default function UsersPage(){
   return <DashboardLayout><div className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
       <div>
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Access Administration · Staff Accounts</p>
-        </div>
+
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">Users &amp; Roles</h1>
         <p className="text-xs text-muted-foreground">Branch assignments grant explicit role-based access per campus.</p>
       </div>
@@ -75,18 +71,18 @@ export default function UsersPage(){
 
     <section className="grid gap-3 sm:grid-cols-3">
       {[
-        ['Staff Accounts', data?.users.length??0, Users],
-        ['Active Personnel', data?.users.filter(u=>u.enabled).length??0, UserCog],
-        ['Role Access Policy', 'Fail Closed', ShieldCheck]
-      ].map(([l, v, I]) => (
-        <Card key={l} className="border border-border/80 shadow-sm transition hover:shadow-md">
-          <CardContent className="flex items-center justify-between p-3.5">
+        ['Staff Accounts', data?.users.length??0, Users, 'border-[#cde0fc] bg-linear-145 from-white via-[#f4f8fe] to-[#e7f1fe]'],
+        ['Active Personnel', data?.users.filter(u=>u.enabled).length??0, UserCog, 'border-[#c9eed6] bg-linear-145 from-white via-[#f4fbf7] to-[#e6f6ee]'],
+        ['Role Access Policy', 'Fail Closed', ShieldCheck, 'border-[#f7e2c2] bg-linear-145 from-white via-[#fffbf2] to-[#fdf2de]']
+      ].map(([l, v, I, tone]) => (
+        <Card key={l} className={`rounded-2xl border shadow-sm transition hover:shadow-md ${tone}`}>
+          <CardContent className="flex min-h-[120px] items-center justify-between gap-4 p-5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{l}</p>
-              <div className="mt-1 text-xl font-bold tracking-tight text-gray-900">{v}</div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{l}</p>
+              <div className="mt-3 text-2xl font-bold tracking-tight text-gray-900">{v}</div>
             </div>
-            <span className="flex size-9 items-center justify-center rounded-lg bg-[#940016]/10 text-[#940016]">
-              <I size={18} />
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#940016]/10 bg-white/70 text-[#940016]">
+              <I size={21} />
             </span>
           </CardContent>
         </Card>
@@ -157,7 +153,6 @@ export default function UsersPage(){
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setViewing(u)}>
                         <Eye size={13} className="mr-1" />View
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={!u.enabled||!u.assignments.length} aria-label={`Switch to account ${u.name}`} onClick={()=>{setSwitching(u);setSwitchError('')}}>Open Account</Button>
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" aria-label={`Delete staff ${u.name}`} onClick={()=>{setDeleting(u);setDeleteError('')}}>Delete</Button>
                       <Button size="sm" variant="outline" className="h-7 px-2 text-xs font-medium cursor-pointer" disabled={base} onClick={() => open(u)}>
                         Edit
@@ -185,28 +180,6 @@ export default function UsersPage(){
         <Button size="sm" variant="outline" className="h-7 px-2 text-xs cursor-pointer" disabled={page >= pages} onClick={() => setPage(x => x + 1)}>Next</Button>
       </div>
     </div>
-
-    <Card className="border border-border/80 shadow-sm">
-      <CardContent className="p-4 space-y-3">
-        <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-900">
-          <KeyRound size={15} className="text-[#940016]"/>Role Access Policy Grants
-        </h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {roles.map(r => {
-            const branchId = data?.branches[0]?.id
-            const grants = branchId ? Object.values(PERMISSIONS).filter(p => canAccess(p, { enabled: true, assignments: [{ branchId, roles: [r] }] }, branchId)) : []
-            return (
-              <div key={r} className="rounded-lg border border-border/60 bg-muted/30 p-3">
-                <span className="text-xs font-bold text-gray-900">{ROLE_LABELS[r]}</span>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  {grants.length ? grants.join(' · ') : 'No module permission grants in the current frontend policy.'}
-                </p>
-              </div>
-            )
-          })}
-        </div>
-      </CardContent>
-    </Card>
 
     <Dialog open={Boolean(viewing)} onOpenChange={open=>!open&&setViewing(null)}>
       <DialogContent>
@@ -236,22 +209,22 @@ export default function UsersPage(){
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? 'Edit Staff Account' : 'Create Staff Account'}</DialogTitle>
-          <DialogDescription>Choose at least one branch and one approved role.</DialogDescription>
+          <DialogDescription>This account belongs to the current branch. Assign its role below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={save} className="grid gap-3">
-          {[['name','Full name'],['login','Login ID'],['contact','Contact']].map(([k,l]) => (
+          {[['name','Full name'],['login','Email'],['contact','Contact']].map(([k,l]) => (
             <label key={k} className="text-xs font-semibold text-gray-700">
               {l}
-              <Input className="mt-1 h-9 text-xs" required value={form[k]} onChange={e => setForm({...form, [k]: e.target.value})} />
+              <Input className="mt-1 h-9 text-xs" type={k === 'login' ? 'email' : 'text'} required={k !== 'contact'} value={form[k]} onChange={e => setForm({...form, [k]: e.target.value})} />
             </label>
           ))}
           <fieldset className="grid gap-2">
-            <legend className="text-xs font-semibold text-gray-700">Branch assignments</legend>
+            <legend className="text-xs font-semibold text-gray-700">Branch &amp; role</legend>
             {data?.branches.filter(b => b.active !== false).map(b => (
-              <div className="grid grid-cols-[auto_1fr_10rem] items-center gap-2 rounded-lg border border-border/60 bg-muted/20 p-2" key={b.id}>
-                <input type="checkbox" className="size-4 rounded border-gray-300 text-[#940016] focus:ring-[#940016]" checked={Boolean(assignment(b.id))} onChange={e => setAssigned(b.id, e.target.checked)} />
-                <span className="text-xs font-medium text-gray-800">{b.name}</span>
-                <select disabled={!assignment(b.id)} className="h-8 rounded-md border border-input bg-background px-2 text-xs outline-none" value={assignment(b.id)?.roles[0] ?? ROLES.RECEPTIONIST} onChange={e => setRole(b.id, e.target.value)}>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_10rem] items-center gap-2 rounded-lg border border-border/60 bg-muted/20 p-2" key={b.id}>
+
+                <span className="text-xs font-medium text-gray-800">{b.name || currentBranch?.name}</span>
+                <select aria-label="Staff role" disabled={!assignment(b.id)} className="h-8 rounded-md border border-input bg-background px-2 text-xs outline-none" value={assignment(b.id)?.roles[0] ?? ROLES.RECEPTIONIST} onChange={e => setRole(b.id, e.target.value)}>
                   {roles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
@@ -265,14 +238,8 @@ export default function UsersPage(){
         </form>
       </DialogContent>
     </Dialog>
-    <Dialog open={!!switching} onOpenChange={open=>{if(!open&&!switchBusy)setSwitching(null)}}>
-      <DialogContent><DialogHeader><DialogTitle>Switch Staff Account</DialogTitle><DialogDescription>Sign in as {switching?.name}? Your current Super Admin session will end. Only this staff account's assigned branches, roles and tabs will be available. To return, log out and sign in as Super Admin again.</DialogDescription></DialogHeader>
-        {switchError&&<p role="alert">{switchError}</p>}
-        <DialogFooter><Button variant="outline" disabled={switchBusy} onClick={()=>setSwitching(null)}>Cancel</Button><Button disabled={switchBusy} onClick={switchAccount}>{switchBusy?'Switching...':'Switch Account'}</Button></DialogFooter>
-      </DialogContent>
-    </Dialog>
     <Dialog open={!!deleting} onOpenChange={open=>{if(!open&&!deleteBusy)setDeleting(null)}}>
-      <DialogContent><DialogHeader><DialogTitle>Delete Staff Member</DialogTitle><DialogDescription>Are you sure you want to delete {deleting?.name} and their branch role assignments? Linked records are protected. This cannot be undone.</DialogDescription></DialogHeader>
+      <DialogContent><DialogHeader><DialogTitle>Delete Staff Member</DialogTitle><DialogDescription>Are you sure you want to delete {deleting?.name} from Users? This removes their login and role access only. Their Faculty profile, classes, assignments and related records will remain.</DialogDescription></DialogHeader>
         {deleteError&&<p role="alert">{deleteError}</p>}
         <DialogFooter><Button variant="outline" disabled={deleteBusy} onClick={()=>setDeleting(null)}>Cancel</Button><Button variant="destructive" disabled={deleteBusy} onClick={removeStaff}>{deleteBusy?'Deleting...':'Delete Staff'}</Button></DialogFooter>
       </DialogContent>

@@ -1608,3 +1608,109 @@ Implemented IN_REVIEW; acceptance pending, as are F02-002/F02-003/F02-004/F03-00
 CONFIRMED: active-branch Super Admin has named `admissions.decide` and `admissions.delete` grants in addition to View/Create/Edit. Receptionist retains View/Create/Edit, Owner retains View and Teacher remains denied. The page derives visible actions from canonical Auth/Branch context; `admissionService` repeats the permission and session/branch check; the mock database independently reads the canonical session before status or delete mutation. Dashboard preview state is never consulted.
 
 Status changes retain the existing atomic status/history contract and preserve the linked Provisional Student. Pending Delete retains the verified same-branch reciprocal Provisional-link transaction. Decided records reject Edit/Delete and display View only. The adapter contract remains replaceable, but browser-local checks are DEMO safeguards and must be reimplemented as backend authorization later. Final evidence: 246/246 tests, lint and build PASS with existing warnings; no package or backend change. F02-005 remains IN_REVIEW pending owner acceptance.
+
+
+## DEMO-REGISTER-CLASSES-20261018 - Saved timetable read integration
+
+DemoRegistrationForm reads classScheduleService.list and facultyService.listAssignments under existing active-branch permission checks while open. A pure demoRegistrationClasses utility narrows records to an active selected batch belonging to the selected course/branch, computes recurring date-only occurrences, includes dated occurrences on/after the preferred date, validates timing and deduplicates equivalent occurrences. Cards use projected actual subject/teacher/room. Focus/storage/minute refresh discards stale results and preserves drafts; page refresh no longer changes the open form's key. Selecting a timing only fills the existing preferred request date/time. Existing demoClassService.register payload, schema and Registered -> Scheduled lifecycle remain unchanged. No direct component persistence or backend changes.
+
+
+## DEMO-MULTI-CLASS-20261018
+
+DEMO-MULTI-CLASS-20261018: register accepts optional requestedClasses [{key, classDate}]. Adapter resolves each reference against saved classes in the same active branch/course/batch, rejects stale/invalid/duplicate references, and stores canonical timing/subject/teacher/room snapshots. Legacy inquiries lacking this field remain supported. No backend integration or new confirmed-session model.
+
+
+## DEMO-DIRECT-ATTENDANCE-20261019
+
+Owner explicitly replaces the separate Demo scheduling UI with direct attendance after registration. Removed scheduling menu actions and page dialog/data wiring. Registered, Scheduled, Attended and Missed inquiries can use the existing attendance dialog; converted/cancelled records remain blocked. Attendance is inquiry-level, not per-class tracking. Registration-selected classes now appear inside Scheduled Trial Class Session in Details, with legacy scheduled-session fallback; no fabricated sessions. Attendance modal remounts per candidate to avoid stale outcomes. Expanded status column and compact table badges prevent clipping. PASS:42 targeted service/page/registration tests, full lint0/0, build (existing chunk warning), isolated Edge360/1366/1440 direct attendance and status badge bounds, git diff --check. Full suite NOT_RUN. IN_REVIEW; no owner data edits, no commit/push.
+
+
+## REPORTS-LEFT-TREND-20261019 - Left analytics card redesign
+
+Uses existing reportService.overview and filtered ledger IDs. Sources: fees linked Verified payments.paidAt; students saved enrollment date; admissions.createdAt; courses dated enrollments in selected batches; faculty saved classes.classDate matching teacher/batch (no invented recurring classes); finance transaction dates; demos.createdAt; assets history.occurredAt and deduplicated maintenanceHistory.date. Raw collections recheck branchId; selected dimensions reject missing/mismatched references; event dates obey window lower bound. Monday weeks/Karachi calendar dates. Custom range inclusive and chart-only. Session boundaries remain unconfigured and explicitly disclosed. No service/schema/backend changes.
+
+
+## BRANCH-CREATION-PAUSE-20261019
+
+CONFIRMED: New branch creation is temporarily disabled for every role, including Super Admin, until explicit owner reauthorization. All currently saved branches and existing view/edit/lifecycle behavior remain preserved. Central branch policy gates UI and organization service; unknown IDs cannot create records disguised as edit. No user-facing enable toggle. Frontend/mock enforcement only; the eventual backend must independently enforce this rule. No license migration or branch deletion authorized. Verification in PROGRESS.md.
+
+
+## BRANCH-EDIT-DELETE-20261019
+
+Branches Edit now supports core display metadata through optional organization.branchOverrides; getDemoBranches merges saved display fields while preserving branch IDs. Optional deletedBranchIds persist deletion visibility. Existing organization version/data remain compatible; no reset. Page refreshes auth/branch context after save/delete so names update in header and access selectors. organizationService.deleteBranch calls serialized mockApi.deleteEmptyBranch, whose canonical adapter checks all operational collections/staff before removal. Confirm/cancel/error/busy states provided. Core lifecycle remains protected and Add Branch stays paused. Evidence in PROGRESS.md.
+
+
+## BRANCH-STATUS-NAME-20261019
+
+Branch Edit now submits only name and service ignores other submitted metadata while preserving saved fields; valid trimmed name1-120 characters and uniqueness required. Core branch name/status overrides merge independently. Status action now supports both core/custom branches and refreshes auth context; busy guard prevents duplicate clicks, errors use an alert instead of a success banner. No core read-only toggle disablement. Existing operation/current-branch safeguards remain; activation checks/persistence reflected after reload. Evidence: PROGRESS.md.
+
+
+## BRANCH-DELETE-ADMIN-EXCEPTION-20261019
+
+Delete confirmation now explains Super Admin assignment exception and non-admin/record blockers. Adapter removes the deleted branch from organization assignmentOverrides and saved user assignments; auth fixture projection filters deleted-branch assignments for base identities. Parent context refresh remains in place. No user account or linked operational data is deleted. Inactive branch requirement, Add Branch pause and name-only edit preserved. See PROGRESS.md.
+
+
+## Entry flow update - 2026-10-19
+
+REMOVE-WORKSPACE-FLOW-20261019 supersedes the former Workspace entry flow. Root opens login even with a saved demo session; successful login and branch selection open Dashboard. The baseline permission identifier is dashboard.view (formerly workspace.view); role/branch checks and deny-by-default behavior are preserved. Authentication remains frontend mock authentication. No backend security claim or owner data migration.
+
+
+## FRONTEND-PERF-20261019 - adapter/route optimization
+
+Protected route components load lazily only after guards; authorized sidebar hover/focus may preload code, not branch data. Global providers remain mounted. Database read snapshots compare current raw database and organization storage plus storage identity and existing read flags; writes clear snapshots. Organization snapshots compare raw storage on every read. Snapshots are bounded, detached and disposable; localStorage remains canonical. Cross-tab writes require no event delivery to invalidate a subsequent read. Services, Web Locks, mutation validation and branch-scoped permission rechecks are unchanged. No schema/version migration added. Reports payment totals index changes algorithmic cost without changing calculation semantics.
+
+
+## TAB-LOADING-FIX-20261020 - transient page initialization
+
+localPageResources caches at most24 detached completed page data snapshots. peek synchronously checks current raw database/organization/session and Karachi/UTC date; changes clear all snapshots. remember accepts only the same version captured before starting the async read, so an older completion cannot cache data after a write/branch change. Local state receives current scope/request markers; filters/dialog state is not cached. Existing domain services and Web Locks still execute on mount; errors remain visible. Logout clears retained page data explicitly. No storage writes, schema, service interface or backend changes. Cold/invalidated scope still uses genuine loading; lazy chunk fallback now says Loading module rather than Restoring demo session.
+
+
+### Admissions default subject selection - 2026-10-20
+Owner-confirmed: on explicit course selection, all available active course subjects default selected. Users can unselect any subject; other selected courses and saved admission subsets retain their existing choices. Selected IDs feed existing fee calculation and submit flow.
+
+
+### GLOBAL-TIME-12H-20261020 ? confirmed presentation contract
+User-facing clocks use h:mm AM/PM through timeFormat.js; shared time entry converts h:mm + AM/PM to existing HH:mm before handlers save. ISO timestamps and clock/date fields remain unchanged in services/storage. Asia/Karachi applies to timestamp presentation; date-only values stay date-only. No overnight policy or computation changes.
+
+
+### GLOBAL-TIME-PICKER-20261020 ? confirmed entry contract
+Shared TimePicker accepts complete h:mm AM/PM or clock plus meridiem, any valid minute and quarter-hour native suggestions. Emits existing HH:mm, never migrates records. Native popup avoids modal clipping. Invalid clocks return empty canonical value; existing start/end and overnight policies continue in scheduling handlers.
+
+
+### BATCH-SHIFT-NAMES-20261020 ? confirmed batch contract
+Optional batch.shift: null/absent, Morning or Evening. Batch form chooses shift instead of clock fields; existing clock metadata and Faculty schedules remain. Batch names unique per branch+course, case-insensitive after trimming; identical names in different courses are allowed. Admissions displays optional shift while saving/reference resolution continues by immutable batch ID. No legacy-data migration or production Server changes.
+
+
+### TIME-PICKER-DROPDOWN-POLISH-20261020
+Shared TimePicker now uses a compact viewport-bounded HTML Popover suggestions list (ordinary positioned fallback when unsupported), replacing native96-option popup. Canonical HH:mm/event contract and all scheduling rules unchanged. Manual input plus AM/PM and15-minute suggestions retained. Escape dismisses menu without closing parent dialog. IN_REVIEW.
+
+
+### BATCH-DURATION-20261020
+Optional batch.durationMonths is null/absent or positive safe integer. Presentation uses shared formatBatchDuration for singular/plural. No automatic calendar/end-date or financial semantics. Existing IDs/time fields unchanged. IN_REVIEW.
+
+
+### STAFF-LOGIN-BRANCH-20261020
+Browser-local authService.login accepts {email,password}; AuthContext forwards credentials and retains string userId compatibility only for mock fixtures. mockCredentials supplies normalized loginEmail, initial local config checks and salted changed-password records in organization adapter. Created staff login field stores normalized email; assignments limited to one current-branch role, legacy foreign assignments preserved during edits. Users page uses staffOverview, not global organization overview. Organization overview/mutations restrict explicit branch-management assignments. Topbar/profile changePassword verifies current password and replaces initial credentials per immutable user ID. No production backend/API/security claim. IN_REVIEW; proof in PROGRESS.md.
+
+
+### USERS-ACCESS-ONLY-DELETE-20261020
+Users Delete now sets accessRevoked on retained professional identities. Authentication and authorized-branch resolution deny revoked users; staffOverview hides them. getDemoUsers keeps historical identities for Faculty/assignment/record resolution, and Users action never deletes operational database records. Existing role membership is professional mapping only once accessRevoked; no login permission follows from it. IN_REVIEW.
+
+
+### AUDIT-LOG-20261020
+Optional auditLogs metadata arrays in existing mock database and organization envelopes; no domain-record migration or envelope version downgrade. mockAudit.appendAudit derives real successful changes and actor snapshots, preserves previous history, excludes initial/read/no-op events, redacts sensitive values and uses monotonic sequence for identical timestamps. Persistence writes domain + journal together; existing cross-store rollback restores old journal as part of original bytes. auditService.list({branchId}) enforces canonical active Super Admin scope and merges detached branch records. UI /audit-log is lazy, readonly, filtered/paginated and responsive. No fabricated old history. Users access removal and guarded Faculty profile deletion remain separate modes. IN_REVIEW.
+
+
+## Payroll boundary corrections ? 2026-10-21 (IN_REVIEW)
+
+PAYROLL-FLOW-FIX retains centralized mock payroll persistence. Agreement forms consume teacherId/teacherName metadata; advances submit method. Approved payroll is immutable to recalculation/adjustments; payment references are unique per payroll line. Advances track recovered amounts and reservations across approved periods. Dated lecture sessions must have ended; fee percentage follows assigned-batch enrollment/challan payment links. No backend integration or record migration introduced. See PROGRESS.md for verification.
+
+
+## Payroll correction contract - 2026-10-21 (REVERTED by owner)
+
+Confirmed owner scope: reopenPeriod({periodId,reason},query) returns unpaid approved payroll to draft; disallows payments or settled advance recovery. addSupplement({periodId,payrollLineId,amount,reason,requestId},query) creates a separate linked bonus line after settlement, idempotent by period/request ID. Active-branch Super Admin only. Original lines/payments unchanged, advance recovery zero for bonus. Existing payment/expense/payslip contracts reused. Browser-local mock only; no Server changes. See PAYROLL-CORRECTIONS in PROGRESS.md for evidence.
+
+
+## PAYROLL-CORRECTIONS-UNDO - 2026-10-21
+
+Owner explicitly reverses PAYROLL-CORRECTIONS. Removed Reopen Payroll/Additional Bonus UI, modal, service operations, correction-specific audit extensions and three corresponding tests; prior approved payroll lock/payment workflow restored. Existing styling and unrelated edits preserved. No stored financial records or existing audit history deleted or migrated. Previous correction documentation marked REVERTED as historical evidence. PASS targeted ESLint, 33 focused payroll/audit/financial tests and scoped git diff --check. Build/browser NOT_RUN for undo. No commit/push. IN_REVIEW pending owner acceptance.

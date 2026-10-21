@@ -49,3 +49,41 @@ describe('F04 Courses & Batches storage boundary', () => {
     expect(result.courses[0]).toMatchObject({ batchCount: expect.any(Number), enrolledCount: expect.any(Number), category: 'Not configured' })
   })
 })
+
+
+it('scopes duplicate batch names to branch and course, including updates and shift validation', () => {
+ session('demo-admin', north.branchId)
+ const db=createMockDatabase()
+ const a=db.academicOperation('save',{entity:'course',record:{name:'Shift Course A'},query:north})
+ const b=db.academicOperation('save',{entity:'course',record:{name:'Shift Course B'},query:north})
+ const save=(id,record)=>db.academicOperation('save',{entity:'batch',id,record,query:north})
+ const first=save(null,{name:'Batch 1',courseId:a.id,shift:'Morning'})
+ const second=save(null,{name:'Batch 1',courseId:b.id,shift:'Evening'})
+ expect(second).toMatchObject({name:'Batch 1',courseId:b.id,shift:'Evening'})
+ const before=localStorage.getItem(MOCK_DATABASE_KEY)
+ expect(()=>save(null,{name:'  BATCH 1  ',courseId:a.id,shift:'Evening'})).toThrow(expect.objectContaining({code:'DUPLICATE_RECORD'}))
+ expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+ expect(()=>save(second.id,{name:'Batch 1',courseId:a.id})).toThrow(expect.objectContaining({code:'DUPLICATE_RECORD'}))
+ expect(save(first.id,{name:'Batch 1',courseId:a.id,shift:null})).toMatchObject({id:first.id,shift:null})
+ expect(()=>save(null,{name:'Night',courseId:a.id,shift:'Night'})).toThrow(expect.objectContaining({code:'INVALID_RECORD'}))
+ expect(save(null,{name:'No Shift',courseId:a.id}).shift).toBeUndefined()
+ const legacy=save(null,{name:'Legacy',courseId:a.id,startTime:'08:00',endTime:'09:00'})
+ expect(save(legacy.id,{name:'Legacy',courseId:a.id,shift:'Morning'})).toMatchObject({shift:'Morning',startTime:'08:00',endTime:'09:00'})
+ expect(createMockDatabase().academicOperation('get',{entity:'batch',id:second.id,query:north})).toMatchObject({shift:'Evening'})
+})
+
+it('persists optional month duration and rejects invalid values without changing saved records',()=>{
+ session('demo-admin',north.branchId)
+ const db=createMockDatabase()
+ const course=db.academicOperation('overview',{query:north}).courses[0]
+ const save=(id,record)=>db.academicOperation('save',{entity:'batch',id,record:{name:'Duration Batch',courseId:course.id,...record},query:north})
+ const batch=save(null,{name:'Duration Batch',courseId:course.id,durationMonths:1})
+ expect(createMockDatabase().academicOperation('get',{entity:'batch',id:batch.id,query:north}).durationMonths).toBe(1)
+ expect(save(batch.id,{durationMonths:3}).durationMonths).toBe(3)
+ for(const durationMonths of [0,-1,1.5,'2']){
+  const before=localStorage.getItem(MOCK_DATABASE_KEY)
+  expect(()=>save(batch.id,{durationMonths})).toThrow(expect.objectContaining({code:'INVALID_RECORD'}))
+  expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+ }
+ expect(save(batch.id,{durationMonths:null}).durationMonths).toBeNull()
+})

@@ -1,3 +1,4 @@
+import { AuditLogPage, DashboardPage, AdmissionsPage, StudentsPage, StudentProfilePage, CoursesBatchesPage, FacultyClassesPage, FacultyProfilePage, ClassDetailsPage, FeesPage, FinancePage, DemoClassesPage, AssetsPage, ReportsPage, BranchesPage, UsersPage, SettingsPage } from './routeModules.js'
 /**
  * Purpose: Will define App Router for the routes area of the Academy frontend.
  * Module: routes
@@ -10,35 +11,18 @@ import NotFoundPage from '../pages/Errors/NotFoundPage.jsx'
 import { ROUTE_PATHS } from './routePaths.js'
 import LoginPage from '../pages/Auth/LoginPage.jsx'
 import SelectBranchPage from '../pages/Auth/SelectBranchPage.jsx'
-import WorkspacePage from '../pages/Auth/WorkspacePage.jsx'
 import UnauthorizedPage from '../pages/Errors/UnauthorizedPage.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
-import DashboardPage from '../pages/Dashboard/DashboardPage.jsx'
-import AdmissionsPage from '../pages/Admissions/AdmissionsPage.jsx'
-import StudentsPage from '../pages/Students/StudentsPage.jsx'
-import StudentProfilePage from '../pages/Students/StudentProfilePage.jsx'
-import CoursesBatchesPage from '../pages/CoursesBatches/CoursesBatchesPage.jsx'
-import FacultyClassesPage from '../pages/FacultyClasses/FacultyClassesPage.jsx'
-import FacultyProfilePage from '../pages/FacultyClasses/FacultyProfilePage.jsx'
-import ClassDetailsPage from '../pages/FacultyClasses/ClassDetailsPage.jsx'
-import FeesPage from '../pages/Fees/FeesPage.jsx'
-import FinancePage from '../pages/Finance/FinancePage.jsx'
-import DemoClassesPage from '../pages/DemoClasses/DemoClassesPage.jsx'
-import AssetsPage from '../pages/Assets/AssetsPage.jsx'
-import ReportsPage from '../pages/Reports/ReportsPage.jsx'
-import BranchesPage from '../pages/BranchManagement/BranchesPage.jsx'
-import UsersPage from '../pages/UserManagement/UsersPage.jsx'
-import SettingsPage from '../pages/Settings/SettingsPage.jsx'
+
 import { PERMISSIONS } from '../constants/permissions.js'
 
-export default function AppRouter({ children }) {
+export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={ROUTE_PATHS.ROOT} element={children} />
+        <Route path={ROUTE_PATHS.ROOT} element={<Navigate to={ROUTE_PATHS.LOGIN} replace />} />
         <Route path={ROUTE_PATHS.LOGIN} element={<LoginPage />} />
         <Route path={ROUTE_PATHS.SELECT_BRANCH} element={<SelectBranchPage />} />
-        <Route path={ROUTE_PATHS.WORKSPACE} element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.DASHBOARD} element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.ADMISSIONS} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_VIEW}><AdmissionsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentsPage /></ProtectedRoute>} />
@@ -53,11 +37,13 @@ export default function AppRouter({ children }) {
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><Navigate to={ROUTE_PATHS.ADMISSIONS} replace state={{ focusNewAdmission: true }} /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FEES} element={<ProtectedRoute permission={PERMISSIONS.FEES_VIEW}><FeesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FINANCE} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.PAYROLL} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage initialTab="payroll" /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.DEMO_CLASSES} element={<ProtectedRoute permission={PERMISSIONS.DEMO_CLASSES_VIEW}><DemoClassesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.ASSETS} element={<ProtectedRoute permission={PERMISSIONS.ASSETS_VIEW}><AssetsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.REPORTS} element={<ProtectedRoute permission={PERMISSIONS.REPORTS_VIEW}><ReportsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.BRANCHES} element={<ProtectedRoute permission={PERMISSIONS.BRANCHES_MANAGE}><BranchesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.USERS} element={<ProtectedRoute permission={PERMISSIONS.USERS_MANAGE}><UsersPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.AUDIT_LOG} element={<ProtectedRoute permission={PERMISSIONS.AUDIT_VIEW}><AuditLogPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.SETTINGS} element={<ProtectedRoute permission={PERMISSIONS.SETTINGS_MANAGE}><SettingsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.UNAUTHORIZED} element={<UnauthorizedPage />} />
         <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />

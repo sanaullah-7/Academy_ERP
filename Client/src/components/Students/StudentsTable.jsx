@@ -33,7 +33,7 @@ export default function StudentsTable({
 
   return <div className="overflow-x-auto min-h-[220px] pb-20 -mb-20">
     <table className="w-full table-fixed text-left text-xs">
-    <caption className="sr-only">Saved DEMO students in the selected branch</caption>
+    <caption className="sr-only">Saved students in the selected branch</caption>
     <thead className="hidden bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-wide dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200 sm:table-header-group"><tr>
       {selection && (
         <th scope="col" className="w-10 px-3 py-2 text-center">

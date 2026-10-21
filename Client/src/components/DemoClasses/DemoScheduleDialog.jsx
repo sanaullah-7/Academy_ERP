@@ -1,3 +1,4 @@
+import { formatTime } from '../../utils/timeFormat.js'
 import { useState } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
@@ -194,7 +195,7 @@ export default function DemoScheduleDialog({
           <div className="rounded-lg border border-border/80 bg-muted/30 p-3 text-xs space-y-1">
             <p><strong>Applicant:</strong> {demo.studentName} ({demo.demoId})</p>
             <p><strong>Course:</strong> {demo.courseName} {demo.batchName ? `· ${demo.batchName}` : ''}</p>
-            <p><strong>Requested:</strong> {demo.requestedDate} {demo.requestedTime ? `at ${demo.requestedTime}` : ''}</p>
+            <p><strong>Requested:</strong> {demo.requestedDate} {demo.requestedTime ? `at ${formatTime(demo.requestedTime)}` : ''}</p>
           </div>
         )}
 

@@ -13,14 +13,14 @@ export function DialogContent({ className, children, showCloseButton = true, var
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay data-slot="dialog-overlay" className="ui-dialog-overlay" />
       <DialogPrimitive.Content data-slot="dialog-content"
-        className={cn('ui-dialog-content bg-card text-card-foreground outline-none', variant === 'navigation' ? 'workspace-drawer' : 'ui-dialog-centered grid gap-4 rounded-xl border border-border p-6 shadow-sm', className)} {...props}>
+        className={cn('ui-dialog-content bg-card text-card-foreground outline-none', variant === 'navigation' ? 'app-drawer' : 'ui-dialog-centered grid gap-4 rounded-xl border border-border p-6 shadow-sm', className)} {...props}>
         {children}
-        {showCloseButton && <DialogPrimitive.Close asChild><Button variant="ghost" size="icon" className="absolute right-2 top-2" aria-label="Close dialog"><X size={20} aria-hidden="true" /></Button></DialogPrimitive.Close>}
+        {showCloseButton && <DialogPrimitive.Close asChild><Button variant="ghost" size="icon" className="absolute right-2 top-2 print:hidden" aria-label="Close dialog"><X size={20} aria-hidden="true" /></Button></DialogPrimitive.Close>}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   )
 }
 export function DialogHeader({ className, ...props }) { return <div data-slot="dialog-header" className={cn('flex flex-col gap-2 text-left', className)} {...props} /> }
-export function DialogFooter({ className, ...props }) { return <div data-slot="dialog-footer" className={cn('flex flex-wrap justify-end gap-2', className)} {...props} /> }
+export function DialogFooter({ className, ...props }) { return <div data-slot="dialog-footer" className={cn('flex flex-wrap justify-end gap-2 print:hidden', className)} {...props} /> }
 export function DialogTitle({ className, ...props }) { return <DialogPrimitive.Title data-slot="dialog-title" className={cn('text-lg font-semibold', className)} {...props} /> }
 export function DialogDescription({ className, ...props }) { return <DialogPrimitive.Description data-slot="dialog-description" className={cn('text-sm text-muted-foreground', className)} {...props} /> }

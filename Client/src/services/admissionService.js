@@ -20,8 +20,8 @@ async function scopeCheck(query, permission) {
   const startedSession = await authService.getSession()
   return async () => {
     const session = await authService.getSession()
-    if (!session?.user || session.user.id !== startedSession?.user.id || !session.branchId || session.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active DEMO session or branch changed. Try again in the current branch.')
-    if (!permission || !canAccess(permission, session.user, session.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for the requested Admissions action.')
+    if (!session?.user || session.user.id !== startedSession?.user.id || !session.branchId || session.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active session or branch changed. Try again in the current branch.')
+    if (!permission || !canAccess(permission, session.user, session.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This role is not authorized for the requested Admissions action.')
   }
 }
 

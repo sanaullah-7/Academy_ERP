@@ -1,3 +1,4 @@
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 /**
  * Purpose: Demo Classes Management Page for prospective student trial sessions.
  * Module: DemoClasses (F08)
@@ -15,7 +16,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import DemoStats from '../../components/DemoClasses/DemoStats.jsx'
 import DemoStudentsTable from '../../components/DemoClasses/DemoStudentsTable.jsx'
 import DemoRegistrationForm from '../../components/DemoClasses/DemoRegistrationForm.jsx'
-import DemoScheduleDialog from '../../components/DemoClasses/DemoScheduleDialog.jsx'
 import DemoAttendanceDialog from '../../components/DemoClasses/DemoAttendanceDialog.jsx'
 import ConvertToAdmissionDialog from '../../components/DemoClasses/ConvertToAdmissionDialog.jsx'
 import DemoDetailsDialog from '../../components/DemoClasses/DemoDetailsDialog.jsx'
@@ -27,7 +27,6 @@ import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import { demoClassService } from '../../services/demoClassService.js'
 import { courseService } from '../../services/courseService.js'
 import { batchService } from '../../services/batchService.js'
-import { facultyService } from '../../services/facultyService.js'
 
 export default function DemoClassesPage() {
   const navigate = useNavigate()
@@ -35,16 +34,15 @@ export default function DemoClassesPage() {
   const { can } = usePermissions()
   const canManage = can(PERMISSIONS.DEMO_CLASSES_MANAGE)
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !peekPageResource('demos'))
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Data
-  const [demos, setDemos] = useState([])
-  const [courses, setCourses] = useState([])
-  const [batches, setBatches] = useState([])
-  const [teachers, setTeachers] = useState([])
+  const [demos, setDemos] = useState(() => peekPageResource('demos')?.demos ?? [])
+  const [courses, setCourses] = useState(() => peekPageResource('demos')?.courses ?? [])
+  const [batches, setBatches] = useState(() => peekPageResource('demos')?.batches ?? [])
 
   // Dialog states
   const [dialog, setDialog] = useState(null)
@@ -56,20 +54,20 @@ export default function DemoClassesPage() {
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     if (!branchId) return () => { active = false }
 
-    Promise.resolve().then(()=>{if(active){setLoading(true);setError('')}})
+    Promise.resolve().then(()=>{if(active){setLoading(!peekPageResource('demos'));setError('')}})
     Promise.all([
       demoClassService.list({ branchId }),
       courseService.list({ branchId }),
       batchService.list({ branchId }),
-      facultyService.list({ branchId }),
-    ]).then(([demoList, courseList, batchList, teacherList]) => {
+    ]).then(([demoList, courseList, batchList]) => {
       if (!active) return
+      rememberPageResource('demos', { demos: demoList || [], courses: courseList || [], batches: batchList || [] }, loadVersion)
       setDemos(demoList || [])
       setCourses(courseList || [])
       setBatches(batchList || [])
-      setTeachers(teacherList || [])
       setLoading(false)
     }).catch(err => {
       if (!active) return
@@ -97,23 +95,6 @@ export default function DemoClassesPage() {
       setRefreshTrigger(x => x + 1)
     } catch (err) {
       setDialogError(err?.message || 'Failed to register demo inquiry.')
-    } finally {
-      setDialogBusy(false)
-    }
-  }
-
-  const handleSchedule = async (record) => {
-    if (!selectedDemo) return
-    setDialogBusy(true)
-    setDialogError('')
-    try {
-      const updated = await demoClassService.schedule(selectedDemo.id, record, { branchId })
-      setMessage(`Demo session scheduled for ${updated.studentName} on ${record.classDate} at ${record.startTime}.`)
-      setDialog(null)
-      setSelectedDemo(null)
-      setRefreshTrigger(x => x + 1)
-    } catch (err) {
-      setDialogError(err?.message || 'Failed to schedule demo class.')
     } finally {
       setDialogBusy(false)
     }
@@ -152,6 +133,23 @@ export default function DemoClassesPage() {
     }
   }
 
+  const handleDeleteInquiry = async () => {
+    if (!selectedDemo || dialogBusy) return
+    setDialogBusy(true)
+    setDialogError('')
+    try {
+      await demoClassService.delete(selectedDemo.id, { branchId })
+      setMessage(`Demo inquiry for ${selectedDemo.studentName} deleted.`)
+      setDialog(null)
+      setSelectedDemo(null)
+      setRefreshTrigger(value => value + 1)
+    } catch (err) {
+      setDialogError(err?.message || 'Unable to delete demo inquiry.')
+    } finally {
+      setDialogBusy(false)
+    }
+  }
+
   const handleCancelInquiry = async () => {
     if (!selectedDemo) return
     setDialogBusy(true)
@@ -173,12 +171,6 @@ export default function DemoClassesPage() {
   const openRegisterDialog = () => {
     setDialogError('')
     setDialog('register')
-  }
-
-  const openScheduleDialog = (item) => {
-    setSelectedDemo(item)
-    setDialogError('')
-    setDialog('schedule')
   }
 
   const openAttendanceDialog = (item) => {
@@ -252,17 +244,11 @@ export default function DemoClassesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Page Header */}
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/60 pb-5">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/60 pb-2">
           <div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-              <span>STUDENT ONBOARDING</span>
-              <span className="text-primary font-bold">•</span>
-              <span className="text-primary font-medium">{branch?.name || 'Current branch'}</span>
-              <span className="text-primary font-bold">•</span>
-              <span className="text-primary font-medium">Active branch registry</span>
-            </div>
+
             <h1
               aria-label="Demo Classes Management — Demo Classes & Trial Sessions"
               className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
@@ -347,10 +333,10 @@ export default function DemoClassesPage() {
               canManage={canManage}
               branchName={branch?.name}
               onViewDetails={openViewDialog}
-              onSchedule={openScheduleDialog}
               onAttendance={openAttendanceDialog}
               onConvert={openConvertDialog}
               onDirectConvert={handleDirectConvert}
+              onDelete={item => { setSelectedDemo(item); setDialogError(''); setDialog('delete') }}
               onCancel={openCancelDialog}
             />
           </>
@@ -358,7 +344,7 @@ export default function DemoClassesPage() {
 
         {/* Dialogs */}
         <DemoRegistrationForm
-          key={dialog==='register'?`register-${refreshTrigger}`:'closed'}
+          key={dialog==='register'?`register-${scopeKey}`:'closed'}
           open={dialog === 'register'}
           onClose={() => setDialog(null)}
           onSubmit={handleRegister}
@@ -370,17 +356,8 @@ export default function DemoClassesPage() {
           error={dialogError}
         />
 
-        <DemoScheduleDialog
-          open={dialog === 'schedule'}
-          onClose={() => { setDialog(null); setSelectedDemo(null) }}
-          onSubmit={handleSchedule}
-          demo={selectedDemo}
-          teachers={teachers}
-          busy={dialogBusy}
-          error={dialogError}
-        />
-
         <DemoAttendanceDialog
+          key={dialog === 'attendance' ? selectedDemo?.id : 'closed-attendance'}
           open={dialog === 'attendance'}
           onClose={() => { setDialog(null); setSelectedDemo(null) }}
           onSubmit={handleAttendance}
@@ -405,6 +382,22 @@ export default function DemoClassesPage() {
           onClose={() => { setDialog(null); setSelectedDemo(null) }}
           demo={selectedDemo}
         />
+
+        <Dialog open={dialog === 'delete'} onOpenChange={open => { if (!open && !dialogBusy) setDialog(null) }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Demo Student?</DialogTitle>
+              <DialogDescription>
+                Permanently delete the demo inquiry for {selectedDemo?.studentName} ({selectedDemo?.demoId})? This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {dialogError && <p role="alert" className="text-sm text-destructive">{dialogError}</p>}
+            <DialogFooter>
+              <Button variant="outline" disabled={dialogBusy} onClick={() => setDialog(null)}>Cancel</Button>
+              <Button variant="destructive" disabled={dialogBusy} onClick={handleDeleteInquiry}>{dialogBusy ? 'Deleting...' : 'Delete'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Cancel Inquiry Dialog */}
         <Dialog open={dialog === 'cancel'} onOpenChange={(val) => { if (!val && !dialogBusy) setDialog(null) }}>

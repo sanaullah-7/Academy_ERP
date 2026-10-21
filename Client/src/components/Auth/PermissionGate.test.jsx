@@ -9,12 +9,12 @@ import { useBranch } from '../../hooks/useBranch.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import PermissionGate from './PermissionGate.jsx'
 
-function Probe({ permission = 'workspace.view' }) {
+function Probe({ permission = 'dashboard.view' }) {
   const { can, hasRole, roles } = usePermissions()
   const { selectBranch } = useBranch()
   const { logout } = useAuth()
   return <>
-    <p aria-label="Current permission context">{roles.join(',')}:{String(can('workspace.view'))}:{String(hasRole('receptionist'))}</p>
+    <p aria-label="Current permission context">{roles.join(',')}:{String(can('dashboard.view'))}:{String(hasRole('receptionist'))}</p>
     <button onClick={() => void selectBranch('demo-central')}>Change branch</button>
     <button onClick={() => void logout()}>Logout</button>
     <PermissionGate permission={permission}><button>Allowed feature</button></PermissionGate>
@@ -25,7 +25,7 @@ function mount(permission) {
 }
 
 describe('permission UI and hook', () => {
-  it('allows only the approved workspace feature and updates informational branch roles', async () => {
+  it('allows only the approved app feature and updates informational branch roles', async () => {
     await authService.login({ userId: 'demo-multi' })
     await authService.selectBranch('demo-multi', 'demo-north')
     mount()

@@ -10,6 +10,12 @@
 **Development Strategy:** Frontend First
 **Delivery Approach:** Incremental, Ticket-Based Development
 
+## F00-011 — Login logo motion (2026-10-21)
+
+**Owner authorization: CONFIRMED. Status: IN_REVIEW; owner acceptance pending.** Add a restrained Three.js presentation to the existing login logo with GSAP-controlled idle float and gentle pointer tilt. Preserve the current white logo background, dynamic academy branding and surrounding login layout. Respect `prefers-reduced-motion` by retaining a static image; retain the image if WebGL is unavailable. Three.js and GSAP are explicitly approved for this isolated UI ticket. No other page, shared animation system, authentication, business behavior or design refresh is in scope.
+
+Acceptance evidence: login branding remains visible with and without WebGL; custom academy logo still renders/falls back; pointer tilt returns to rest on exit; GSAP/Three resources are cleaned up; reduced-motion displays a static logo without downloading animation assets. Focused tests pass 12/12 across the animation and branding suites; targeted ESLint and production build pass. Local browser confirms WebGL canvas rendering and static logo when reduced motion is enabled. Package audit reports zero vulnerabilities. Three.js and GSAP are dynamically loaded; the Three.js chunk is 736.44 kB raw/186.85 kB gzip and Vite reports the >500 kB chunk warning.
+
 ---
 
 ## F02-003 approved gapless display numbering (2026-10-10)
@@ -24,9 +30,9 @@ Current owner instruction permits deleting an admission and its uniquely linked 
 
 ---
 
-## Latest owner scope - F02-003 branch numbering and DEMO CRUD (2026-10-10)
+## F02-003 authorization snapshot (2026-10-10)
 
-**Current authorization:** F02-003 extension only; delivered IN_REVIEW, owner acceptance pending. Independent durable branch Student/Admission sequences, shared popup and browser-local View/Edit/confirmed safe Delete are explicitly approved. Earlier current-authorization snapshots below are historical. No following ticket, backend, production permissions, fees or enrollment authorized. [Latest delivery evidence](PROGRESS.md#f02-003-resumed-delivery---branch-wise-numbering--working-admissions-crud-2026-10-10).
+**Authorization at the time:** F02-003 extension only; delivered IN_REVIEW, owner acceptance pending. Independent durable branch Student/Admission sequences, shared popup and browser-local View/Edit/confirmed safe Delete were explicitly approved. This dated authorization snapshot is superseded by the newer F00-011 authorization above; it remains historical evidence. [Delivery evidence](PROGRESS.md#f02-003-resumed-delivery---branch-wise-numbering--working-admissions-crud-2026-10-10).
 
 ---
 
@@ -372,7 +378,7 @@ Review changes before merging.
 | F04 | Courses & Batches | BACKLOG | P0 |
 | F05 | Faculty & Classes | BACKLOG | P1 |
 | F06 | Fees | BACKLOG | P0 |
-| F07 | Finance | BACKLOG | P0 |
+| F07 | Finance & Payroll | IN_REVIEW | P0 |
 | F08 | Demo Classes | BACKLOG | P1 |
 | F09 | Assets | BACKLOG | P1 |
 | F10 | Reports | BACKLOG | P1 |
@@ -2055,3 +2061,976 @@ Acceptance evidence:
 - Dialogs use viewport-relative heights, bounded grid tracks, internal scrolling, single-column form grids and readable inputs. Fixed challan-preview intrinsic grid overflow; unchanged PDF/print templates. Inline Admissions stays in-page with non-sticky summary below its form.
 - Faculty roster/detail design stacks on mobile; selecting a record reveals/focuses the existing detail panel only below 768px. Desktop selection stays unchanged.
 - Target browser matrix and actual workflow evidence in PROGRESS.md. Final full Vitest 422/422 PASS, targeted 29/29 PASS, ESLint PASS, build PASS. Existing large-chunk notice remains. No dependencies or backend/service changes. Owner acceptance pending; no commit/push.
+
+
+## DEMO-REGISTER-CLASSES-20261018 - Registration class timing flow (IN_REVIEW)
+
+Approved scope: selected academic Field -> Course -> Batch exposes only that batch's saved recurring assignments and dated class records in the active branch. Show actual subject, teacher, days, 12-hour timing and room; using a timing fills preferred request date/time. Keep a prospective inquiry Registered until the existing scheduling action confirms it; no automatic attendance, admission or enrollment. Form-only visual polish and sticky dialog footer authorized by the owner's subsequent request; prior mobile-only desktop-preservation scope continues outside this dialog.
+
+Acceptance: independent date-only weekday/rollover handling; strict course/batch/branch filtering; no fabricated slots; live focus/storage/minute refresh with cleanup and stale-response guard; no periodic form draft reset; manual date/time fallback when no saved classes exist; accessible buttons, loading, error and retry. Focused tests17/17 PASS and real Edge nine viewport/submit cases PASS. Final regression evidence in PROGRESS.md.
+
+
+## DEMO-ACTIONS-DELETE-20261018
+
+Implemented compact accessible desktop/mobile row menu and explicit Cancel/Delete confirmation. Centralized service/database deletion checks active branch and manage permission, removes only selected inquiry and preserves other academy records. Linked admissions prevent deletion. Acceptance evidence: 48 targeted tests, lint, build and disposable browser checks at 320/390/430/1440px.
+
+
+## DEMO-MULTI-CLASS-20261018
+
+DEMO-MULTI-CLASS-20261018: multiple saved classes may be requested within one course/batch inquiry. Each selection toggles independently; field/course/batch/manual request changes clear selection. First selection fills preferred date/time. Registration validates each actual class reference against branch/course/batch and saves class snapshots. Inquiry remains Registered, separate scheduling unchanged. Acceptance: 50 targeted tests PASS, lint0/0, build PASS, disposable browser360/1440 PASS.
+
+
+## DEMO-UI-POLISH-20261019
+
+Owner-authorized presentation update: reuse shared CustomSelect for Demo stream filter; reduce summary card padding/icon/value size and page/header vertical spacing; remove Trial Faculty desktop column and matching mobile summary line, redistribute seven table column widths. Faculty information remains in inquiry details and scheduling. IN_REVIEW. PASS: 10 existing Demo page/registration tests, full lint0/0, production build (existing large-chunk notice), disposable Edge dropdown bounds/selection and removed-column checks at360/1440px, git diff --check. No persistence/business-rule change or commit/push.
+
+
+## DEMO-DIRECT-ATTENDANCE-20261019
+
+Owner explicitly replaces the separate Demo scheduling UI with direct attendance after registration. Removed scheduling menu actions and page dialog/data wiring. Registered, Scheduled, Attended and Missed inquiries can use the existing attendance dialog; converted/cancelled records remain blocked. Attendance is inquiry-level, not per-class tracking. Registration-selected classes now appear inside Scheduled Trial Class Session in Details, with legacy scheduled-session fallback; no fabricated sessions. Attendance modal remounts per candidate to avoid stale outcomes. Expanded status column and compact table badges prevent clipping. PASS:42 targeted service/page/registration tests, full lint0/0, build (existing chunk warning), isolated Edge360/1366/1440 direct attendance and status badge bounds, git diff --check. Full suite NOT_RUN. IN_REVIEW; no owner data edits, no commit/push.
+
+
+## DEMO-DATE-COLUMN-20261019
+
+Owner-authorized date-only Demo registry presentation: heading Trial Date, desktop cell and mobile summary show scheduled date or requested-date fallback only; remove time/venue from list. Existing exports and inquiry details preserved. PASS targeted component ESLint and7 existing Demo page tests; git diff --check. IN_REVIEW; no commit/push.
+
+
+## PAGE-HEADER-CLEANUP-20261019
+
+Owner authorized removal of category/branch eyebrow text above page names across all tabs. Removed matching lines/decorative dots from Demo Classes, Fees, Finance, Assets, Reports, Branch Management, User Management and Settings. Other pages already start at their main heading. Page titles, descriptions and branch context remain intact. PASS: full ESLint0/0, production build (existing chunk warning),11 existing Finance/Demo page tests, git diff --check. Browser/full suite NOT_RUN for this presentation-only change. IN_REVIEW; no commit/push.
+
+
+## DEMO-FILTER-BAR-20261019
+
+Owner-authorized compact Demo filter bar with soft maroon border, light inactive tab borders/backgrounds and one-line nonwrapping status tabs; reduced search/dropdown widths align toolbar on desktop. Mobile tabs scroll internally, with existing stacked search controls retained. PASS targeted component lint,7 existing Demo page tests, disposable Edge360/1366/1440 single-line tab/alignment/no-page-overflow checks; git diff --check. IN_REVIEW. No business changes or commit/push.
+
+
+## SHARED-BREADCRUMB-20261019
+
+Owner-authorized compact shared Home/current-page breadcrumb across all tabs, roles and branches. Base height48->36px, padding10x18->6x12, text14->12px, icon17->14px, reduced gaps; existing compact/mobile visibility rules retained. Home route and aria-current semantics preserved. PASS targeted component ESLint, production build (existing chunk warning), git diff --check. Browser/full suite NOT_RUN for this small style change. IN_REVIEW; no commit/push.
+
+
+## DEMO-NOTES-SPACE-20261019
+
+Owner-authorized Demo presentation adjustment: date column18->12 percent and notes13->19 percent, shifting notes left and widening every notes cell. Removed old220px notes cap; preserved single-line ellipsis/title. Search160->192px with existing mobile full-width behavior. PASS targeted ESLint and7 existing Demo page tests; git diff --check. Browser/build NOT_RUN for this scoped style change. IN_REVIEW; no commit/push.
+
+
+## SHARED-PAGE-TITLE-20261019
+
+Owner authorizes removing the redundant shared route heading above module titles across all roles/branches. Shared PageHeader now contains compact right-aligned breadcrumb only, with reduced vertical margin and no hidden generic description; existing page main titles/descriptions move up. Courses had no own page heading, so retained its name as a semantic module-level h1. PASS11 existing Finance/Demo tests, lint/build (existing chunk warning), git diff --check. Browser/full suite NOT_RUN. IN_REVIEW; no commit/push.
+
+
+## SHARED-BREADCRUMB-LEFT-20261019
+
+Owner explicitly requested left alignment for the shared Home/current-page breadcrumb across tabs and roles. Changed only shared breadcrumb-row justification to flex-start; compact sizing and navigation preserved. PASS git diff --check. Browser/tests NOT_RUN for this one-property presentation change. IN_REVIEW; no commit/push.
+
+
+
+## ASSETS-FLOW-20261019 - UNDONE
+
+Owner requested reverting only the last Assets adjustment. Restored prior table widths/sidebar layout/KPI display, prior unsupported-version message and prior imports. Removed scoped asset-table CSS. Earlier Demo/shared header changes and unrelated existing Assets redesign preserved. PASS git diff --check; runtime tests NOT_RUN for this targeted reversal. No records modified.
+
+
+## STORAGE-V9-RECOVERY-20261019
+
+Owner authorizes urgent recovery of all tabs after unsupported-version errors. Read only the academy app database/organization keys from Chrome storage, saved local untracked recovery snapshots (never stage: contains owner records). Identified persisted version9 with actual saved records; current reader rejected anything beyond8. Version9 payload validates against current schema. Reader now explicitly accepts8 and9, preserving stored version9 and all collections; unknown versions and invalid records remain rejected without rewriting. No seeding, reset, downgrade, actual owner-storage writes or UI redesign. Removed3 dead Assets imports for clean lint. PASS35 database/assets tests including v9 reads, writes, preservation and invalid-record rejection; production build (existing chunk warning); isolated owner-data-copy validation and no-alert routes Courses/Students/Admissions/Faculty/Fees/Finance/Demo/Assets, isolated asset write preserves students/payments and version9. Owner should refresh the existing URL/branch. IN_REVIEW; no commit/push.
+
+
+## ASSETS-LIVE-FLOW-20261019
+
+Owner reauthorizes Assets functionality and compact non-overflowing inventory layout after previous targeted undo. Existing centralized asset services remain the data source; register/edit/assign/unassign/inspection/maintenance mutations retain persistence and branch/permission checks. Added cleaned-up focus/storage/minute refresh with latest-request guard so summaries and rows reflect saved changes. Added duplicate-submit guards. KPI loading/errors no longer masquerade as zero totals. Desktop inventory uses fixed percentage widths, compact single-line typography/ellipsis and bounded text; full details remain accessible. Existing mobile cards retained. Sidebar stacks below the table until1600px to provide readable table width. PASS37 database/asset-service/mounted-page tests, including actual UI registration/card totals and external saved inspection/value refresh; full lint0/0; production build with existing large-chunk warning; isolated Edge actual registration, persistence, table refresh and no horizontal table/page overflow at360/768/1024/1366/1440/1600px; git diff --check. Full suite NOT_RUN. No owner-record changes, no new seeding/schema change or commit/push. IN_REVIEW pending owner acceptance.
+
+
+## ASSETS-RIGHT-PANEL-20261019
+
+Owner correction: restore Quick Inspection sidebar on the right at the original xl breakpoint and22rem width. Keep compact fixed-layout inventory and reduced10px cell text; no functional/storage changes. PASS targeted lint and git diff --check; browser/tests NOT_RUN for this presentation-only correction.
+
+
+## ASSETS-CHECKBOX-REMOVE-20261019
+
+Owner requests removing Assets table selection checkboxes. Removed select-all/row checkbox cells, selection highlighting and unused bulk selection controls. Exports continue using all currently filtered inventory records. Right inspection panel unchanged. PASS targeted ESLint and git diff --check; runtime tests NOT_RUN for this small UI removal.
+
+
+## ASSETS-COMPACT-ACTIONS-20261019
+
+Owner requests moving inline Inspect/Log Repair into the three-dot menu in place of Assign Staff. Removed inline actions; menu now offers View Details, Edit Asset and condition-dependent Inspect/Log Repair, reusing existing detail/maintenance handlers. Removed duplicate maintenance action, kept staff assignment accessible in asset details. Menu width176->144px with compact11px text/padding. PASS targeted lint and2 existing Assets page tests; git diff --check. Browser NOT_RUN for this scoped menu change. No persistence/permissions changes.
+
+
+## ASSETS-PAGINATION-20261019
+
+Owner requests screenshot-style inventory footer. Reused shared Pagination with default10 rows,10/15/25/50 selector, current record range, numbered pages, previous/next and disabled bounds. Row-count changes reset page1; clamped page used after filters/deletions. Right inspection panel retained. PASS3 Assets page tests including11-record next-page and page-size reset, targeted ESLint, git diff --check. No persistence changes.
+
+
+## ASSETS-ATTACHED-PAGINATION-20261019
+
+Owner requests pagination joined to the inventory rather than a separate card. Table/mobile records, empty state and pagination now share one bordered container; no external footer gap/duplicate border. PASS targeted lint and git diff --check; runtime tests NOT_RUN for container-only change.
+
+
+## ASSETS-100-PERCENT-20261019
+
+Owner supplies80%-zoom reference and requests its compact proportions at normal100% zoom. Scoped desktop Assets presentation now uses approximately75/25 inventory/right-inspection split, compact cards/filter typography and fixed100%-total table column proportions; category tabs stay in one internally scrollable line, filters remain one row, rows retain single-line truncation with accessible Details. Reduced cell padding and icons; attached pagination preserved. No browser zoom/transform, data, status or business-rule changes. PASS targeted lint, production build (existing chunk warning), isolated fictional8-record Edge checks at1366/1440/1920 at deviceScaleFactor1, right-sidebar positioning, no table/page horizontal overflow;1440 screenshot visually inspected. Existing mobile styling retained. Runtime tests NOT_RUN for this scoped presentation pass. IN_REVIEW; no commit/push.
+
+
+## ASSETS-INSPECTION-WIDTH-20261019
+
+Owner requests wider right Quick Inspection panel and exactly2px desktop gap from inventory. Changed desktop split75/25 to70/30 with17rem sidebar minimum and xl gap2px. Existing mobile stacking retained. PASS git diff --check; tests/browser NOT_RUN for this grid-only presentation change.
+
+
+## ASSETS-MAINTENANCE-TEXT-20261019
+
+Owner requests slightly smaller maintenance list and balanced warning colors. Reduced heading/name11->10px and panel padding; red heading/dots/asset codes retain warning emphasis, asset names use readable slate and locations muted slate. No data/layout flow changes. PASS targeted lint and git diff --check; runtime tests NOT_RUN for styling-only change.
+
+
+## ASSETS-MENU-COLORS-20261019
+
+Owner requests narrower asset action menu, individual icon colors and maroon hover. Width144->128px including placement calculation. View sky, Edit violet, Inspect emerald; maroon hover/focus text with pale maroon background, icon colors retained. PASS targeted lint and git diff --check; runtime tests NOT_RUN for presentation-only change.
+
+
+## ASSETS-KPI-COLORS-20261019
+
+Owner requests Assets summary cards use the existing cross-module card color treatment. Reused shared top-kpi-card class for existing maroon/emerald/sky/amber gradients, borders and hover/dark/mobile rules. Existing totals, urgent indicator, sizing and icons preserved. PASS targeted lint and git diff --check; browser/tests NOT_RUN for shared-class styling change.
+
+
+## DEMO-SUMMARY-HEIGHT-20261019
+
+Owner requests slightly shorter Demo KPI cards and moving them upward. Reduced content vertical padding/internal gaps and page/header spacing. Single-line footer ellipsis prevents long pending-room text stretching all cards; room tooltip retains full text. Existing metrics/colors/business behavior preserved. PASS7 existing Demo page tests, targeted lint and git diff --check. Browser NOT_RUN for this scoped spacing change.
+
+
+## DEMO-SUMMARY-LABELS-20261019
+
+Owner requests removing hall/batch text from Pending Trial Slots and black headings on all four Demo KPI cards. Removed room display/unused calculation and changed only heading text color to near-black. Counts and other footer metrics preserved. PASS targeted lint and git diff --check; runtime tests NOT_RUN for this small presentation change.
+
+
+## ASSETS-SEARCH-WIDTH-20261019
+
+Owner requests slightly shorter Assets search. Reserve12px extra right spacing on desktop search wrapper, reducing its flexible input width by12px while preserving filter sizes and mobile layout. PASS git diff --check; runtime tests NOT_RUN for spacing-only adjustment.
+
+
+## ASSETS-SEARCH-ACTUAL-WIDTH-20261019
+
+Owner clarifies actual search box width rather than typography. Replaced prior extra margin approach with desktop width40% and no flex growth on search wrapper. Input font unchanged, mobile flexible width preserved. PASS git diff --check; browser/tests NOT_RUN for this sizing-only correction.
+
+
+## ASSETS-CATEGORY-TINTS-20261019
+
+Owner requests icon-matching light backgrounds on inactive category tabs and maroon hover. Reused existing category palette for blue/amber/teal/violet tint/text, with pale maroon hover/focus and maroon text. Active tab stays solid maroon; counts/filter behavior unchanged. PASS targeted lint and git diff --check; browser/tests NOT_RUN for styling-only change.
+
+
+## ASSETS-FILTER-WIDTHS-20261019
+
+Owner requests wider Rooms and Condition controls without changing search width or displacing Sort. Desktop dropdown widths135->144px each; reduce three row gaps8->2px to offset18px added width, keeping search and Sort alignment. Existing mobile layout unchanged. PASS git diff --check; browser/tests NOT_RUN for scoped CSS adjustment.
+
+
+## ASSETS-FILTER-TRIGGER-CORRECTION-20261019
+
+Owner clarifies visible filter boxes should widen, opened menus should shrink. Rooms/Condition desktop triggers now responsive150-176px; their popup menus bounded160px. Search remains unchanged40%. PASS targeted lint and git diff --check; browser NOT_RUN for this small correction.
+
+
+## ASSETS-FILTER-GAP-20261019
+
+Owner requests a little spacing between visible filter controls. Desktop filter row gap2->6px; widths/font unchanged. PASS git diff --check; browser/tests NOT_RUN for one CSS property.
+
+
+## ASSETS-SORT-MENU-WIDTH-20261019
+
+Owner requests narrower opened Sort Tag menu. Bounded only its popup width128px instead of min140px; visible trigger/search/filter widths unchanged. PASS git diff --check; runtime tests NOT_RUN for sizing-only change.
+
+
+## ASSETS-ROOM-CONDITION-MENUS-20261019
+
+Owner requests slightly wider Rooms/Condition opened menus. Popup widths160->176px only; trigger, search and Sort popup unchanged. PASS git diff --check; tests/browser NOT_RUN for width-only change.
+
+
+## ASSETS-SORT-TRIGGER-20261019
+
+Owner requests narrower visible Sort Tag control. Set90px width with desktop override; opened Sort menu and other controls unchanged. PASS git diff --check; tests/browser NOT_RUN for width-only change.
+
+
+## ASSETS-FILTER-FONT-WEIGHT-20261019
+
+Owner requests slightly bolder search placeholder and Rooms/Condition/Sort trigger text. Scoped font-weight600 on those controls only. Widths, sizes and spacing preserved. PASS git diff --check; tests/browser NOT_RUN for typography-only change.
+
+
+## ASSETS-SORT-POPUP-COMPACT-20261019
+
+Owner explicitly identifies opened Sort popup. Reduced popup128->112px only; trigger and other controls unchanged. PASS git diff --check; tests/browser NOT_RUN for width-only adjustment.
+
+
+## ASSETS-CONTROL-SPACING-20261019
+
+Owner requests visible gaps between Rooms, Condition and Sort boxes. Desktop filter gap6->10px and prevent dropdown wrappers shrinking below their trigger width (which could visually erase the flex gap). Search dimensions and trigger/menu widths unchanged. PASS git diff --check; tests/browser NOT_RUN for scoped CSS change.
+
+
+## ASSETS-FILTER-ROW-FIT-20261019
+
+Owner reports Sort overflow after added gaps. Desktop filter row now uses bounded grid columns: search40%, two flexible dropdowns and Sort90px, with6px gaps. Trigger wrappers/labels fit their tracks rather than overflowing fixed widths. Mobile unchanged. PASS isolated Edge1280/1366/1440/1920 same-row, visible gaps and Sort-inside-panel checks; git diff --check. No functional changes.
+
+
+## ASSETS-FILTER-LABELS-20261019
+
+Owner requests shorter default filter labels: All Rooms and All Conditions. Updated matching options/placeholders only; filtering values/behavior unchanged. PASS git diff --check; tests NOT_RUN for text-only change.
+
+
+## REPORTS-HEADER-ACTIONS-20261019
+
+Owner requests removing pictured Batch Schedule Summary and Export Active Report header buttons. Removed their header action group only; existing report contents and other export actions preserved. PASS git diff --check. Targeted lint FAIL: current Reports file has9 errors/2 warnings including preexisting unused Check/setPageSize and rowsFormatted assignments; unrelated cleanup not included. Runtime tests NOT_RUN for this button-only removal.
+
+
+## REPORTS-CATEGORY-STYLING-20261019
+
+Owner requests pale maroon bordered report category options with relevant icons and improved hover. Added semantic icons via existing TAB_CONFIG and imported Lucide components, light maroon inactive tabs/container/badges, deeper maroon hover, preserved solid active state; added pressed state and focus ring. Filtering/count logic unchanged. PASS production build (existing chunk warning) and git diff --check. Lint not rerun: previous Reports9 errors/2 warnings remain documented; runtime tests NOT_RUN for this presentation change.
+
+
+## REPORTS-CATEGORY-COLORS-20261019
+
+Owner requests distinct category icon colors with matching pale option backgrounds. Added emerald/sky/violet/amber/indigo/teal/rose/orange palettes and matching badge colors through existing tab config. Active maroon/white and maroon hover retained. PASS production build (existing chunk warning), git diff --check. Browser/tests NOT_RUN; existing Reports lint issues unchanged.
+
+
+## REPORTS-DROPDOWN-ANCHOR-20261019
+
+Owner reports all filter menus opening away from their fields. Root cause shared CustomSelect lets containerClassName replace default relative positioning (Reports passes w-full). Always retain relative class on the shared wrapper while preserving consumer classes; absolute menus now anchor below their own triggers. PASS shared component ESLint and isolated Edge five Reports filter dropdown geometry/escape checks at390/1366/1440px (15 menu openings); git diff --check. No filter/business changes.
+
+
+## REPORTS-SESSION-LABEL-DATE-20261019
+
+Owner requests automatic month/year on Current Session option. Replaced hardcoded Oct2025 with Intl month/year in Asia/Karachi; minute timer/focus refresh and cleanup support open-page month/year rollover. This ticket changes label only; actual academic-session filter dates remain unconfigured as previously reported. PASS production build (existing chunk warning), isolated UTC-browser clock test Dec2026->Jan2027 at Karachi midnight, git diff --check. Existing Reports lint issues unchanged; full tests NOT_RUN.
+
+
+## REPORTS-KPI-COLORS-FIT-20261019
+
+Owner requests shared colorful KPI backgrounds and smaller nonbreaking content for every Reports category. Reused shared top-kpi-card gradients/borders/hover, reduced padding and label/value/subtext sizes, constrained content tracks with min-width0, single-line ellipsis and full-text titles. Existing metric values/calculations preserved. PASS build (existing chunk warning), isolated Edge all8 category card groups at390/1366/1440: contained single-line content; git diff --check. Lint/full tests NOT_RUN; earlier Reports lint issues documented.
+
+
+## REPORTS-KPI-HEIGHT-20261019
+
+Owner requests slightly taller Reports KPI cards. Shared card renderer now min-height136px for all categories, preserving compact nonwrapping typography and existing colors/metrics. Existing mobile minimum-height override retained. PASS git diff --check; browser/tests NOT_RUN for one-class sizing change.
+
+
+## REPORTS-KPI-HEIGHT-TUNE-20261019
+
+Owner requests slightly reducing the preceding height increase. Reports KPI minimum136->124px only; content/colors unchanged. PASS git diff --check; tests/browser NOT_RUN for sizing-only correction.
+
+
+## REPORTS-KPI-HEIGHT-FINAL-TUNE-20261019
+
+Owner requests another small height reduction. Reports KPI minimum124->116px only. PASS git diff --check; tests/browser NOT_RUN for sizing-only correction.
+
+
+## REPORTS-KPI-CONTENT-ALIGN-20261019
+
+Owner requests content aligned to reduced KPI height and bolder single-line numbers. Vertically centered KPI content within116px card,17px extra-bold main values, semibold subtext and tighter line-height/consistent spacing; preserved nowrap/ellipsis/full-text title. PASS build (existing chunk warning), isolated Edge all8 category groups at390/1366/1440 fit/single-line checks, git diff --check. Existing Reports lint findings unchanged.
+
+
+## REPORTS-COHORT-LABEL-20261019
+
+Owner requests shorter default selected-cohort card text. Changed All Cohorts / Batches to All Cohorts. No filtering/calculation changes. PASS git diff --check; tests NOT_RUN for text-only adjustment.
+
+
+## REPORTS-KPI-POSITIONS-20261019
+
+Owner requests heading top-left, icon/gauge top-right, main value centered between header/footer and subtext at bottom. Reorganized the shared KPI renderer into three grid rows; preserved116px minimum, nowrap/full-text titles, existing metrics and colors across all categories. PASS build (existing chunk warning), isolated Edge all8 category groups at390/1366/1440 containment/single-line checks, git diff --check. Existing Reports lint issues unchanged.
+
+
+## REPORTS-KPI-VALUE-LEFT-20261019
+
+Owner clarifies middle value must be left aligned while vertically centered between top heading and bottom subtext. Changed main-value alignment center->left only across all Reports categories. PASS git diff --check; tests/browser NOT_RUN for alignment-only correction.
+
+
+## REPORTS-KPI-VALUE-UP-20261019
+
+Owner requests middle KPI value slightly higher. Applied4px upward translation only to the main value; left alignment, heading/footer positions unchanged. PASS git diff --check; tests/browser NOT_RUN for minor positioning adjustment.
+
+
+## REPORTS-KPI-VALUE-EMPHASIS-20261019
+
+Owner requests main KPI value slightly higher, larger and bolder. Upward offset4->8px, font17->19px and weight800->900; nowrap/truncation and left alignment retained. PASS git diff --check; tests/browser NOT_RUN for typography/offset-only adjustment.
+
+
+## REPORTS-KPI-VALUE-SIZE-20261019
+
+Owner requests another small main-value size increase. Reports KPI font19->21px only; existing boldness/position/nowrap preserved. PASS git diff --check; tests/browser NOT_RUN for size-only adjustment.
+
+
+## REPORTS-KPI-HEADING-EMPHASIS-20261019
+
+Owner requests slightly larger, bolder black top headings. Shared Reports KPI label9->10px, weight700->800, slate600->950; single-line fitting and full-text title retained. PASS git diff --check; tests/browser NOT_RUN for typography-only adjustment.
+
+
+## REPORTS-KPI-HEADING-COLOR-RESTORE-20261019
+
+Owner requests reverting only the black heading color. Restored slate600 while retaining latest heading size/weight. PASS git diff --check; tests NOT_RUN for color-only adjustment.
+
+
+## REPORTS-KPI-HEADINGS-FULL-20261019
+
+Owner requests fixing clipped top labels such as Classrooms Occupied and Challan Recovery Rate. Slightly smaller long labels/tighter tracking, compact32px icons/gauges, narrower header gap; changed medium desktop to3 columns before xl5 for usable title width. Removed heading ellipsis; retained full single-line text. Scoped mobile8px heading override compensates shared KPI typography. PASS full heading scrollWidth/clientWidth checks for every8 Reports category at390/1024/1280/1366/1440, production build (existing chunk warning), git diff --check. No metric/data changes; existing Reports lint findings unchanged.
+
+
+## REPORTS-FILTER-FOOTER-EXPORT-20261019
+
+Owner requests compact colored filter section with hover, attached rows-per-page footer and table-header PDF/spreadsheet export icons. Reduced filter padding/control heights/label sizes, pale maroon background/borders/hover. Reused shared Pagination (default10,10/15/25/50, ranges, numbered pages) inside report table container. Reused toolbar PDF/CSV icons connected to existing filtered/selected exports. Updated obsolete test expecting owner-removed Schedule Summary button to current header/export/pagination assertions; no skipped tests. PASS4 Reports tests, build (existing chunk warning), disposable browser page-size selection/filter menu and actual PDF/CSV downloads; git diff --check. Existing Reports lint findings unchanged, full suite NOT_RUN. No business/filter logic or owner-data modifications.
+
+
+## REPORTS-ACTION-FEEDBACK-20261019
+
+Owner requests Reset/Print color treatments and investigation of Refresh. Existing Refresh already re-fetches overview but offered no loading/success feedback. Added scoped refresh generation state, disabled/spinning refresh button while loading, selected-row clearing and accessible success announcement; preserved filters. Reset amber, Print sky, Refresh violet with pale maroon hover. Added integration test proving newly saved branch asset appears only after refresh and overview re-fetches. PASS5 Reports tests, build (existing chunk warning), isolated browser actual new saved record refresh/success plus print handler invocation; git diff --check. Existing unrelated Reports lint findings unchanged. No owner records touched.
+
+
+## REPORTS-WORD-EXPORT-20261019
+
+Owner requests pictured Word/Google Docs-compatible export beside PDF. Added blue Word document action producing genuine.docx Office Open XML without new dependencies. Shares exact PDF row formatting and filtered/selected scope; exports report title, branch and filter summary. Text escaped and invalid XML controls stripped; files are local downloads, not automatic Google Drive uploads. PASS6 Reports/Word tests, targeted new helper lint, production build (existing chunk warning), disposable browser selected-row download, Python ZIP CRC/all XML parsing and exactly header+one selected table row; git diff --check. Native Word/Google Docs import UI NOT_RUN. Existing unrelated Reports lint issues remain. No owner data changes.
+
+
+## REPORTS-SEARCH-HEADER-20261019
+
+Owner requests wider report quick-search/larger text and Showing-records below ledger title. Search widths224/288/320px responsive,13px input text and36px height; record count now under title in vertical heading group. Existing export/refresh/search behavior unchanged. PASS git diff --check; tests/browser NOT_RUN for presentation-only adjustment.
+
+
+## REPORTS-SEARCH-ICON-20261019
+
+Owner requests slightly larger aligned quick-search icon. Icon13->16px, vertically centered with pointer-events disabled and input left padding40px to prevent text overlap. PASS git diff --check; tests/browser NOT_RUN for icon-only adjustment.
+
+
+## REPORTS-TOOLBAR-LABELS-20261019
+
+Owner requests labels alongside other toolbar icons like Word. Added optional showLabels flag to shared PDF/CSV actions (defaultfalse, enabled Reports only), with PDF/Excel labels and compact rounded buttons; Print/Refresh now have visible labels. Existing handlers/aria labels preserved. Toolbar wraps within bounds on narrow screens. PASS shared helper lint and production build (existing chunk warning); git diff --check. No export logic changes.
+
+
+## REPORTS-BOTTOM-EXPORT-REMOVE-20261019
+
+Owner requests removing the pictured Ready to Export Filtered Cohort Data bottom section. Removed only duplicate bottom export card; table-header PDF/Excel/Word/Print/Refresh actions remain. PASS git diff --check; tests/browser NOT_RUN for section-only removal.
+
+## REPORTS-TABLE-FIT-20261019
+
+Owner authorizes compact Reports ledger sizing at normal100% browser zoom using supplied80% screenshot as reference. Scoped desktop-only ledger CSS reduces cell padding, primary/secondary typography, avatars and search dimensions; automatic table column sizing and bounded horizontal scrolling retained. No data/action/export changes or browser zoom manipulation. Status: IN_REVIEW pending owner visual acceptance. PASS production build (existing chunk warning) and git diff --check. Browser visual comparison NOT_RUN. Reports tests attempted but runner stalled without results and was interrupted; no test pass claimed.
+
+## REPORTS-DONUT-SIZE-20261019
+
+Owner requests slightly larger Reports donut. Chart container128->144px, outer radius56->64px and inner radius34->39px preserve ring proportions. Existing data/colors/legend retained. IN_REVIEW pending owner visual acceptance. Runtime tests/build/browser NOT_RUN for sizing-only change; git diff --check PASS.
+
+### REPORTS-DONUT-SIZE-20261019 � Further size adjustment
+
+Owner requests another small increase: container144->160px, outer radius64->72px, inner radius39->44px. IN_REVIEW pending visual acceptance. PASS git diff --check; build/runtime tests/browser NOT_RUN for sizing-only adjustment.
+
+
+## REPORTS-LEFT-TREND-20261019 - Left analytics card redesign
+
+Scope: only Reports left-card redesign. Evidence: all8 tabs; filtered ledger IDs and branch-scoped dated events; validated custom dates; zero/undated/sparse states; wrapped controls; preserved160px right donut and ledger workflows. PASS20 tests, lint0/0, build,32 tab/viewport checks and actual PDF/CSV/DOCX downloads/print/refresh. IN_REVIEW pending owner acceptance. No dependencies added. Current Session date boundaries remain unconfigured and disclosed.
+
+
+## REPORTS-LEGEND-COLORS-20261019
+
+Owner requests individual dot-matching pale backgrounds for donut legend rows and pale maroon header icon background with maroon icon. Reused existing segment hex palette with8-percent background/20-percent border alpha across categories; updated only right chart header icon colors. Data, sizes and chart behavior preserved. IN_REVIEW pending owner visual acceptance. PASS targeted Reports ESLint and git diff --check; build/tests/browser NOT_RUN for color-only change.
+
+
+## REPORTS-TREND-SUMMARY-20261019
+
+Owner requests reference-style summary items on the left chart in every Reports tab and asks why Week/Month/Year show one dot. Added3 real filtered-ledger summary items per tab with softly tinted circle icons: fees recovery/total/balance; students total/active/provisional; admissions total/approved/pending; batches weighted fill rate/saved capacity/remaining seats; faculty distinct instructors/weekly hours/assignments; finance inflow/outflow/net; demos total/converted/awaiting; assets records/book value/maintenance. Unknown ratio denominator shows Not available; no invented targets. Summaries are explicitly labeled ledger snapshots; custom chart dates apply only above. Single calendar-period data now renders actual total as a bar with an explanation; multiple periods retain area chart. No fabricated timestamps/history, right-card or ledger/export changes. Updated ambiguous table-header test to use semantic columnheader query after summary introduced same label. PASS31 tests, touched-file lint0/0, production build (existing chunk warning), git diff --check; isolated Edge32 tab/viewport fits and3 summary items per tab at320/390/1366/1440; all grouping controls produce single-period bars with QA receipt, custom range/tooltip/right donut/export/refresh/print checks. Screenshots/evidence: artifacts/reports-trend-summary-20261019. QA browser context isolated; owner data unchanged. Full suite/physical devices NOT_RUN. IN_REVIEW pending owner visual acceptance; no commit/push.
+
+
+## FEES-KPI-FOOTERS-20261019
+
+Owner requests screenshot-style bottom details on Fees tab top cards with correct live flow. Added recovery percentage/progress bar relative to actual issued fees and Monday-to-date collected amount; distinct unpaid-student and unpaid-challan counts; current Overdue status student/challan counts and View All action that clears search/resets pagination/selects existing Overdue filter; today verified receipt count. Main totals and footers share one branch-scoped helper. Today receipt amount/count use Asia/Karachi boundaries. Existing all-time Total Collected label and current overdue status rules retained (no invented YTD/15-day threshold, quota target, weekly growth claim, SMS automation or cohort average). Existing create/payment/refresh flow recalculates cards from saved overview. PASS8 helper/financial-service tests, touched-file ESLint0/0, production build (existing chunk warning), git diff --check, isolated Edge actual20-percent recovery, receipt count, two-student overdue View All/table flow and1440/1366/390/320 card-fit checks. Screenshot evidence: artifacts/fees-kpi-footers-20261019. Test records only in disposable browser context; owner data untouched. Full suite/physical devices NOT_RUN. IN_REVIEW pending owner acceptance; no commit/push.
+
+
+## REPORTS-LEFT-COMPACT-20261019
+
+Owner clarifies Reports left chart card: reduce height and anchor summary at the very bottom. Converted only trend card to flex-column, summary margin-top:auto, plot210->160px, reduced outer padding/header/footer gaps and summary padding/icons. Existing right donut and data logic unchanged. PASS3 focused component tests, targeted lint0/0, git diff --check; isolated Edge32 tab/viewport fit/control/export/right-card checks, plus explicit1440/390 footer geometry:13px bottom inset and160px plot. Screenshots: artifacts/reports-left-compact-20261019. Build/full suite NOT_RUN for spacing-only change. IN_REVIEW pending owner visual acceptance; no owner data changes/commit/push.
+
+
+## REPORTS-TREND-TEXT-REMOVE-20261019
+
+Owner requests removing the left-chart dates/grouping/timezone/event-count footer and single-period explanatory paragraph. Removed those display blocks and unused windowLabel prop/call site. Updated existing component assertions to reflect owner-requested text removal; preserved real bar/area data, controls, tooltip, summary and session warning. PASS3 component tests, touched-file lint and git diff --check. Build/browser NOT_RUN for text-only removal. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-CHART-HEIGHT-TUNE-20261019
+
+Owner requests slightly shorter left Reports card with taller internal chart. Plot160->180px; reduced outer vertical padding, header/metric/footer gaps, summary padding and header icon size to offset chart growth and compact total height. Bottom summary remains anchored. Right card/data unchanged. PASS targeted ESLint, git diff --check, isolated Edge1440/390 geometry checks: plot180px, footer9px bottom inset, card365.5px desktop/518.5px mobile. Screenshots under artifacts/reports-left-compact-20261019. Build/runtime suite NOT_RUN for spacing-only change. IN_REVIEW pending visual acceptance; no owner-data changes or commit/push.
+
+
+## REPORTS-LEFT-HEIGHT-20261019
+
+Owner requests another slight left-card height reduction. Reduced vertical card padding8->4px per side and metric/plot/footer gaps4->2px; chart remains180px, bottom summary alignment retained. No right-card/data changes. PASS targeted lint and git diff --check; build/tests/browser NOT_RUN for spacing-only adjustment. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-LEFT-COMPACT-TUNE-20261019
+
+Owner requests further compact height with adjusted content. Combined chart total label/value into a wrapping baseline row; tightened header typography and custom-date top gap. Plot remains180px and summary stays bottom-aligned. PASS targeted lint, git diff --check and isolated Edge1440/390 checks: card324.5/477.5px, footer5px inset, plot180px. No data/right-card changes. Build/tests NOT_RUN for presentation-only adjustment. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-INNER-CHART-HEIGHT-20261019
+
+Owner explicitly requires unchanged left-card height with taller actual graph. Kept180px chart container and all surrounding layout unchanged; reduced graph top margin8->2px and X-axis reserved height30->18px, tick margin10->3px/font10->9px. Actual drawing area142->160px (+18px) without resizing card. PASS targeted lint, git diff --check and isolated Edge before/after at1440/390: card remains324.5/477.5px, footer inset5px; drawing area142->160px on both. Evidence: artifacts/reports-inner-chart-height-20261019. Data, controls/right card unchanged. Build/tests NOT_RUN for axis-spacing-only change. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-SUMMARY-BG-20261019
+
+Owner requests nicer backgrounds on left-chart summary cards. Added pale maroon/emerald/amber fills and matching borders by summary position across Reports tabs. Existing icon colors, dimensions, chart height and data preserved. PASS targeted lint and git diff --check; tests/build/browser NOT_RUN for color-only change. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-PLOT-EXPAND-20261019
+
+Owner requests taller chart without taller card. Reflowed bottom summary label/value into compact single rows with full-text titles and preserved tinted backgrounds, reduced summary padding/icons. Redistributed recovered space to plot: desktop180->196px, mobile180->228px. PASS isolated Edge before/after: outer card unchanged324.5px desktop/477.5px mobile; drawing area160->176px desktop/160->208px mobile; bottom summary5px inset preserved. PASS3 component tests, targeted lint and git diff --check. No data/right-card changes. Build/full suite NOT_RUN for scoped layout change. IN_REVIEW pending visual acceptance. Evidence: artifacts/reports-inner-chart-height-20261019/expand-check.cjs.
+
+
+## BRANCH-KPI-STYLE-20261019
+
+Owner requests slightly taller Branch Management summary cards and cross-tab colors. Reused shared top-kpi-card class for maroon/emerald/sky gradients, borders and hover. Added104px minimum content height with16px padding for the3 summary cards only. Existing labels/counts/icons and branch directory cards unchanged. PASS targeted lint and git diff --check; build/tests/browser NOT_RUN for presentation-only change. IN_REVIEW pending visual acceptance.
+
+
+## REPORTS-DONUT-FIT-20261019
+
+Owner requests larger donut within unchanged section height. Retained160px chart container and surrounding layout; outer radius72->78px, inner44->48px, giving156px donut diameter inside existing160px space. Data/legend/card dimensions unchanged. PASS targeted lint and git diff --check; browser/build/tests NOT_RUN for radius-only change. IN_REVIEW pending visual acceptance.
+
+
+## BRANCH-KPI-TEXT-20261019
+
+Owner requests larger text in Branches summary cards. Headings11->13px with slightly tighter tracking; values20->24px. Existing104px minimum height, backgrounds, icons and calculations preserved. PASS targeted lint and git diff --check; browser/build/tests NOT_RUN for typography-only change. IN_REVIEW pending visual acceptance.
+
+
+## BRANCH-CREATION-PAUSE-20261019
+
+CONFIRMED owner instruction: client currently agreed two branches; preserve all existing saved branches, but pause ALL new branch creation including Super Admin until owner explicitly requests re-enabling. This supersedes currently available frontend creation behavior; it does not delete extra existing branches, alter their assignments, or authorize new subscription/license infrastructure. Added centralized source-controlled branch-creation pause policy with no user-facing enable switch; Add Branch disabled even before data loads with visible explanation. Organization service rejects creation after authorization and rejects unknown IDs to prevent creation disguised as edit. Existing branch viewing/editing/lifecycle remain available under existing rules. No storage migration/reset or owner-record writes. Existing configured license count is not changed by this temporary pause.
+
+PASS10 organization service tests covering Super Admin/new creation rejection, exact stored organization and assignment preservation, existing-branch edits/lifecycle, unknown-ID bypass rejection, other-role denial and staff/settings regressions. Replaced superseded positive-creation/limit tests; existing branch fixtures now seed test storage only. PASS touched-file ESLint0/0, production build (existing chunk warning), git diff --check; disposable Edge disabled Super Admin Add Branch, direct service denial, preservation of3 QA branches and existing edit enabled. Evidence: artifacts/branch-creation-pause-20261019. Full suite NOT_RUN. This is frontend/mock-service enforcement; production backend enforcement remains a later authorized task. IN_REVIEW pending owner acceptance; no commit/push.
+
+
+## BRANCH-EDIT-DELETE-20261019
+
+Owner-authorized scope: edit existing branch details (including core display details); confirmed deletion only for empty inactive branches after confirmation. Acceptance evidence: persisted edits preserve IDs and records; unique name/code validation; active branch/canonical current branch deletion denied; all14 operational collections and all enabled/disabled staff assignments checked; deleted branches remain gone after reload; organization-write failure restores database bytes. Creation pause remains enforced. PASS80 relevant tests, lint/build/browser. IN_REVIEW.
+
+
+## BRANCH-STATUS-NAME-20261019
+
+Authorized: remove core branch toggle disablement; provide actual activate/deactivate persistence, actionable failures and name-only edit. Existing Add Branch pause and empty-inactive deletion rule remain. Evidence: core toggles both directions/reload, saved name override survives status changes, other metadata cannot change through name edit, current branch/unfinished operations remain protected, busy state and branch-context refresh. PASS53 tests, lint/build/browser. IN_REVIEW.
+
+
+## BRANCH-DELETE-ADMIN-EXCEPTION-20261019
+
+Authorized exception: Super Admin-only assignments no longer block empty inactive branch deletion. Mixed Super Admin plus staff roles, disabled staff assignments and all14 linked-record collections remain blockers. Confirmation, inactive/current-branch protections, Add Branch pause and name-only editing preserved. Tests/browser verify access cleanup without account deletion or other-branch access changes. PASS55 tests, lint/build. IN_REVIEW.
+
+
+## BRANCH-PLACEHOLDER-TEXT-20261019
+
+Owner asks meaning/removal of pictured DEMO code and Demo campus location. Removed generic/missing placeholders from branch card display; real saved codes/locations remain. Missing location also omits its map icon/separator. No persisted branch fields or workflows changed. PASS targeted lint and git diff --check; build/tests/browser NOT_RUN for display-text-only change. IN_REVIEW pending visual acceptance.
+
+
+## BRANCH-DELETE-BLOCKER-DETAILS-20261019
+
+Owner reports generic linked-record error and asks why deletion is blocked. Deletion check now reports exact nonzero counts for every linked collection (courses, fields, subjects, batches, students, admissions, enrollments, scheduled classes, fee challans, payments, expenses, demo inquiries, assets, faculty assignments). No deletion policy/data mutations changed. Actual owner branch records were not accessed; exact cause will display on retry. PASS20 organization tests, targeted lint and git diff --check; build/browser NOT_RUN for error-message-only change. IN_REVIEW.
+
+
+## BRANCH-CARD-CLEANUP-20261019
+
+Authorized branch card cleanup: no eye/View action, distinct stable soft gradients and no retained d backup data. Dedicated purge folder removed and5 historical recovery snapshots selectively cleaned. PASS targeted lint, production build (existing chunk warning), git diff --check, no target ID in local recovery JSON/JSONL/BAK files, isolated Edge distinct gradients/no View action, name-only edit/status persistence and continued creation pause/mobile form fit. IN_REVIEW.
+
+
+## REMOVE-WORKSPACE-FLOW-20261019
+
+Owner explicitly authorizes removing the obsolete Workspace screen and all shipped source references. Root always redirects to login, including with a restored demo session. Successful login opens Dashboard directly for one branch or after branch selection. Removed WorkspacePage and route; obsolete URL now uses existing Not Found handling. Renamed shared shell CSS/theme tokens to app-* and baseline permission to dashboard.view with unchanged assigned-role/branch checks. Preserved historical records and unrelated in-progress changes. Branch-switch keyboard focus survives Dashboard shell remounts. IN_REVIEW pending owner acceptance.
+
+Verification addendum:87 focused tests pass across final per-file runs; lint/build/browser/diff pass. Full suite initially479/495, with10 permission-test rename failures corrected and6 broader stale UI expectation failures remaining; full suite not rerun. See PROGRESS REMOVE-WORKSPACE-FLOW-20261019.
+
+
+## BRANCH-SUMMARY-BG-20261019
+
+Owner requests improved background for branch courses/batches/students count strip. Replaced translucent white fill/border with subtle6% maroon fill and10% maroon border; existing dimensions, card colors and behavior preserved. Changed BranchesPage.jsx only. PASS targeted ESLint and production build (existing chunk-size warning). Unit/browser tests NOT_RUN for styling-only change. IN_REVIEW pending visual acceptance; no commit/push.
+
+
+## BRANCH-CARD-SIZE-20261019
+
+Owner authorizes taller branch cards and larger text. BranchesPage branch cards now have190px minimum content height (200px at sm+),20px padding,18px branch title and14px metadata/count strip with12px status badge. Count strip aligns at bottom; header/counts wrap on narrow screens. Existing gradient/maroon strip and all actions/data unchanged. PASS targeted ESLint, production build (existing chunk warning), existing isolated browser desktop/mobile route and login checks. Unit tests NOT_RUN for styling-only change. IN_REVIEW pending visual acceptance. No commit/push.
+
+
+## FRONTEND-PERF-20261019 (continued 2026-10-20)
+
+IN_REVIEW. Owner attachment explicitly authorizes scoped frontend performance work directly on dev, preserving all existing uncommitted changes. No backend, dependencies, persistent schema changes, data migration, UI redesign, commit or push. Lightweight inspection found eager page imports, repeated normalization/validation/JSON work and repeated per-challan payment scans; no artificial loading delay was found. Real Web Locks, permission rechecks, loading/error states and branch scope remounts remain.
+
+Implemented lazy protected page boundaries, cached module promises and authorized sidebar hover/focus preloading. Added a bounded detached normalized database snapshot keyed by current raw database and organization values, storage identity and existing read-mode flags. Writes invalidate it; every read still checks actual storage, including external changes. Added detached organization parse snapshot with raw comparison and write invalidation. No cached permission grant or financial result bypass. Reports verified payments now use one memoized challan index, preserving status/order/formula semantics. Faculty UI regression test awaits loaded roster data instead of only its pre-data heading.
+
+Changed application/test files: src/routes/{AppRouter.jsx,ProtectedRoute.jsx,routeModules.js}; src/components/Layout/Sidebar.jsx; src/mock/{mockDatabase.js,mockOrganization.js,storagePerformance.test.js}; src/pages/Reports/ReportsPage.jsx; src/pages/FacultyClasses/FacultyClasses.test.jsx. All other existing edits retained.
+
+PASS targeted ESLint, production build (one final production build executed), git diff --check. Entry JS chunk322.93KB (gzip102.17KB), formerly2846.16KB (gzip1131.26KB); remaining exportHelpers1171.90KB chunk still warns. This is entry chunk size, not total app transfer or a claimed89% latency improvement.
+
+Full Vitest executed ONCE:493/500 pass,7 fail. Six pre-existing mismatched expectations remain (AdminOperations branch-create and removed Branch Comparison, plus four Student Profile heading expectations; also present before this task). The seventh was a faculty test reading roster before loading completed; changed to await the actual student. Focused follow-up9/9 pass including all4 faculty screen tests and5 cache contract tests. All other full-suite tests pass, including auth, finance/payments, admission/enrollment, faculty service, dashboard daily classes, reports/filter/chart and export tests. No second full suite run. Earlier test-only cache guard test was corrected to use authorized academic adapter rather than the generic collection primitive; canonical guard then passes.
+
+PASS isolated Edge155.0.4283.62 four-role allowed-module and restricted-route QA, all8 report tabs and all5 grouping modes, custom start/end dates, actual CSV/PDF downloads, mobile390px no document overflow, mobile drawer navigation and branch edit dialog; no browser page errors. Owner's browser/storage never touched. Existing disabled/denied navigation entries are preserved; e.g. Teacher fees/finance direct routes deny access.
+
+Performance evidence/methodology and limitations are in artifacts/frontend-perf-20261019/REPORT.md and JSON. Results are mixed: do not claim universal navigation/modal/refresh speedup or under100ms compliance. Synthetic throttling/large production datasets and exhaustive manual role workflow acceptance NOT_RUN. Owner acceptance remains required; no production security claim.
+
+Final evidence: artifacts/frontend-perf-20261019/REPORT.md. Paired end-to-end warm median158->164ms (no gain), Reports tabs203.5->192ms, search94->81ms, branch482->450ms, modal151->285ms, refresh984->1183ms; mixed outcomes explicitly disclosed. Controlled100-read adapter check34.1->22.2ms. No universal speed/under100ms claim. Ticket remains IN_REVIEW.
+
+
+## TAB-LOADING-FIX-20261020
+
+ACTIVE / IN_REVIEW pending final verification and owner browser acceptance. Owner attachment explicitly authorizes fixing repeated loading/flicker and all seven previously reported test failures directly on dev. No new branch/worktree, dependency, backend, schema change, redesign, commit or push. Existing Reports charts and all unrelated working changes preserved.
+
+Reproduced in isolated Edge155: page remounts reset loaded data to null/empty/loading and re-enter async Web Lock/service reads. Visible sources: SuperAdminDashboard Loading dashboard; AdmissionsPage Loading admissions plus NewAdmissionForm Loading academic configuration; FacultyClassesPage State Loading Faculty & Classes; CoursesBatchesPage microtask setData(null); FeesPage Loading fee records. Students/Finance/Demos/Assets had the same null-state pattern. Providers remain above routes and do not remount on ordinary navigation. Lazy fallback reused SessionStatus auth-restoration text even for genuine module loading; fallback text now distinguishes uncached module loading.
+
+Implemented bounded24-entry detached presentation snapshots in services/localPageResources.js, populated only by successfully loaded page data. Initialization checks canonical raw database, organization, session and current Karachi/UTC dates. Any change discards all snapshots; older in-flight reads cannot repopulate a changed version. Existing services/locks/auth checks still revalidate on every mount; no async loader is hidden when data is actually unavailable. Raw snapshot input is never written by this helper. Logout explicitly clears retained page data; test teardown clears transient snapshots for isolation. Only data is reused: filters, dialogs, pagination and unsaved forms retain their existing reset behavior. Genuine initial/cache-miss/dirty-scope/error/loading states remain. Admission form reference data uses the same guard. Snapshot restore resets transient request/scope markers to the current mount, preventing cached requests from looking perpetually pending.
+
+Edge frame sampling: two warm rounds through Dashboard/Admissions/Students/Faculty/Courses/Reports/Fees rendered14/14 transitions without a loading frame or blank frame. First uncached visits retain genuine loading. Broader acceptance includes13 modules, mobile drawer routes, refresh, branch switching, logout/login and actual disposable enrollment, verified payment and faculty assignment writes. No owner browser profile or saved owner data touched. Initial document bootstrap/refresh may still contain empty pre-React frames; no blanket no-blank claim for cold loads.
+
+Previous failing tests investigated: branch creation intentionally paused (test now verifies disabled creation plus real name-only edit/persistence); removed Branch Comparison replaced by current Reports tabs/columns; Student Profile generic heading replaced by the actual loaded Student details label (CardTitle is a div, not heading); faculty test already waits for loaded roster. No tests removed/skipped, no production feature removed to pass tests. Focused final33/33 PASS. New page-resource tests cover raw DB/org/session changes, out-of-band writes, stale in-flight generations, detached data, bounded retention, logout and unavailable storage. Warm component test checks valid local data stays visible during service revalidation and genuine error still renders.
+
+Full Vitest running ONCE after fixes, using one worker to avoid measured jsdom/transform contention; final result to be appended. Full ESLint0 errors/warnings PASS; production build PASS with existing large export chunk warning. Final before/after timing report will distinguish sampled warm transitions from cold, refreshed or invalidated scopes. Ticket remains IN_REVIEW until owner acceptance.
+
+
+### TAB-LOADING-FIX-20261020 final verification
+
+IN_REVIEW. Final focused33/33 PASS; full Vitest executed ONCE after fixes:508/508 PASS,0 failed, all previous seven failing cases included. Full ESLint0 errors/warnings PASS; final production build PASS (existing1171.90KB export chunk warning) and git diff --check PASS. Text-only genuine-loading label correction included in final build. Paired Edge core sequence warm median217.5->197.5ms; first-visit round median298->252ms. Final before warm loaders11/14 versus after0/14; after blank frames0/14. Broader13-module warm round also0 loaders/blank; real enrollment/payment/faculty-assignment propagation, mutation invalidation, branch frame isolation and logout clearing PASS. Refresh785->856ms shows no confirmed paired improvement; modal170->169ms essentially unchanged. Cold bootstrap/refresh empty pre-React frames and genuine initial/dirty-scope loaders are explicitly recorded, not hidden or counted as warm PASS. Detailed per-case A-G flags/timings, file list and evidence in artifacts/tab-loading-fix-20261020/REPORT.md. Eighteen source/six test files plus docs touched in this scope; existing unrelated changes preserved. No commit/push; owner browser acceptance is next approval.
+
+
+## SETTINGS-BRANDING-ONLY-20261020
+
+Owner explicitly requests removing Settings section tabs and their corresponding panels, retaining only Branding & Visual Identity in the existing design. Removed six section selectors/profile/academic/fee/roles/branch/alerts panels, obsolete state/imports and unnecessary academic read. Branding/name/logo/sidebar preview, Save/Cancel/default reset remain. Existing hidden profile metadata is loaded and preserved on saves; save/reset disabled until saved settings are available. SettingsPage.jsx only application file changed. PASS targeted ESLint, production build (existing export chunk warning), AdminOperations integration4/4 and isolated Edge only-branding/save/hidden-metadata preservation/desktop1440 and mobile390 fit checks. Full suite NOT_RUN for scoped UI removal. Existing uncommitted work retained; no commit/push. IN_REVIEW pending owner visual acceptance.
+
+
+## USERS-POLICY-PANEL-REMOVE-20261020
+
+Owner requests removing Users Role Access Policy Grants display section. Removed only that card and its unused KeyRound/canAccess/PERMISSIONS imports from UsersPage.jsx. Kept role filters, assignment inputs, actual authorization policy, staff actions and KPI cards. PASS targeted ESLint, production build (existing export chunk warning), git diff --check and isolated Edge panel absence/users table/Add Staff role choices. Unit/full suite NOT_RUN for display-only removal. Documentation updated; IN_REVIEW for visual acceptance; no commit/push.
+
+
+## RECENT-ENROLLMENTS-TODAY-20261020
+
+Owner-authorized scope: Dashboard Recent Student Enrollments card shows only the current Asia/Karachi calendar day's saved enrollments. Existing active branch, period/search filters, latest-five limit, student links, fee calculations and View all admissions navigation remain. Desktop/mobile share the filtered list. Enrollment display dates use the same academy timezone; existing minute clock updates the day after midnight. Subtitle/empty state explain today's scope. Added reusable isOnAcademyDay predicate without changing existing local date-input formatting.
+
+Status: IN_REVIEW pending owner acceptance. Changed application files: Client/src/components/Dashboard/SuperAdminDashboard.jsx, Client/src/utils/formatDate.js, Client/src/utils/formatDate.test.js. PASS: targeted Vitest22/22 (date boundaries/invalid dates/day rollover plus existing dashboard regressions), touched-file ESLint, production build. Existing large export chunk warning remains. Browser/manual workflow and full suite NOT_RUN for this scope. No backend, saved owner records, permissions or layout changes; no commit/push. Existing unrelated working-tree edits preserved.
+
+
+## RECENT-ENROLLMENTS-PAGINATION-20261020
+
+Owner-authorized change: Dashboard Recent Student Enrollments now reuses Shared/Pagination.jsx below desktop/mobile rows, including empty state. Default10 with existing10/15/25/50 choices, matching record range, page numbers and previous/next controls. Replaced latest-five truncation with pagination over all matching today's active-branch enrollments. Existing newest-first order, period/search filters, dues and navigation preserved. Page resets on filter/search/branch/academy-day/row-size changes and clamps on data shrink. This supersedes the prior latest-five limit only.
+
+Status IN_REVIEW pending owner visual acceptance. Application changes: Client/src/components/Dashboard/SuperAdminDashboard.jsx and Client/src/pages/Dashboard/DashboardPage.test.jsx. PASS final Dashboard14/14 including12-record pagination fixture, prior-day exclusion, next page, row-size reset and search reset. Initial test assertion had a shell-encoding character issue and lazy-load wait; corrected test passes. PASS touched ESLint, production build (existing large export chunk warning), diff whitespace check. Browser/manual and full suite NOT_RUN. Updated TASKS/FEATURE_TICKETS/PROGRESS/MEMORY. Existing unrelated edits preserved; no commit/push, dependencies or data mutation.
+
+
+## ADMISSIONS-FILTERS-PAGINATION-20261020
+
+CONFIRMED owner change: Admissions application table gains shared pagination (default10;10/15/25/50), record range and page controls, plus All/Daily/Weekly/Monthly/Yearly/Custom segmented period controls above the table. Saved application createdAt drives the date filter in Asia/Karachi. Weekly means current Monday-Sunday; monthly/yearly current calendar month/year. Custom dates include both boundaries, require both dates and reject reversed ranges. Search/status/date filters intersect with active branch. Page resets on filter/row-size changes and clamps after data shrink; selection header toggles current page, Select all matching and exports cover all matching records. Clear filters resets date/search/status. No changed admission actions, form design or permission policy.
+
+Supporting fix found by isolated browser: ordinary new admission createdAt previously used UTC date-only, excluding a newly saved application from Daily between Karachi midnight and05:00. New ordinary/instant admissions save academy calendar date through getAcademyDateOnly; historical saved records and financial issue/due dates remain untouched. No Server changes, migrations, dependencies or owner data mutations. Scope files: AdmissionsPage.jsx/test, utils/admissionPeriod.js/test, utils/formatDate.js, mock/mockDatabase.js (two admission creation timestamps and import only), mock/admissionTransaction.test.js.
+
+Verification: touched ESLint PASS, production build PASS (existing large export chunk warning), whitespace check PASS. Isolated Edge PASS six periods, custom endpoints, next page, reset, CSV all12 matches despite two pages,1440desktop/390mobile without page overflow and no JS errors. Browser fixture records existed only in disposable browser storage. Initial33 focused tests PASS; expanded final test results recorded below. Earlier interim expanded run48/50 included old-page-return regression (fixed and retested) and a cold-load CRUD timing failure. IN_REVIEW pending owner acceptance; no commit/push; unrelated working-tree edits preserved.
+
+Final verification: PASS 96/96 tests across all nine Admissions page suites, admission calendar/date helper suites and mock admission transactions. Zero final failures. Full repository suite NOT_RUN for this scoped task. IN_REVIEW for owner visual acceptance.
+
+
+## FACULTY-OVERFLOW-20261020
+
+Owner-authorized fix: Faculty & Classes page-wide horizontal scrolling at laptop widths. Browser reproduced instructor profile action header extending document to1287px at1280viewport and1034px at1024viewport. Localized FacultyClassesPage.jsx classes allow profile header/actions and roster toolbar to wrap; set min-width0 on page/grid columns and profile identity, allow long identity text to wrap. All actions/data/permissions preserved; no global overflow hiding or unrelated module redesign.
+
+IN_REVIEW pending owner visual acceptance. PASS isolated Edge checks for directory/subject assignments/batch assignments/class schedule at1440,1280,1024,768,390px (20 combinations): document scrollWidth matches viewport after fix. Existing mobile module nav retains its own contained scrolling. PASS FacultyClasses4/4 tests, touched ESLint, production build with existing large export chunk warning, diff whitespace check. Full suite NOT_RUN for scoped layout correction. Files: FacultyClassesPage.jsx plus task/progress/ticket records and browser check artifact. Existing unrelated changes preserved; no commit/push. No further implementation authorization needed; next approval is owner visual acceptance.
+
+
+## ADMISSIONS-COMPACT-TOOLBAR-20261020
+
+Owner requests moving Admissions period controls to the right of search on the same row with smaller text. AdmissionsPage.jsx only application change: compact period buttons (10/11px text, reduced padding), search/period/status/export in one wrapping toolbar; custom dates remain below. Application-date/timezone explanation retained accessibly. No filtering/paging/export logic changed. PASS AdmissionsPage5/5, touched ESLint, production build (existing chunk warning), whitespace check. Isolated Edge PASS search/period same-row positioning at1600/1440/1280/1024, no page overflow at those widths or390mobile, mobile custom inputs visible and fit. Full suite NOT_RUN. IN_REVIEW pending owner visual acceptance. Docs TASKS/FEATURE_TICKETS/PROGRESS updated; artifacts/admissions-compact-toolbar-20261020 contains checks/screenshots. Existing unrelated edits preserved, no commit/push. Next approval: visual acceptance.
+
+
+## FEES-PERIOD-TOOLBAR-20261020
+
+CONFIRMED owner request: Fees ledger gains compact All/Daily/Weekly/Monthly/Yearly/Custom controls to the LEFT of a narrower search on the same desktop toolbar; mobile wraps. Filters use saved challan issueDate in Asia/Karachi, current Monday-Sunday week/month/year and inclusive custom endpoints. Incomplete/reversed custom ranges show no matches with guidance. Date/search/status filters intersect in active branch; chip counts match date scope; pagination and selection reset on filter changes. Shared selection receives current page rows. CSV/PDF use existing matching/selected scope; KPI calculations remain unchanged. Reset clears dates/search/status. Overdue View All and dashboard receipt navigation restore All dates to preserve their intended destination.
+
+Extracted existing Admissions calendar logic unchanged into utils/reportingPeriod.js; admissionPeriod.js retains compatibility aliases. No financial formulas, payment authorization, persistence, Server or dependencies changed. Source files: FeesPage.jsx, utils/reportingPeriod.js, utils/admissionPeriod.js. Tests: new FeesPage.test.jsx plus financialService.test.js preload of Dashboard/Fees modules before receipt navigation assertions to exclude lazy module transformation timing; all original assertions preserved.
+
+PASS31/31 final tests:26 across Fees page, Admissions page, calendar boundaries and KPI metrics; financial service5/5 including saved verified receipts/branch isolation/dashboard selected-payment navigation. Initial new-test selector mismatches corrected; initial service navigation timed out on Loading module, corrected harness preloads routes. PASS touched ESLint, production build (existing1171.90KB export chunk warning), whitespace check. Isolated Edge PASS period controls left of search/same row at1600/1440/1280/1024 and390mobile/custom no overflow; real service-created disposable demo challans verify all six periods, search, custom inclusive range, CSV date scope, Reset and zero JS errors. Owner browser data untouched. Artifacts: artifacts/fees-period-toolbar-20261020. Full repository suite NOT_RUN. IN_REVIEW pending visual acceptance; no commit/push; unrelated edits preserved. Updated TASKS/FEATURE_TICKETS/PROGRESS/MEMORY; next approval owner visual acceptance.
+
+
+## SETTINGS-BRANDING-DESIGN-20261020
+
+Owner authorizes visual polish of Branding & Visual Identity only. SettingsPage.jsx now uses a soft theme-tinted maroon/white gradient, icon-led header, three white identity/color/logo field cards, bordered color-swatch tiles and framed sidebar preview. Small sky/slate tint balances the sidebar section; primary accents still follow configured theme tokens. Responsive grids/wrapping preserve desktop/mobile fit. Added explicit input labels and semantic sidebar section. Original upload validation/file reader, save/cancel/reset handlers and hidden settings persistence are unchanged. No extra sections, packages or workflows introduced.
+
+PASS12/12 AdminOperations/branding-context regression tests, touched ESLint, production build (existing export chunk warning), whitespace check. Isolated Edge verifies1440/1024/768/390 widths without page overflow, live color preview, Cancel, Save/reload, Reset and no JS errors; visually reviewed desktop screenshot. All browser changes used disposable demo storage, no owner records changed. Upload handler unchanged; additional file-upload browser regression NOT_RUN. Full repository suite NOT_RUN. IN_REVIEW pending owner visual acceptance. Application file: Client/src/pages/Settings/SettingsPage.jsx; task/progress/ticket/design records updated. Screenshots/check: artifacts/settings-branding-design-20261020. No commit/push; unrelated edits retained. Next approval: owner visual review.
+
+
+## ADMISSIONS-DEFAULT-SUBJECTS-20261020
+
+CONFIRMED owner change: selecting a course in the Admissions form selects all its currently available active subjects by default. Manual subject deselection/reselection remains available. Selecting an additional course adds only that course's active subjects, preserving manual exclusions in already selected courses. Removing a course removes its subjects; selecting it again defaults all its active subjects again. Legacy course-dropdown selection also defaults subjects. Opening an existing saved admission preserves its recorded subject subset, and unrelated field edits never reselect excluded subjects. Subject buttons now expose aria-pressed. No blanket effect, persistence change or new subject/fee records.
+
+Application file: Client/src/components/Admissions/NewAdmissionForm.jsx. New focused tests: NewAdmissionForm.subjects.test.jsx. PASS53/53 across all nine Admissions page suites plus three subject-selection tests. Additional fee-total assertions PASS focused3/3: all active subjects default, inactive excluded, manual exclusions retained across multi-course changes, removed/reselected course behavior, dropdown, submitted selected IDs, saved subset preservation and total3,000->2,000 after manual unselect. PASS touched ESLint, production build (existing large export chunk warning), whitespace check. Isolated Edge using real service-created disposable demo subjects PASS default selection, manual unselect, unrelated edits, course removal/reselection. Initial browser locator ambiguity with batch label corrected; no application defect. Full repository suite NOT_RUN. Existing owner data and unrelated edits preserved. No commit/push. IN_REVIEW pending owner visual acceptance; next approval owner review. Artifacts: artifacts/admissions-default-subjects-20261020.
+
+
+## SETTINGS-LOGO-COMPACT-20261020
+
+Owner requests removing Settings Cancel and keeping the Academy logo card height stable when a logo is supplied. Removed Cancel button/unused cancel handler only. Logo format/size help, compact32px thumbnail and Remove share a reserved40px footer row; no conditional block extends the field card. Upload validation, Save, Remove, Reset and preview remain. Application file: Client/src/pages/Settings/SettingsPage.jsx. Existing unrelated changes preserved; no commit/push.
+
+PASS touched ESLint, production build (existing export chunk warning), whitespace check. Isolated Edge PASS Cancel absent, PNG upload/preview/Remove, persisted logo restored after Save/reload, no page overflow and equal card heights before/after upload/remove at1440/1024 (150px) and768/390 (154px). Browser used disposable demo storage. Initial AdminOperations3/4 PASS; unrelated Assets creation test hit existing10000ms timeout during concurrent browser verification; sequential rerun result below. Full repository suite NOT_RUN. IN_REVIEW pending owner visual acceptance; next approval owner review. Docs TASKS/FEATURE_TICKETS/PROGRESS updated; evidence artifacts/settings-logo-compact-20261020.
+
+Final sequential AdminOperations rerun: PASS4/4, zero failures; no test or application changes needed for interim timing failure.
+
+
+## SETTINGS-BACKGROUND-20261020
+
+Owner requests slightly more distinct light background so branding content stands out. SettingsPage.jsx only application change: soft rose/lavender/sky outer gradient, rose header and lavender/slate/sky sidebar-section background; existing white inner field cards and configured live sidebar preview colors retained. Dark-mode variants included. No layout/data/handler changes. PASS touched ESLint, production build (existing export chunk warning),1440desktop/390mobile browser fit and desktop screenshot visual review, whitespace check. Tests/full suite NOT_RUN for background-only edit. IN_REVIEW pending visual acceptance. TASKS/FEATURE_TICKETS/PROGRESS updated; screenshots in artifacts/settings-background-20261020. Existing edits preserved; no commit/push. Next approval: owner visual review.
+
+
+## GLOBAL-TIME-12H-20261020
+
+CONFIRMED owner-authorized global presentation change; IN_REVIEW pending owner acceptance. Central utils/timeFormat.js formats strict saved HH:mm/already12h clock values, whole known schedule ranges and user-facing timestamps with explicit Asia/Karachi timezone. Existing formatClassTime compatibility delegates to central formatter; class shift/period functions unchanged. Midnight/noon display12:00 AM/PM, afternoon/night numeric hour without leading zero. Invalid/missing values return explicit fallback; relative text stays unchanged. Timestamp offsets are respected; offset-free local ISO presentation is interpreted as Karachi; date-only fields never gain clock or shift day.
+
+Shared Input delegates type=time to TimeInput: h:mm field plus AM/PM selector, returning canonical HH:mm to existing handlers. Partial/invalid input emits empty canonical value rather than retaining a stale valid time; disabled/required/read-only and existing labels remain. No persistence migration, schema/API representation, auth/branch policy, calculation, overlap, duration, date-filter, sorting, attendance/payment or countdown changes. Existing overnight validation remains unchanged (current create flows reject end<=start); formatting23:00->01:00 preserves endpoints without inventing a duration/date.
+
+Presentation consumers updated: Dashboard class slots/enrollment timestamps/daily chart labels and role schedule labels; Faculty roster/timetable/saved assignment labels and room-conflict message; Courses/Batches tables/modals/CSV/PDF; Admissions subject/batch/clash timings and status history timestamps; Student profile subjects; Demo requested/scheduled/history timings and labels; Reports table time projections, human-readable enrollment CSV timestamps; PDF generated-at timestamp. Existing Faculty/profile/shift/demo export callers already using formatClassTime receive centralized output. Fees/Finance, Assets, Users and Settings audited: date-only fields remain date-only where no time was displayed. Raw API batchTiming and ISO dateTime attributes remain machine-compatible. No new dependencies, worktree/branch, Server changes or owner-data mutation. Existing performance/cache and unrelated edits preserved.
+
+PASS focused tests 144/144: core35 (midnight/noon13:00/23:59, invalid/offset/date boundaries, input roundtrip, existing conflict/countdown/shift), modules92 (Faculty, Dashboard, Admissions, Reports, Students, Demos, daily classes and Word), export/form17 (Courses, PDF templates, default subject flow). Updated only two existing display assertions for new AM/PM labels/input8:00; storage assertions still expect08:00. PASS targeted ESLint on all24 scoped source/test files. ONE production build executed, PASS with existing1171.88KB export chunk warning. PASS whitespace check. Full repository suite NOT_RUN, as focused checks requested.
+
+Isolated Edge: class assignment Create noon12:00 PM->1:30 PM saves12:00/13:30; Edit1:00 PM->2:15 PM saves13:00/14:15; Reload retains fields/PM. Actual teacher and room conflicts still reject; room error uses1:00 PM. Countdown at Karachi12:45 is Starting Soon with15 minutes. Same1:00 PM-2:15 PM displayed in Dashboard, Faculty, Admissions, Reports and batch directory. Batch CSV/PDF include AM/PM; profile print fires; enrollment CSV human timestamp12:45 PM while saved ISO remains unchanged. Mobile390 modal controls fit; desktop1440 checked. All four authorized roles and both allowed branches navigated without foreign branch data or JS errors. Browser scripts use only disposable demo storage. Initial browser harness selector/unsupported fixture-account mismatches corrected; no related application defects or workflow changes. Evidence/scripts/screenshot and complete24-file scope in artifacts/global-time-12h-20261020. No commit/push. Next approval: owner acceptance; STOP after authorized task.
+
+
+## SETTINGS-MAROON-BG-20261020
+
+Owner requests stronger light maroon Branding & Visual Identity background with white inner cards. SettingsPage.jsx presentation classes only: outer/header solid soft maroon #f3dfe4; identity fields/sidebar section/color tiles/preview frame white. Configured live sidebar preview color remains dynamic, preserving color controls. No layout or handler changes. PASS targeted ESLint, production build (existing chunk warning), whitespace check. Tests/browser NOT_RUN for color-only edit. IN_REVIEW pending visual acceptance. TASKS/FEATURE_TICKETS/PROGRESS updated; prior edits preserved; no commit/push. Next approval: owner visual review.
+
+
+## GLOBAL-TIME-PICKER-20261020
+
+CONFIRMED owner-authorized enhancement; IN_REVIEW until owner acceptance. Shared TimePicker (time-input.jsx, TimeInput compatibility alias) remains the single implementation behind every Input type=time. Supports h:mm plus AM/PM or complete typed9:07 AM, arbitrary valid minutes00-59, normalizes on blur, and emits existing canonical HH:mm to unchanged save handlers. Compact clock-triggered native select supplies96 quarter-hour suggestions across both AM/PM and fills immediately. Native popup avoids CSS/modal overflow clipping and uses OS keyboard/touch behavior; disabled/read-only/required semantics retained. Invalid13:70 emits empty canonical value and fails validity. Existing same-day/overnight/start-end scheduling policies are unchanged.
+
+Coverage: existing Faculty assignment, Batch form and Demo registration/schedule time inputs inherit picker; Admissions/Dashboard schedule editing entry points use those forms. No new time fields added to modules that only display times. Previous centralized AM/PM displays, reports/PDF/CSV, timezone and date-only behavior remain. No persistence/schema/migration, duration/overlap/countdown/financial/permissions/cache changes or dependencies.
+
+Scope6 code/test files: components/ui/input.jsx, components/ui/time-input.jsx, components/ui/time-input.test.jsx, utils/timeFormat.js, utils/timeFormat.test.js, components/CoursesBatches/AssignFacultyModal.test.jsx. PASS37/37 distinct focused tests across two reports (36 initial plus1 new ordering case; repeated tests counted once). Tests cover complete/custom-minute input,96 suggestions and immediate selection, keyboard focus, midnight/noon, invalid entry, saved custom-minute prefill, original Demo create flow and canonical save/ordering/conflict/daily-class logic. Targeted ESLint on all6 files PASS. ONE production build PASS (existing1171.88KB export chunk warning). Whitespace check PASS. Full repository suite NOT_RUN for scoped enhancement.
+
+Isolated Edge PASS manual9:07 AM creates09:07; suggested2:15 PM creates14:15; keyboard End suggestion23:45, midnight/noon options,13:70 rejection; Create-Save-Edit-Refresh preserves custom and edited times. Desktop1440/mobile390 modal fit with additional dropdown; touchscreen focus and keyboard dropdown navigation; native suggestions remain inside platform popup rather than a clipped DOM list. Existing teacher/room conflicts,15-minute Dashboard countdown, identical Faculty/Courses/Admissions/Dashboard/Reports schedules, batch PDF/CSV, enrollment timestamp CSV and print, all four roles/both authorized branches with no JS errors also PASS. Existing overnight rejection rule retained; no new policy. Browser tests used disposable demo storage. Evidence scripts/screenshot in artifacts/global-time-picker-20261020. TASKS/FEATURE_TICKETS/PROGRESS/MEMORY/FRONTEND_INTEGRATION updated. dev unchanged; no worktree/branch/commit/push/reset/stash/clean. Prior uncommitted edits preserved. No blockers; next approval owner visual acceptance; STOP.
+
+
+## BATCH-SHIFT-NAMES-20261020
+
+CONFIRMED owner-approved scope: Add/Edit Batch replaces start/end time controls with optional No shift selected/Morning/Evening select. Saved shift is null (none) or Morning/Evening, explicitly chosen rather than inferred from clock. Existing saved batch startTime/endTime are not removed or changed by editing; Faculty class time entry, schedules, AM/PM picker and duration/conflict/countdown behavior remain unchanged.
+
+Batch name uniqueness is now (branchId, courseId, trimmed case-insensitive name), not branch-wide. Different courses can both have Batch1; same course cannot duplicate it even if shift differs. Update excludes own ID but cannot move/rename onto a same-course duplicate; existing linked-record course-move protections and authorization/branch validation retained. Optional shift is validated by mock payload and saved-record boundary, carried in existing projections/storage without migrations. No Server/schema production integration, fixed demo shifts or records added.
+
+Admissions preferred batch dropdown/cards, enrollment selector and saved View details show selected shift. Batch directory and course-details batch cards show configured shift; legacy AM/PM times remain as fallback when no shift chosen. All references remain immutable batch IDs so duplicate names across courses never replace links. Scope8 source/test files: BatchForm.jsx/test, mockDatabase.js, academicModule.test.js, NewAdmissionForm.jsx, AdmissionActions.jsx, CoursesBatchesPage.jsx, CourseDetailsModal.jsx. Old uncommitted/performance changes preserved.
+
+PASS47/47 distinct focused tests (32 primary plus additional Admissions CRUD and assignment regressions, repeated BatchForm tests counted once). Covers optional Morning/Evening/none, edit-clear/roundtrip, missing legacy shift, legacy times retained, invalid shift rejection, same name across courses, same-course case/trim duplicate and edit collision, read/save guards, admission course/batch flow and existing exact schedules. PASS targeted ESLint, production build (existing export chunk warning), diff whitespace check. Full suite NOT_RUN for scoped change.
+
+Isolated Edge PASS real Add Batch form without time fields, Morning and Evening same-name batches in separate courses, same-course duplicate error, blank-shift batch creation, saved shift prefill/reload,390mobile popup fit, Admissions Morning/Evening cards and selectors, actual Submit Application and saved batch-label projection. No JS errors; records existed only in disposable browser. Initial exact-label browser selector exposed unnamed Course select; explicit aria-label added and all checks passed. Artifacts: artifacts/batch-shift-names-20261020. TASKS/FEATURE_TICKETS/PROGRESS/MEMORY/FRONTEND_INTEGRATION updated. dev unchanged, no commit/push or destructive git operations. IN_REVIEW until owner acceptance; no blockers. Next approval: owner review.
+
+
+## SETTINGS-LIGHTER-BG-20261020
+
+Owner-authorized color-only change: Branding section outer/header maroon tint lightened from #f3dfe4 to #f8edf0 in SettingsPage.jsx. Inner white cards/layout/handlers unchanged. Targeted ESLint result recorded below; build/tests/browser NOT_RUN for this color-only change. Existing edits preserved; no commit/push. IN_REVIEW pending visual acceptance.
+
+Verification: targeted ESLint PASS.
+
+
+## TIME-PICKER-DROPDOWN-POLISH-20261020
+
+Owner explicitly authorizes continuation of shared Start/End Time dropdown polish. IN_REVIEW pending owner visual acceptance. Changed components/ui/time-input.jsx and its test only, plus documentation/evidence. Replaced oversized native96-option suggestions with compact scrollable top-layer popover, selected checkmark, quarter-hour labels, viewport clamping and upward placement when needed. Keyboard arrows/Home/End/Page keys/Enter/Tab, touch selection, outside dismissal and Escape supported. Escape closes only suggestions before modal listeners. Manual arbitrary-minute input, saved-value prefill, canonical HH:mm output and existing validation/scheduling policies retained. AM/PM select gets scoped spacing/background override to prevent global select styling clipping its text. Existing Input type=time consumers inherit the change; no dependencies, data migration or business-rule changes.
+
+PASS29/29 focused tests (picker, assignment form and formatter), targeted ESLint and final production build (existing large export chunk warning). Initial runs exposed unsupported-popover test rendering and modal Escape propagation; corrected and rerun PASS. Isolated Edge1440 desktop/390 mobile verifies bounded top-layer dropdown, keyboard/touch, midnight/noon/invalid13:70, manual9:07 AM=>09:07, suggested2:15 PM=>14:15, create-save-edit-reload, existing teacher/room conflicts and15-minute countdown, Dashboard/Admissions/Faculty/Courses/Reports display, CSV/PDF/print, four roles/two authorized branches; zero page errors. Mobile screenshot visually inspected including unclipped AM/PM. Evidence artifacts/time-picker-dropdown-polish-20261020. Full suite NOT_RUN. Existing uncommitted/performance edits preserved; branch dev, no commit/push/reset/stash/clean. No blockers. Next approval: owner review.
+
+
+## ADMISSION-BATCH-SHIFT-ONLY-20261020
+
+Owner-approved minimal display change; IN_REVIEW. Removed exact clock range and clock icon from Admissions preferred batch cards in NewAdmissionForm.jsx. Existing optional Morning/Evening badge, name, days, room, seats and selection retained. No inferred shift, stored-time changes or schedule/calculation changes. Targeted ESLint PASS. Tests/build/browser NOT_RUN for removal-only presentation change. Prior uncommitted edits preserved; no commit/push. Next approval: owner visual review.
+
+
+## SETTINGS-LIGHTEST-BG-20261020
+
+Owner requests further lightening of Branding & Visual Identity section. IN_REVIEW: SettingsPage.jsx outer/header tint changed from #f8edf0 to #fcf5f7; inner white cards and all handlers/layout unchanged. Targeted ESLint PASS. Tests/build/browser NOT_RUN for color-only change. Existing edits preserved, no commit/push. Next approval: owner visual acceptance.
+
+
+## BATCH-DURATION-20261020
+
+CONFIRMED owner-authorized change; IN_REVIEW pending owner acceptance. Batch create/edit now accepts optional positive integer durationMonths (1 month,2 months,3 months,etc), blank=null and existing absent values preserved without guessed defaults or migrations. Validated at form, mock payload and stored-record boundaries. Existing branch/course name uniqueness, optional shift, immutable IDs and legacy clock metadata retained. Duration is descriptive months only; no automatic end date, fee calculation or schedule/countdown/permission changes.
+
+Shared utils/batchDuration.js formats singular/plural. Batches table schedule cell shows labeled duration (Not configured for legacy absence); directory CSV/PDF include Duration; course-details batch cards, Admissions batch dropdown/cards, enrollment dropdown and saved admission batchLabel show configured duration. Exact timing remains removed from Admissions batch cards. Source/test scope9 files: BatchForm.jsx/test, mockDatabase.js, academicModule.test.js, NewAdmissionForm.jsx, AdmissionActions.jsx, CourseDetailsModal.jsx, CoursesBatchesPage.jsx, batchDuration.js.
+
+PASS16/16 focused tests covering create/edit/clear/refresh duration, invalid zero/negative/fraction/string rejection without storage mutations, shift/uniqueness guards and Admissions subject-selection regression. Initial new service test omitted existing mandatory name/course fields; fixture corrected to existing save contract and rerun PASS. Targeted ESLint PASS; production build PASS (existing large export chunk warning). Isolated Edge desktop/mobile PASS actual3-month create/save/edit/reload, Batches table text, Admissions dropdown/card and actual submitted application's saved duration label, optional shift and duplicate-name guards; zero page errors. Browser harness modal-hidden row lookup corrected; final rerun PASS. Evidence artifacts/batch-duration-20261020. Full suite NOT_RUN; PDF/CSV duration source mapping inspected, additional export browser test NOT_RUN. All persistence remains browser-local mock. Existing uncommitted/performance edits preserved; dev unchanged; no commit/push/reset/stash/clean. Next approval owner review.
+
+
+## BATCH-FACULTY-COLUMN-20261020
+
+Owner-approved table presentation change; IN_REVIEW. CoursesBatchesPage.jsx Batches desktop table now has separate Schedule and Faculty columns; duration stays with Schedule, teacher names/empty state move to Faculty. Conditional seven-column widths total100%; Courses table retains original six columns, mobile cards and underlying services unchanged. Targeted ESLint and production build PASS (existing chunk warning). Tests/browser NOT_RUN for cell relocation. Existing edits preserved, no commit/push. Next approval owner visual review.
+
+
+## STAFF-LOGIN-BRANCH-20261020
+
+CONFIRMED owner authorizes current-branch staff creation/listing, email/password login for every role including bootstrap Super Admin, shared initial staff password, profile password change, and academy-branded responsive login. IN_REVIEW until owner acceptance. Existing browser-local mock architecture retained; no Server or real authentication deployment introduced.
+
+Implemented: Users page loads staffOverview keyed by active branch, lists only that branch's staff/assignments, automatically assigns current branch and one approved role, uses required normalized unique email and optional contact. Service rejects foreign-branch create/update/toggle/delete attempts; legacy assignments in other branches preserved on edit. Removed public UI Open Account impersonation action. Organization branch overview and branch mutations now respect actor's explicit Super Admin assignments (including inactive assigned branches for management), preventing a new branch-only admin from viewing/editing other campuses. Existing bootstrap admin's authorized branches retained. Existing cross-branch operational report scope continues unchanged.
+
+Login page replaces account selector with email/password, show/hide password, keyboard submission/error/busy states, configured academy name/logo, maroon gradient panel and responsive centered card. AuthContext accepts credential object; explicit email login clears prior session/cache first, checks enabled identity/password and active authorized branches, auto-selects sole branch, preserves existing role routing/guards. Programmatic userId login/switchAccount remain mock fixture APIs, not production security. Existing fictional staff without email use deterministic id@tsa.local aliases; existing persisted IDs/assignments/data not migrated.
+
+Profile and topbar menu offer Change Password with current/new/confirmation,10-128 characters, mismatch/current-password validation and busy/status states. Changed password stored as random-salt PBKDF2-SHA256100000-iteration digest in browser-local organization adapter. Once present, initial password is rejected; malformed saved credentials fail closed. Password/role/email editing remains separate so profile contact-email change does not silently alter login identity. Initial bootstrap email/password and shared staff password configured only in ignored Client/.env.local; .env.example lists blank public mock configuration variables, no passwords committed or recorded here. VITE config is client-visible and must never contain production credentials. Test setup generates disposable defaults when ignored config absent.
+
+Application scope: pages/UserManagement/UsersPage.jsx, pages/Auth/LoginPage.jsx, components/Auth/DemoSessionControls.jsx, services/organizationService.js, services/authService.js, contexts/AuthContext.jsx, new mock/mockCredentials.js, Client/.env.example. Tests: new services/staffLogin.test.js; organizationService/authRoutes/AdminOperations/BranchSwitcher/StudentsPage/AdmissionWorkflow/DashboardPage tests and test/setup.js adapted for email UI/strict scope while preserving business assertions. Static route imports in tests avoid cold lazy-transform timing; longer email fixture fields use change events with real submit/search assertions and browser typing coverage. Small supporting fix in SettingsPage.jsx: repaired missing closing parenthesis introduced by a concurrent settings edit; all other settings/payroll changes preserved.
+
+PASS111/111 distinct focused cases across final9-file run plus targeted reruns (duplicate reruns counted once; aggregate artifacts/staff-login-20261020/test-summary.json). Coverage all four roles, current-branch read/write restrictions including branch-only Super Admin, email normalization/uniqueness, admin/staff password login/change, bad/default-old password rejection, no plaintext changed-password storage, malformed credential failure, saved sessions, profile/branch/CRUD/admission/dashboard regressions. Initial failures: updated old-selector fixtures, rejected legacy cross-branch creation fixtures moved to explicit legacy data, invalid login correctly clearing prior session required re-login in fixture, cold import/typing timeouts; fixed and rerun. A concurrent Settings parse error was minimally fixed and Admin UI rerun PASS. Targeted ESLint PASS; final production build PASS with existing large export chunk warning. Scoped diff whitespace check PASS. Full repository suite NOT_RUN.
+
+Isolated Edge PASS desktop1440/mobile390 login/staff/password dialogs, academy branding visually inspected, bootstrap admin email login, create receptionist in current campus, no foreign campus option/foreign staff listing, assigned-role navigation, sole authorized branch locked, My Profile=>Change Password=>logout=>default rejected=>new password login=>reload. Zero page errors. No owner browser records touched; disposable contexts only. Evidence browser.cjs/login screenshots under artifacts/staff-login-20261020. Current branch dev, prior uncommitted/performance and concurrent edits preserved; no worktree/commit/push/reset/stash/clean. Known boundary: this is browser-local mock access; production server authentication/authorization, secure sessions and recovery remain separate work. No current mock-flow blocker. Next approval: owner acceptance.
+
+
+## PASSWORD-VISIBILITY-SIX-20261020
+
+Owner-approved scoped enhancement; IN_REVIEW. DemoSessionControls.jsx Change Password fields each have independent accessible Show/Hide eye buttons (type=button, pressed state, keyboard focus), retaining input value and disabling while saving. Visibility resets on opening/success. mockCredentials.js and new/confirm field validation/helper text now allow6-128 characters; current password verification and salted digest/old-password rejection unchanged. Updated staffLogin.test.js verifies five rejected, six saved and subsequently authenticated. PASS9/9 focused tests, targeted ESLint and production build (existing chunk warning). Isolated Edge PASS all3 show/hide toggles without value loss,6-character change through profile, old default rejection/new password login/reload, desktop/mobile and no page errors. Browser evidence artifacts/password-visibility-20261020. Full suite NOT_RUN. Existing edits preserved; dev, no commit/push. Next approval owner visual acceptance. This remains browser-local mock authentication.
+
+
+## USERS-ACCESS-ONLY-DELETE-20261020
+
+CONFIRMED owner changes Users Delete semantics: remove login/role access only; never delete Faculty profile, assignments, classes or linked professional/academic/financial records. IN_REVIEW. organizationService.deleteUser retains identity and metadata and marks accessRevoked=true (created user record or merged seed profile override), preserving credentials, historical branch memberships/profile overrides and all database bytes. Existing self/last-admin/current-branch/every-assigned-branch authorization guards retained. Linked-record deletion check removed from Users action because no professional record is deleted. Actual Faculty deletion workflow is unchanged.
+
+getDemoUsers remains the professional-identity source; revoked teacher profiles/IDs and links resolve as before. findDemoUser and getAuthorizedBranches deny revoked identities; email login/listLoginUsers also exclude them, so saved session reread/reload, programmatic login and email/default/changed-password login cannot restore access. staffOverview hides revoked accounts from Users. Delete confirmation/status explicitly explain access-only removal and preserved records. Historical professional roles remain for Faculty mapping while permissions deny all authorized branches. No blanket migration/restoration of previously deleted identities, no Server/production auth change.
+
+Scope6 source/test files: services/organizationService.js, mock/authFixtures.js, services/authService.js, pages/UserManagement/UsersPage.jsx, organizationService.test.js, staffLogin.test.js. PASS61/61 focused service/auth/organization tests; targeted ESLint PASS; production build PASS (existing export chunk warning). New tests verify linked built-in and created teacher retention, identical Faculty projection/assignment list and unchanged academic database bytes, hidden Users row, blocked email/programmatic login and invalidated saved session on reread. Isolated Edge PASS actual Delete dialog on linked Dr. Irfan account, account removed from Users, Faculty profile URL still opens with unchanged records and login rejects; no page errors, disposable browser only. Evidence artifacts/staff-access-removal-20261020. Full suite NOT_RUN. Existing edits preserved; dev, no commit/push. Next approval owner acceptance. Browser-local mock boundary unchanged.
+
+
+## AUDIT-LOG-20261020
+
+CONFIRMED owner-authorized branch-specific Super Admin Audit Log. IN_REVIEW until owner acceptance. New /audit-log lazy route, central AUDIT_VIEW=audit.view permission granted only to single-role Super Admin, sidebar navigation and existing DashboardLayout styling. Read service requires canonical session's active branch and permission, filters by exact branch and returns detached newest-first records. Owner/Receptionist/Teacher/direct foreign-branch reads fail closed. No all-branches view or audit edit/delete endpoint/UI added.
+
+AuditLogPage matches existing maroon/white ERP UI and requested reference: date/time (Asia/Karachi h:mm AM/PM), user and role snapshot, module, action, description and importance; readonly details show changed fields and safe before/after values. Search supports user/role labels/action/record; module/importance/All time/Today/last7calendar days/current month/custom-inclusive dates, invalid range state, Clear filters, Refresh and shared10/15/25/50 pagination with filter reset/page clamp. Responsive desktop table and mobile activity cards, keyboard-accessible controls/details. Explicit empty/error/loading states and activation-onward message. Clear never clears history.
+
+Real change capture resides in shared mock persistence boundaries, not pages: mockDatabase.write and writeOrganization append auditLogs to the same atomic storage payload as actual saved mutations. Actor ID/name/effective role snapshot, branch, ISO timestamp, stable tie-break sequence, resource/record ID/name, Created/Updated/Deleted/Access removed, importance and changed fields retained. Covers persisted Admissions/Students/enrollment, Courses/Batches/streams/subjects, Faculty/classes/assignments, Fees/payments, Finance/expenses, Demo Classes, Assets, Payroll records, Users/role/access/profile changes, Branches, Settings and password-change metadata. First-ever mutation logged against unpersisted initial baseline; initial seeds/migrations/read normalization do not fabricate events. Failed validation/persistence and no-op saves do not add events. Existing domain records/IDs/times/calculations unchanged. Shared professional identity/access/password changes are written to affected membership branches; scoped domain records use record branch. Organization-wide settings changes are recorded under the acting branch. No fabricated historical backfill. Read/page-view/login/logout/export activity is outside this saved-change journal.
+
+Privacy: safe field allowlist permits relevant status/name/configuration/amount/schedule and branch-role reference values; other field values are Not displayed. Password digest/salt updates become generic Account Security password-change metadata, never credentials, tokens, photos, private contact values or notes. Old history retained when identity/profile is revoked/deleted. Audit stores are readonly through application flows, but remain browser-local mock storage and are not production/tamper-proof audit infrastructure. No retention/truncation policy invented, no dependency/Server/database migration added.
+
+Source/test scope17 files: new mock/mockAudit.js, services/auditService.js, services/auditService.test.js, utils/auditFilter.js, pages/AuditLog/AuditLogPage.jsx; modified mock/mockOrganization.js, mock/mockDatabase.js, routes/AppRouter.jsx, routes/routeModules.js, routes/routePaths.js, constants/permissions.js/test, components/Layout/Sidebar.jsx, mock/mockDatabase.test.js, services/demoClassService.test.js, services/organizationService.js, services/facultyService.js. Supporting regression fix: Faculty delete now explicitly requests guarded professional profile deletion; default Users delete remains access-only with retained Faculty records, as owner previously required. Existing actual Faculty deletion had delegated to Users API and regression exposed that coupling. Linked-profile safety checks are retained in explicit Faculty delete path. Existing unused payroll viewOps declaration removed to pass touched-file lint; no payroll logic changed.
+
+PASS132/132 focused cases across9 final test files (audit, staff login, academic operations, organization, permissions, database, finance/payments, demo classes and Faculty workflow). Tests cover empty/no fake initialization, first mutation, no-op/failed writes, actor/role/before-after/ordering, protected-value redaction/password metadata, both branch histories/shared teacher access changes, role/foreign-branch denial, Karachi midnight/custom boundaries, existing persistence/version9 compatibility and operational regressions. Existing whole-envelope comparisons retain every domain assertion while allowing new audit metadata and asserting actual audit events. Initial checks exposed envelope allowlist, missing first-save baseline and previous Faculty delete coupling; fixed with targeted regression tests and final complete scoped run PASS. Targeted ESLint PASS; final production build PASS (existing large export chunk warning); scoped diff whitespace check PASS. Full repository suite NOT_RUN.
+
+Isolated Edge1440desktop/390mobile PASS real service mutations from Admin and Receptionist, actual actor roles, journal table, record before/after dialog, search/module/importance/date filters and invalid custom range, pagination/row-size/reset, refresh after mutation, branch switch isolation, all3 non-admin route denials and hidden navigation, no horizontal page overflow/page errors. Desktop viewport and mobile screenshots visually inspected; full-page desktop capture produced browser viewport artifact, viewport capture and geometry checks confirm correct sidebar/content alignment. Browser data only in disposable contexts, no owner browser records changed. Evidence artifacts/audit-log-20261020 (browser.cjs/tests.json/screenshots). TASKS/FEATURE_TICKETS/PROGRESS/MEMORY/FRONTEND_INTEGRATION/SECURITY/DESIGN updated. Branch dev; prior uncommitted/performance/concurrent work preserved; no worktree/commit/push/reset/stash/clean. No active mock-flow blocker. Next approval owner acceptance.
+
+
+## AUDIT-FILTERS-LEVELS-20261020
+
+Owner authorizes All/Normal/Important/Critical importance filter and corresponding action-based row levels, fixed Academy ERP module list covering every sidebar tab, and Audit Log first in Administration. IN_REVIEW. New constants/audit.js centralizes module list, ordered levels and classification: deletes/access removal/role changes/account or branch deactivation/financial reversal-cancellation Critical; remaining financial/settings/account/branch changes Important; routine changes Normal. Created staff remains Important. New writes persist classification; reads consistently classify historical event metadata without rewriting stored history. Critical rows red, Important amber, Normal green on desktop/mobile. Module filter includes Dashboard/Admissions/Students/Courses & Batches/Faculty & Classes/Fees/Finance/Payroll/Demo Classes/Assets/Reports/Audit Log/Branches/Users/Settings/Account Security even with no events. Empty modules honestly show no matches; no fabricated activity or hotel modules. Sidebar Audit Log moved to first Administration item.
+
+Scope6 source/test files: constants/audit.js/test, mock/mockAudit.js, services/auditService.js, pages/AuditLog/AuditLogPage.jsx, components/Layout/Sidebar.jsx. PASS9/9 focused classification/audit tests; targeted ESLint PASS; build PASS (existing chunk warning). Isolated Edge verifies exact importance option order, real access removal Critical row/red styling, all Academy module options/no hotel labels, empty Dashboard filter, actual course event filtering, Administration first link and390mobile fit; no page errors. Evidence artifacts/audit-filters-20261020. Existing edits preserved, no commit/push. Next approval owner visual acceptance; mock-only boundary unchanged.
+
+
+## FINANCE-OVERVIEW-MAROON-20261020
+
+Owner-authorized color-only change; IN_REVIEW. FinancePage.jsx selected Finance Overview button now uses existing maroon #940016 background and white text/inherited icon, matching Teacher Payroll active style. No layout/handlers/data changes. Targeted ESLint PASS. Tests/build/browser NOT_RUN for class-only color change. Existing edits preserved; no commit/push. Next approval owner visual review.
+
+
+## PAYROLL-FLOW-FIX ? 2026-10-21
+
+Owner-authorized payroll analysis and repairs; IN_REVIEW pending owner acceptance. Fixed agreement teacher metadata, advance payment-method contract, shared pagination, month selection, Finance tab navigation and agreement deep-link reopening. Save-success/refresh-failure handling preserves the successful mutation and avoids duplicate retries. Accessible monetary/payment fields retained within existing layouts.
+
+Payroll requires approval before payment; approved snapshots cannot be recalculated or adjusted. Whole positive PKR payments, valid methods and duplicate references within the same payroll line are validated. Each payment creates exactly one linked Finance expense. Advance recovery happens once, including partial payments and zero-cash settlement; other approved periods reserve recoverable balances. Scoped enabled teachers and agreement dates/rates are validated. Per-lecture calculation counts saved dated sessions after their end time; fee percentage joins the teacher's assigned batch enrollments to their challans and verified payments, excluding unrelated batches. Existing formulas and historical records are preserved. Karachi date boundaries used for defaults and payslip payment dates. This remains browser-local mock accounting, not a bank transfer or production backend.
+
+Changed: Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, StaffAdvanceModal.jsx, DisbursePaymentModal.jsx, ManualAdjustmentModal.jsx, PayslipModal.jsx; pages/Finance/FinancePage.jsx; mock/mockDatabase.js payroll operation; services/payrollService.test.js.
+
+PASS: 33 focused tests (payroll service/view/page, audit and financial regressions), targeted ESLint, production build and git diff --check. Build retains existing large export chunk warning. Disposable Edge desktop/mobile verified agreement create/save/reload, >10-row pagination, advance methods, bonus, approval lock, partial/full salary payments, single advance recovery and linked expenses, payslip PDF/print, CSV, month/tab navigation and deep-link save closure; no page errors. Browser scenario: 51,000 salary less 3,000 advance plus 500 bonus = 48,500; paid in two payments. Full repository suite and real backend integration NOT_RUN. Evidence: artifacts/payroll-flow-fix-20261021. Branch dev; unrelated dirty changes preserved; no commit/push. Next required approval: owner acceptance.
+
+
+## PAYROLL-HEADER-EXPORTS - 2026-10-21
+
+Owner-authorized minimal toolbar relocation; IN_REVIEW. FinancePage hides its Overview month/statement exports on Teacher Payroll and provides a header slot. TeacherPayrollView renders its existing PDF/CSV controls into that slot using a React portal, retaining current payroll month/filter data and handlers. Standalone payroll retains inline exports. Overview controls and payroll month input remain functional. Source files: pages/Finance/FinancePage.jsx, components/Finance/TeacherPayrollView.jsx. PASS: targeted ESLint, 6 payroll component/page tests, disposable Edge payroll workflow including CSV/downloads and tab navigation. Build NOT_RUN for this small relocation; no calculation/storage changes. Existing dirty edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-TABLE-FIT - 2026-10-21
+
+Owner-approved payroll table spacing/no-wrap change; IN_REVIEW. TeacherPayrollView.jsx uses compact horizontal cell padding below 1536px, wider padding on large screens, and single-line text. Calculation detail width cap removed; existing table-local horizontal scrolling accommodates unusually long records and mobile without overflowing the page. No data/actions/calculations changed. PASS targeted ESLint and disposable Edge normal-scale checks at 1920/1440/1366/390 CSS-pixel widths: all cells nowrap, no page overflow; representative desktop table fits its container at all three desktop widths. Mobile preserves local table scrolling. Browser evidence artifacts/payroll-flow-fix-20261021/table-fit.cjs. Build/unit tests NOT_RUN for styling-only change. Prior dirty edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-EXPORT-STYLE - 2026-10-21
+
+Owner-approved label/icon/color change; IN_REVIEW. TeacherPayrollView.jsx payroll export controls now say Export PDF and Export CSV, both with download icons, maroon #940016 backgrounds, white text and #7a0012 hover. Existing export handlers, loading/empty guards and header placement retained. Targeted ESLint PASS; tests/build/browser NOT_RUN for presentation-only change. Unrelated edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## FINANCE-TABLE-FIT - 2026-10-21
+
+Owner-approved Finance Overview table adjustment; IN_REVIEW. FinancePage.jsx defaults to 10 rows instead of 15, keeps date/category/method/amount and headings on one line, and uses compact cell padding. Long transaction descriptions truncate with full native title and keyboard-focus expansion; financial values are not truncated. Existing table-local mobile scrolling, filters, pagination and export handlers retained. PASS targeted ESLint and disposable Edge checks at 1920/1440/1366/390 widths: no page overflow, normal desktop rows fit, 16 actual mock expenses paginate 10 then 6. No browser page errors. Evidence artifacts/payroll-flow-fix-20261021/finance-table-fit.cjs. Build/unit tests NOT_RUN for scoped presentation/default-row change. Existing edits preserved, no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-EXPORT-ICONS - 2026-10-21
+
+Owner-authorized distinct export icons; IN_REVIEW. TeacherPayrollView.jsx uses FileText for Export PDF and FileSpreadsheet for Export CSV, replacing identical download icons. Maroon styling, labels and handlers retained. Decorative icons hidden from accessibility tree; text labels preserved. Targeted ESLint PASS; build/tests/browser NOT_RUN for icon-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-REMOVE-INTRO - 2026-10-21
+
+Owner-approved removal of Teacher Payroll & Compensation introduction, decorative icon, period badge and explanatory subtitle; IN_REVIEW. TeacherPayrollView.jsx retains right-aligned month/recalculate/approval/advance controls and existing export placement, with intro divider removed. No payroll state or accounting changes. TeacherPayrollPage.test.jsx locates the retained month control instead of removed heading. PASS targeted ESLint and 6 payroll component/page tests. Build/browser NOT_RUN for presentation-only removal. Unrelated edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-STYLE - 2026-10-21
+
+Owner-approved larger tinted payroll KPI cards; IN_REVIEW. TeacherPayrollView.jsx six cards now have 150px minimum height, increased padding/value typography/spacing, and light sky/emerald/rose/maroon/teal/amber backgrounds matching existing ERP palette. Responsive grid retained; no amount/calculation/action changes. PASS targeted ESLint and disposable Edge 1440/390px checks: six 150px cards, distinct background colors, no page overflow. Build/unit tests NOT_RUN for styling-only change. Evidence artifacts/payroll-flow-fix-20261021/card-style.cjs. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-FILTER-STYLE - 2026-10-21
+
+Owner-approved payroll progress/filter presentation; IN_REVIEW. TeacherPayrollView.jsx reuses existing CustomSelect for calculation method and payment status, with rounded controls, maroon selected menu styling/checkmark, method icons and payment status dots. Existing method/status values and page-reset filtering preserved. Progress card spacing, wrapping legend, search height and responsive filter layout adjusted locally. No accounting changes or shared component modifications. PASS targeted ESLint, 6 payroll component/page tests, isolated Edge 1440/390px checks: method/payment filters change results and restore rows, menus fit viewport, Escape closes, no page overflow/errors. Evidence artifacts/payroll-flow-fix-20261021/filter-style.cjs. Build NOT_RUN for localized UI change. Existing dirty edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## FINANCE-TABLE-NO-SCROLL - 2026-10-21
+
+Owner-approved Finance Overview no-horizontal-scroll layout; IN_REVIEW. FinancePage.jsx removes minimum table width and scroll wrapper; full Transaction Detail wraps with overflow-wrap:anywhere instead of truncation. Other columns stay single-line. Mobile uses labeled stacked rows to preserve every field without horizontal scrolling; scoped min-width override avoids shared mobile table minimum. Default 10 rows and pagination preserved. PASS targeted ESLint and isolated Edge 1920/1440/1366/390 checks with 16 actual mock expenses: table has no horizontal overflow, details wrap, page has no overflow/errors, pagination shows 10 then 6. Evidence artifacts/payroll-flow-fix-20261021/finance-no-scroll.cjs. Build/unit tests NOT_RUN for localized presentation change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-ACTIONS-POSITION - 2026-10-21
+
+Owner-approved payroll action placement/month sizing; IN_REVIEW. FinancePage.jsx provides a responsive slot opposite Finance Overview/Teacher Payroll tabs; TeacherPayrollView.jsx portals its existing month/recalculate/approve/advance controls into that row, retaining inline standalone fallback. Month control reduced to 32px overall height and 128px inner width. Handlers/guards unchanged; narrow viewports wrap naturally. Targeted ESLint PASS. Focused payroll component/page tests recorded below. No commit/push; existing edits preserved. Next approval: owner visual acceptance.
+
+Verification: 6 focused payroll component/page tests PASS. Build/browser NOT_RUN for this relocation.
+
+
+## PAYROLL-PROGRESS-COMPACT - 2026-10-21
+
+Owner-approved progress section height reduction; IN_REVIEW. TeacherPayrollView.jsx progress card vertical padding reduced from 20px to 12px, internal gaps tightened, bar 8px and method control 36px. Existing content, dropdown, responsive wrapping and calculations preserved. Targeted ESLint PASS; build/tests/browser NOT_RUN for spacing-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-VERTICAL-SPACING - 2026-10-21
+
+Owner-approved tighter payroll vertical layout; IN_REVIEW. TeacherPayrollView.jsx section gaps reduced from 24px to 12px, progress card vertical padding from 12px to 8px, progress internal spacing from 6px to 4px and legend top padding removed. Cards, progress, search and table now sit closer together; existing controls/content/calculations preserved. Targeted ESLint PASS; tests/build/browser NOT_RUN for spacing-only change. No commit/push; unrelated edits preserved. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-SIZING - 2026-10-21
+
+Owner-approved KPI card text/size adjustment; IN_REVIEW. TeacherPayrollView.jsx KPI labels/help text increased from 10px to 12px and amounts from 20px to 24px. Minimum height reduced from 150px to 130px with compact padding/spacing. Grid gaps reduced from 12px to 8px, giving cards slightly more width within existing responsive grid. Backgrounds/data/calculations preserved. Targeted ESLint PASS; tests/build/browser NOT_RUN for styling-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-TEXT - 2026-10-21
+
+Owner-approved smaller payroll card typography; IN_REVIEW. TeacherPayrollView.jsx KPI labels/help reduced from 12px to 11px, amounts from 24px to 20px, and heading letter spacing normalized to reduce wrapping. Card dimensions/colors and data unchanged. Targeted ESLint PASS; build/tests/browser NOT_RUN for typography-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-TEXT-GAPS - 2026-10-21
+
+Owner-approved internal KPI text spacing; IN_REVIEW. TeacherPayrollView.jsx title-to-amount and amount-to-description margins increased from 6px to 12px across all six cards. Existing fonts/colors/minimum card height/data preserved. Targeted ESLint PASS; tests/build/browser NOT_RUN for spacing-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-COMPACT-GAPS - 2026-10-21
+
+Owner-approved shorter KPI cards with greater text separation; IN_REVIEW. TeacherPayrollView.jsx reduces minimum height 130px to 120px and vertical padding 12px to 6px, uses justify-between and minimum 14px internal gaps instead of 12px margins. Fonts/colors/data unchanged; content can grow naturally. Targeted ESLint PASS; tests/build/browser NOT_RUN for styling-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CARD-COLORS - 2026-10-21
+
+Owner-approved screenshot palette match; IN_REVIEW. TeacherPayrollView.jsx payroll KPI cards use existing Fees-style white-to-mint, cream/amber and pale blue gradients with matching borders, dark totals and muted supporting labels. Existing dimensions/spacing/data preserved; no shared KPI CSS/layout changes. Targeted ESLint PASS; tests/build/browser NOT_RUN for color-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## AUDIT-DROPDOWN-STYLE - 2026-10-21
+
+Owner-approved Audit Log dropdown presentation; IN_REVIEW. AuditLogPage.jsx reuses CustomSelect for Module, Importance and Time filter with rounded controls, maroon selected rows/checkmarks, white shadowed menus and severity dots. Values/filter logic unchanged, Custom date range and Clear retained. Removed outer card overflow clipping for menus. PASS targeted ESLint, 9 audit constants/service tests and disposable Edge desktop/mobile menu selection, custom dates/Clear and viewport-fit checks at 1440/390px; no page errors. Evidence artifacts/payroll-flow-fix-20261021/audit-dropdown-style.cjs. Build NOT_RUN for localized UI change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## AUDIT-SEARCH-WIDTH - 2026-10-21
+
+Owner-approved wider Audit Log search field; IN_REVIEW. AuditLogPage.jsx search flex basis/minimum increased to 320px on desktop with double flex growth, mobile retains full available width. Search/filter handlers unchanged. Targeted ESLint PASS; tests/build/browser NOT_RUN for width-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## USERS-CARD-STYLE - 2026-10-21
+
+Owner-approved larger Users summary cards; IN_REVIEW. UsersPage.jsx three cards use 120px minimum content height, increased padding, 12px labels/24px values and larger icon containers. Existing ERP pale blue, mint and cream gradients/borders applied, matching payroll/Fees palette. Counts, role policy labels and user workflows unchanged. Targeted ESLint PASS; tests/build/browser NOT_RUN for presentation-only change. Existing dirty edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## AUDIT-TOOLBAR-FIT - 2026-10-21
+
+Owner-approved compact Audit Log dropdowns and wider single-row desktop search toolbar; IN_REVIEW. AuditLogPage.jsx uses desktop grid with flexible search, 160px Module and 130px Importance/Time controls plus Clear/Refresh columns. Desktop controls stay aligned in one row; mobile uses two-column layout/full-width search. Custom date range spans separate full row. Existing filters unchanged. PASS targeted ESLint and isolated Edge 1440/1366/390 viewport checks including desktop bottom alignment of search/dropdowns/Refresh, menu selection/custom dates/Clear and no overflow/errors. Evidence artifacts/payroll-flow-fix-20261021/audit-toolbar-fit.cjs. Build/unit tests NOT_RUN for layout-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+
+
+## PAYROLL-CORRECTIONS - 2026-10-21 (REVERTED by owner)
+
+Owner explicitly authorizes reasoned unpaid payroll reopening and separate additional bonus after salary payment; IN_REVIEW pending owner acceptance. Super Admin only in active authorized branch (mock service gate plus existing permission checks). Reopen Payroll clears approval and returns lines to draft if no period payments or settled advance recovery exist; saved reason/actor/time and journal preserve correction history. Existing adjustments can then be updated, recalculated and approved. Recalculation retains reopen metadata. Payroll with any salary payment or completed advance recovery cannot reopen, including zero-cash advance settlements.
+
+Additional Bonus creates an approved separate payroll line linked to the original salary, with positive whole PKR amount, mandatory reason and request ID. Allowed only on settled approved periods and original salary lines. Original salary/paid records and expenses stay unchanged. Same request retries return the saved bonus; mismatched reused request IDs reject. Separate bonus has no advance deduction/recovery; newer advances remain untouched. Period payable/outstanding reflect the bonus; teacher count remains unchanged. Existing Pay supports partial/full bonus disbursement, one linked Finance expense per payment, and separate payslip/print/PDF. Payment is recorded locally; no bank transfer or backend implementation introduced.
+
+UI: Reopen Payroll appears for approved unsettled periods; Additional Bonus appears on original teacher rows after settlement. Reason/amount dialog validates, disables busy submissions and preserves input on errors. Reopen and Additional bonus created audit actions record reason with actor/branch/time. Existing safe audit fields extended only for explicit correction metadata.
+
+Files: services/payrollService.js and test; mock/mockDatabase.js and mockAudit.js; components/Finance/TeacherPayrollView.jsx and new PayrollCorrectionModal.jsx. PASS: 36 focused payroll service/view/page, audit and financial tests; targeted ESLint; production build; scoped git diff --check. Build retains existing large export chunk warning. Disposable Edge verifies reopen -> adjustment -> reapproval, partial original payment -> separate bonus -> Pay -> separate payslip -> reload, mobile dialog fit, audit actions and exactly one expense per linked payment. Browser evidence artifacts/payroll-flow-fix-20261021/corrections.cjs. Full repository suite/real backend integration NOT_RUN. Branch dev, unrelated dirty edits preserved, no commit/push. Next approval: owner acceptance.
+
+
+## PAYROLL-CORRECTIONS-UNDO - 2026-10-21
+
+Owner explicitly reverses PAYROLL-CORRECTIONS. Removed Reopen Payroll/Additional Bonus UI, modal, service operations, correction-specific audit extensions and three corresponding tests; prior approved payroll lock/payment workflow restored. Existing styling and unrelated edits preserved. No stored financial records or existing audit history deleted or migrated. Previous correction documentation marked REVERTED as historical evidence. PASS targeted ESLint, 33 focused payroll/audit/financial tests and scoped git diff --check. Build/browser NOT_RUN for undo. No commit/push. IN_REVIEW pending owner acceptance.
+
+
+## PAYROLL-MONTH-BORDER - 2026-10-21
+
+Owner-approved removal of maroon month input focus border; IN_REVIEW. TeacherPayrollView.jsx payroll month retains borderless input and uses subtle neutral slate keyboard focus ring with no offset. Other inputs/styles/handlers unchanged. Targeted ESLint PASS; tests/build/browser NOT_RUN for focus-color-only change. No commit/push; existing edits preserved. Next approval: owner visual acceptance.
+
+
+## PAYROLL-MONTH-NO-BORDER - 2026-10-21
+
+Owner explicitly requests completely borderless payroll month control; IN_REVIEW. TeacherPayrollView.jsx removes outer container border and input focus ring/outline. Other controls unchanged. Targeted ESLint PASS; tests/build/browser NOT_RUN for styling-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+## LOGIN-LOGO-MOTION - 2026-10-21
+
+Owner-approved login logo motion refinement; IN_REVIEW. Rounded white logo surface, one-time 3D entry rotation and faster/wider vertical float implemented without changing login behavior. Reduced-motion users retain a static logo. PASS: 14 focused tests, targeted ESLint and production build; existing chunk warnings remain. No commit/push. Next approval: owner visual acceptance.
+
+## REMOVE-DEMO-UI - 2026-10-21
+
+Owner-approved frontend copy cleanup; IN_REVIEW. Acceptance: normal ERP screens no longer present themselves as a demo, while all Demo Classes labels and related workflow/report terminology remain intact. Built-in visible branch/course/batch/staff names now use operational labels; internal IDs and local mock persistence interfaces are preserved. PASS: 95 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## UPDATE-DEFAULT-PASSWORDS - 2026-10-21
+
+Owner-approved browser-local initial password replacement; IN_REVIEW. Super Admin initial password is `admin@123`; staff initial password is `staff@123`. Previously changed account passwords are not reset. PASS: 21 focused authentication tests. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-LOGO-MOTION-FIX - 2026-10-21
+
+Owner-approved animation lifecycle fix; IN_REVIEW. Login logo performs its one-time 3D spin and continuous vertical float reliably, protects the intro from early pointer cancellation, and uses a DOM animation fallback when WebGL cannot initialize. Reduced-motion accessibility is preserved. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-SECTION-HEIGHT - 2026-10-21
+
+Owner-approved login card height reduction; IN_REVIEW. The existing login composition is more compact through smaller padding, gaps and logo dimensions, with responsive layout and functionality preserved. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-100-PERCENT-SCALE - 2026-10-21
+
+Owner clarification supersedes LOGIN-SECTION-HEIGHT implementation details. Original internal proportions are restored and the complete desktop login card uses a uniform 90% visual scale at normal browser zoom; mobile is unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-BRANDING-LAYOUT - 2026-10-21
+
+Owner-approved desktop login branding adjustment; IN_REVIEW. Academy name stays on one line, animated logo is larger, and desktop page scrolling is removed without changing mobile flow or login behavior. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-WIDTH-CORRECTION - 2026-10-21
+
+Owner-approved correction; IN_REVIEW. Login card uses its normal width again while preserving a single-line desktop academy name, larger logo and no desktop scrollbar. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-ACADEMY-NAME-SIZE - 2026-10-21
+
+Owner-approved login heading adjustment; IN_REVIEW. Only the academy-name typography was enlarged while retaining a single line and the existing card width. PASS: 10 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-ACADEMY-NAME-SIZE-2 - 2026-10-21
+
+Owner-approved follow-up; IN_REVIEW. Academy name is slightly larger again while remaining one line inside the unchanged login section width. PASS: 10 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
+
+## LOGIN-ACADEMY-NAME-SIZE-3 - 2026-10-21
+
+Owner-approved typography-only follow-up; IN_REVIEW. Academy name is larger with subtle word spacing, remains responsive on one line, and does not change the login section dimensions. PASS: 10 focused auth tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## LOGIN-THREE-BACKGROUND - 2026-10-21
+
+Owner-approved visual-only ticket; IN_REVIEW. The login branding panel now renders a subtle Three.js galaxy atmosphere beneath its existing content, preserves panel dimensions, ignores pointer input and respects reduced-motion preferences. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## LOGIN-THREE-PAGE-BACKDROP - 2026-10-21
+
+Owner-approved visual-only follow-up; IN_REVIEW. The background outside the login card now uses a calm, low-opacity Three.js particle atmosphere with warm radial light. The login card dimensions and behavior are unchanged, pointer interaction passes through, and reduced-motion remains supported. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## BRANCH-SELECT-COMPACT-CARDS - 2026-10-21
+
+Owner-approved auth UX refinement; IN_REVIEW. Multi-branch users now choose an authorized branch directly from accessible selection cards and then use `Open dashboard`; the redundant dropdown is removed. The selection panel is narrower and more compact while branch scoping remains unchanged. PASS: 10 focused auth tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## LOGIN-THREE-STARFIELD - 2026-10-21
+
+Owner-approved visual-only follow-up; IN_REVIEW. The light area outside the login card now has a visible but calm Three.js star field with slow drift and soft twinkling in academy-aligned colors. Login card and section layout are unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## LOGIN-THREE-FULL-PAGE-SCENE - 2026-10-21
+
+Owner-approved visual-only follow-up; IN_REVIEW. The full light page area outside the login card now combines the moving star field with three subtle orbital paths for a distinct celestial effect. The login card and both internal sections are unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## LOGIN-THREE-VISIBILITY-FIX - 2026-10-21
+
+Owner-reported visual defect; IN_REVIEW. Browser inspection showed the outer Three.js canvas working but too faint on the light background. Outer star, twinkle and orbit opacity were raised to a clearly visible restrained level; the login card and internal sections remain unchanged. PASS: Edge screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## LOGIN-OUTER-THREE-REMOVE - 2026-10-21
+
+Owner-approved visual rollback; IN_REVIEW. The login page's outer background is plain again. The internal maroon-panel Three.js atmosphere, login card dimensions and authentication behavior remain unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## LOGIN-MAROON-NETWORK-BACKDROP - 2026-10-21
+
+Owner-approved visual-only ticket; IN_REVIEW. The light background outside the login card now renders a maroon connected-node network using Three.js, with slow GSAP drift and opacity breathing. The login card and both internal sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## LOGIN-MAROON-PARTICLE-FLOW - 2026-10-21
+
+Owner-approved visual-only follow-up; IN_REVIEW. Dense flowing particles in maroon shades now cover the complete outer light background and animate alongside the existing connected-node scene using Three.js and GSAP. The login card and internal sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## LOGIN-MAROON-CURVED-TRAILS - 2026-10-21
+
+Owner-approved visual-only refinement; IN_REVIEW. The full outer background now uses glowing maroon particle trails curved across multiple directions, plus distributed depth particles and a softened connected-node layer. Three.js renders the scene and GSAP supplies restrained motion. The login card and sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## LOGIN-OUTER-THREE-REMOVE-MOBILE-NAME - 2026-10-21
+
+Owner-approved visual rollback and responsive typography correction; IN_REVIEW. The page background is plain after removing the outer Three.js/GSAP component. The academy name uses a smaller mobile-only responsive clamp and remains a complete single line; tablet/desktop size and all section dimensions are unchanged. PASS: desktop/mobile Edge screenshots, 14 focused tests, targeted ESLint and production build. No commit/push.

@@ -10,6 +10,10 @@
 **Application:** React + Vite Web Application
 **Design Strategy:** Reference-Driven, Component-Based, Responsive
 
+## F00-011 — Approved login logo motion (2026-10-21)
+
+Owner-approved login-only polish: the configured academy logo keeps its white image background and current layout, with a subtle GSAP idle float and gentle Three.js tilt on pointer movement. Respect `prefers-reduced-motion` by rendering a static logo; preserve a static fallback if WebGL is unavailable. This does not establish animation patterns for other screens.
+
 ---
 
 ## Accepted Foundation / F01-001 Visual Scope (2026-10-10)
@@ -1217,3 +1221,68 @@ This document defines professional visual and UX standards for the Academy Manag
 ## MOBILE-20261018 - Confirmed mobile presentation scope (2026-10-18)
 
 Owner approved mobile-only presentation at widths <=767px, targeting320,360,375,390,414 and430px plus landscape. Existing >=768px design remains unchanged. Reuse the current accessible drawer/topbar, semantic theme, compact KPI grids, existing record cards where available, bounded inner table scroll with all data/actions preserved, readable single-column forms and viewport-fit dialogs. Inline admission summary belongs below the form and must not cover inputs. Respect safe areas/reduced motion and existing permissions. Mobile-specific rules are screen-only to preserve print/PDF appearance. MOBILE-20261018 is IN_REVIEW pending owner acceptance; this does not authorize new business rules or alter existing desktop tokens. Validation/evidence and physical-device limitations are recorded in PROGRESS.md.
+
+
+## DEMO-REGISTER-CLASSES-20261018 - Owner-approved registration dialog update
+
+Scoped polished Demo registration dialog: candidate details, dependent Field/Course/Batch controls, saved-class timing cards with subject/teacher/day/time/room, preferred date/time and notes. Bounded width720px, viewport-relative height, independently scrollable body and persistent Cancel/Register footer. Mobile single-column form and safe-area footer retained. Scope excludes the rest of desktop/mobile ERP. Nine actual Edge viewport cases including320px and1440px passed. IN_REVIEW pending owner acceptance.
+
+
+## Demo candidate action menu - 2026-10-18
+
+Demo desktop rows and mobile cards share a compact three-dot action menu with keyboard navigation, Escape dismissal and portal positioning to avoid table clipping. Delete opens explicit confirmation; converted linked records show disabled Delete with an explanation.
+
+
+## DEMO-MULTI-CLASS-20261018
+
+Demo registration class cards now independently toggle aria-pressed and retain multiple selections, with a visible selected count. Existing compact form layout is preserved. Demo Details displays all requested class snapshots with 12-hour timings.
+
+
+## ASSETS-LIVE-FLOW-20261019
+
+Owner reauthorizes Assets functionality and compact non-overflowing inventory layout after previous targeted undo. Existing centralized asset services remain the data source; register/edit/assign/unassign/inspection/maintenance mutations retain persistence and branch/permission checks. Added cleaned-up focus/storage/minute refresh with latest-request guard so summaries and rows reflect saved changes. Added duplicate-submit guards. KPI loading/errors no longer masquerade as zero totals. Desktop inventory uses fixed percentage widths, compact single-line typography/ellipsis and bounded text; full details remain accessible. Existing mobile cards retained. Sidebar stacks below the table until1600px to provide readable table width. PASS37 database/asset-service/mounted-page tests, including actual UI registration/card totals and external saved inspection/value refresh; full lint0/0; production build with existing large-chunk warning; isolated Edge actual registration, persistence, table refresh and no horizontal table/page overflow at360/768/1024/1366/1440/1600px; git diff --check. Full suite NOT_RUN. No owner-record changes, no new seeding/schema change or commit/push. IN_REVIEW pending owner acceptance.
+
+
+## ASSETS-100-PERCENT-20261019
+
+Owner supplies80%-zoom reference and requests its compact proportions at normal100% zoom. Scoped desktop Assets presentation now uses approximately75/25 inventory/right-inspection split, compact cards/filter typography and fixed100%-total table column proportions; category tabs stay in one internally scrollable line, filters remain one row, rows retain single-line truncation with accessible Details. Reduced cell padding and icons; attached pagination preserved. No browser zoom/transform, data, status or business-rule changes. PASS targeted lint, production build (existing chunk warning), isolated fictional8-record Edge checks at1366/1440/1920 at deviceScaleFactor1, right-sidebar positioning, no table/page horizontal overflow;1440 screenshot visually inspected. Existing mobile styling retained. Runtime tests NOT_RUN for this scoped presentation pass. IN_REVIEW; no commit/push.
+
+
+## REPORTS-CATEGORY-STYLING-20261019
+
+Owner requests pale maroon bordered report category options with relevant icons and improved hover. Added semantic icons via existing TAB_CONFIG and imported Lucide components, light maroon inactive tabs/container/badges, deeper maroon hover, preserved solid active state; added pressed state and focus ring. Filtering/count logic unchanged. PASS production build (existing chunk warning) and git diff --check. Lint not rerun: previous Reports9 errors/2 warnings remain documented; runtime tests NOT_RUN for this presentation change.
+
+
+## REPORTS-KPI-COLORS-FIT-20261019
+
+Owner requests shared colorful KPI backgrounds and smaller nonbreaking content for every Reports category. Reused shared top-kpi-card gradients/borders/hover, reduced padding and label/value/subtext sizes, constrained content tracks with min-width0, single-line ellipsis and full-text titles. Existing metric values/calculations preserved. PASS build (existing chunk warning), isolated Edge all8 category card groups at390/1366/1440: contained single-line content; git diff --check. Lint/full tests NOT_RUN; earlier Reports lint issues documented.
+
+
+## REPORTS-FILTER-FOOTER-EXPORT-20261019
+
+Owner requests compact colored filter section with hover, attached rows-per-page footer and table-header PDF/spreadsheet export icons. Reduced filter padding/control heights/label sizes, pale maroon background/borders/hover. Reused shared Pagination (default10,10/15/25/50, ranges, numbered pages) inside report table container. Reused toolbar PDF/CSV icons connected to existing filtered/selected exports. Updated obsolete test expecting owner-removed Schedule Summary button to current header/export/pagination assertions; no skipped tests. PASS4 Reports tests, build (existing chunk warning), disposable browser page-size selection/filter menu and actual PDF/CSV downloads; git diff --check. Existing Reports lint findings unchanged, full suite NOT_RUN. No business/filter logic or owner-data modifications.
+
+## REPORTS-TABLE-FIT-20261019
+
+Owner authorizes compact Reports ledger sizing at normal100% browser zoom using supplied80% screenshot as reference. Scoped desktop-only ledger CSS reduces cell padding, primary/secondary typography, avatars and search dimensions; automatic table column sizing and bounded horizontal scrolling retained. No data/action/export changes or browser zoom manipulation. Status: IN_REVIEW pending owner visual acceptance. PASS production build (existing chunk warning) and git diff --check. Browser visual comparison NOT_RUN. Reports tests attempted but runner stalled without results and was interrupted; no test pass claimed.
+
+
+## REPORTS-LEFT-TREND-20261019 - Left analytics card redesign
+
+Left meter replaced by white bordered card, smooth maroon area chart, zero-based axis, compact tooltip and dashed slate finance outflow. Existing7/5 split/right donut retained; mobile controls wrap. Default Month groups all matching dates. Period buttons change grouping; Date Range limits only chart data. Missing activity intervals show zeros; no data shows empty state; one period shows a point and sparse-data explanation. No fabricated history or targets. Owner-authorized; IN_REVIEW.
+
+
+## REPORTS-TREND-SUMMARY-20261019
+
+Owner approves reference-style icon/label/value summaries inside each Reports left chart card. Three real filtered-ledger metrics below chart; maroon/amber tinted circular icons, responsive3-column desktop/stacked mobile. Snapshot scope explicitly labeled separately from chart dates. A single calendar period is a rounded bar with an explanation; multiple periods remain the smooth area chart. No guessed target percentages. Verification in PROGRESS.md; IN_REVIEW.
+
+
+## SETTINGS-BRANDING-DESIGN-20261020
+
+Owner authorizes visual polish of Branding & Visual Identity only. SettingsPage.jsx now uses a soft theme-tinted maroon/white gradient, icon-led header, three white identity/color/logo field cards, bordered color-swatch tiles and framed sidebar preview. Small sky/slate tint balances the sidebar section; primary accents still follow configured theme tokens. Responsive grids/wrapping preserve desktop/mobile fit. Added explicit input labels and semantic sidebar section. Original upload validation/file reader, save/cancel/reset handlers and hidden settings persistence are unchanged. No extra sections, packages or workflows introduced.
+
+PASS12/12 AdminOperations/branding-context regression tests, touched ESLint, production build (existing export chunk warning), whitespace check. Isolated Edge verifies1440/1024/768/390 widths without page overflow, live color preview, Cancel, Save/reload, Reset and no JS errors; visually reviewed desktop screenshot. All browser changes used disposable demo storage, no owner records changed. Upload handler unchanged; additional file-upload browser regression NOT_RUN. Full repository suite NOT_RUN. IN_REVIEW pending owner visual acceptance. Application file: Client/src/pages/Settings/SettingsPage.jsx; task/progress/ticket/design records updated. Screenshots/check: artifacts/settings-branding-design-20261020. No commit/push; unrelated edits retained. Next approval: owner visual review.
+
+
+## AUDIT-LOG-20261020
+Owner-authorized Audit Log uses existing maroon accents, semantic white Card, compact labeled search/filter row, desktop six-column table and mobile activity cards, colored Important/Normal markers, shared pagination and readonly before/after dialog. Current branch and Asia/Karachi timestamp context shown. No redesign of other modules. Desktop/mobile browser evidence and actual tests recorded in PROGRESS.md. IN_REVIEW.

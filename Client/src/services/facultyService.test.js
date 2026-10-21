@@ -31,7 +31,7 @@ describe('F05 branch-scoped Faculty & Classes reads', () => {
   it('lists only explicit single-role Teacher identities for the selected branch', async () => {
     await signIn()
     const centralTeachers = await facultyService.list(central)
-    expect(centralTeachers).toContainEqual(expect.objectContaining({ id: 'demo-teacher', name: 'Demo Teacher', branchId: central.branchId }))
+    expect(centralTeachers).toContainEqual(expect.objectContaining({ id: 'demo-teacher', name: 'Faculty Teacher', branchId: central.branchId }))
     expect(centralTeachers.every(teacher => teacher.branchId === central.branchId)).toBe(true)
     await authService.selectBranch('demo-admin', north.branchId)
     const northTeachers = await facultyService.list(north)
@@ -43,7 +43,7 @@ describe('F05 branch-scoped Faculty & Classes reads', () => {
   it('returns only saved identity data and fails closed for unauthorized roles and changed branch scope', async () => {
     await signIn()
     const profile = await facultyService.getById('demo-teacher', central)
-    expect(profile).toMatchObject({ id: 'demo-teacher', name: 'Demo Teacher', contact: null, qualifications: null, assignedSubjects: [], assignedBatches: [], schedules: [] })
+    expect(profile).toMatchObject({ id: 'demo-teacher', name: 'Faculty Teacher', contact: null, qualifications: null, assignedSubjects: [], assignedBatches: [], schedules: [] })
     await expect(facultyService.getById('demo-multi', central)).rejects.toMatchObject({ code: 'NOT_FOUND' })
     await authService.login({ userId: 'demo-teacher' })
     await expect(facultyService.list(central)).rejects.toMatchObject({ code: 'DEMO_ACTION_DENIED' })

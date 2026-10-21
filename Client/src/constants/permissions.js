@@ -8,7 +8,7 @@
 import { getAuthorizedBranches } from '../mock/authFixtures.js'
 import { getBranchRoles, ROLES } from './roles.js'
 export const PERMISSIONS = Object.freeze({
-  WORKSPACE_VIEW: 'workspace.view',
+  DASHBOARD_VIEW: 'dashboard.view',
   ADMISSIONS_VIEW: 'admissions.view',
   ADMISSIONS_CREATE: 'admissions.create',
   ADMISSIONS_EDIT: 'admissions.edit',
@@ -36,6 +36,7 @@ export const PERMISSIONS = Object.freeze({
   BRANCHES_MANAGE: 'branches.manage',
   USERS_MANAGE: 'users.manage',
   SETTINGS_MANAGE: 'settings.manage',
+  AUDIT_VIEW: 'audit.view',
 })
 export const isKnownPermission = (permission) => Object.values(PERMISSIONS).includes(permission)
 
@@ -68,6 +69,7 @@ const SINGLE_ROLE_GRANTS = Object.freeze({
     PERMISSIONS.BRANCHES_MANAGE,
     PERMISSIONS.USERS_MANAGE,
     PERMISSIONS.SETTINGS_MANAGE,
+    PERMISSIONS.AUDIT_VIEW,
   ]),
   [ROLES.RECEPTIONIST]: Object.freeze([
     PERMISSIONS.ADMISSIONS_VIEW,
@@ -102,7 +104,7 @@ const SINGLE_ROLE_GRANTS = Object.freeze({
 export function canAccess(permission, user, branchId) {
   const assigned = getAuthorizedBranches(user).some((branch) => branch.id === branchId)
   if (!assigned) return false
-  if (permission === PERMISSIONS.WORKSPACE_VIEW) return true
+  if (permission === PERMISSIONS.DASHBOARD_VIEW) return true
   const roles = getBranchRoles(user, branchId)
   return roles.length === 1 && SINGLE_ROLE_GRANTS[roles[0]]?.includes(permission) === true
 }

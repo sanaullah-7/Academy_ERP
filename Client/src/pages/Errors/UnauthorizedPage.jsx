@@ -16,6 +16,6 @@ export default function UnauthorizedPage() {
   const { user, logout } = useAuth()
   return <main className="demo-access-page"><Card className="demo-access-card">
     <CardHeader><CardTitle><h1 className="text-2xl">Access unavailable</h1></CardTitle><CardDescription><PermissionNotice /></CardDescription></CardHeader>
-    <CardContent className="grid gap-3"><Button asChild><Link to={ROUTE_PATHS.ROOT}>Return home</Link></Button>{user && <Button variant="outline" onClick={() => void logout()}>Log out of demo</Button>}</CardContent>
+    <CardContent className="grid gap-3"><Button asChild><Link to={ROUTE_PATHS.ROOT}>Return home</Link></Button>{user && <Button variant="outline" onClick={() => void logout()}>Log out</Button>}</CardContent>
   </Card></main>
 }

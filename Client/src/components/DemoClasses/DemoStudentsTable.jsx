@@ -1,9 +1,11 @@
 import { formatClassTime } from '../../utils/classTime.js'
 import { useState, useMemo } from 'react'
 import {
-  Search, ArrowRight, GraduationCap, ExternalLink, User,
+  Search,
   ChevronLeft, ChevronRight
 } from 'lucide-react'
+import CustomSelect from '../ui/CustomSelect.jsx'
+import DemoRowActions from './DemoRowActions.jsx'
 import DemoStatusBadge from './DemoStatusBadge.jsx'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
@@ -59,10 +61,11 @@ export default function DemoStudentsTable({
   courses = [],
   canManage = false,
   onViewDetails,
-  onSchedule,
   onAttendance,
   onConvert,
   onDirectConvert,
+  onCancel,
+  onDelete,
   branchName = 'Campus',
 }) {
   const [activeTab, setActiveTab] = useState('All')
@@ -173,16 +176,16 @@ export default function DemoStudentsTable({
   return (
     <div className="space-y-3">
       {/* Tab Segment Controls & Search/Stream Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 pt-0.5">
+      <div className="demo-filter-bar flex min-w-0 flex-col gap-2 rounded-xl border border-primary/20 bg-white/80 p-2 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs overflow-hidden">
+        <div className="flex min-w-0 items-center gap-1 overflow-x-auto p-0.5 text-[11px] no-scrollbar">
           <button
             type="button"
             onClick={() => { setActiveTab('All'); setPage(1) }}
-            className={`rounded-lg px-3 py-1.5 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+            className={`shrink-0 rounded-lg border border-primary/15 px-2 py-1.5 font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'All'
                 ? 'bg-[#940016] text-white shadow-2xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
+                : 'text-slate-600 bg-primary/[0.02] hover:text-primary hover:bg-primary/5'
             }`}
           >
             <span>All Candidates</span>
@@ -196,10 +199,10 @@ export default function DemoStudentsTable({
           <button
             type="button"
             onClick={() => { setActiveTab('Upcoming'); setPage(1) }}
-            className={`rounded-lg px-3 py-1.5 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+            className={`shrink-0 rounded-lg border border-primary/15 px-2 py-1.5 font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Upcoming'
                 ? 'bg-[#940016] text-white shadow-2xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
+                : 'text-slate-600 bg-primary/[0.02] hover:text-primary hover:bg-primary/5'
             }`}
           >
             <span>Upcoming / Registered</span>
@@ -213,10 +216,10 @@ export default function DemoStudentsTable({
           <button
             type="button"
             onClick={() => { setActiveTab('Attended'); setPage(1) }}
-            className={`rounded-lg px-3 py-1.5 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+            className={`shrink-0 rounded-lg border border-primary/15 px-2 py-1.5 font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Attended'
                 ? 'bg-[#940016] text-white shadow-2xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
+                : 'text-slate-600 bg-primary/[0.02] hover:text-primary hover:bg-primary/5'
             }`}
           >
             <span>Attended</span>
@@ -230,10 +233,10 @@ export default function DemoStudentsTable({
           <button
             type="button"
             onClick={() => { setActiveTab('Converted'); setPage(1) }}
-            className={`rounded-lg px-3 py-1.5 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+            className={`shrink-0 rounded-lg border border-primary/15 px-2 py-1.5 font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'Converted'
                 ? 'bg-[#940016] text-white shadow-2xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
+                : 'text-slate-600 bg-primary/[0.02] hover:text-primary hover:bg-primary/5'
             }`}
           >
             <span>Converted</span>
@@ -247,10 +250,10 @@ export default function DemoStudentsTable({
           <button
             type="button"
             onClick={() => { setActiveTab('NoShow'); setPage(1) }}
-            className={`rounded-lg px-3 py-1.5 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+            className={`shrink-0 rounded-lg border border-primary/15 px-2 py-1.5 font-medium flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'NoShow'
                 ? 'bg-[#940016] text-white shadow-2xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#F9EBEE]/60'
+                : 'text-slate-600 bg-primary/[0.02] hover:text-primary hover:bg-primary/5'
             }`}
           >
             <span>No Show</span>
@@ -272,19 +275,18 @@ export default function DemoStudentsTable({
               placeholder="Search student name or phone..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="pl-8 pr-2.5 h-9 w-52 sm:w-60 rounded-lg border border-slate-200/90 bg-slate-50/80 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#940016]"
+              className="pl-8 pr-2.5 h-9 w-48 rounded-lg border border-primary/15 bg-slate-50/80 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#940016]"
             />
           </div>
 
-          <select
+          <CustomSelect
             aria-label="Filter by stream"
             value={streamFilter}
-            onChange={(e) => { setStreamFilter(e.target.value); setPage(1) }}
-            className="h-9 rounded-lg border border-slate-200/90 bg-white px-2.5 text-xs font-medium text-slate-700 shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#940016] cursor-pointer"
-          >
-            <option value="All">All Streams</option>
-            {[...new Set(courses.map(course=>course.streamName||'Unassigned'))].map(name=><option key={name}>{name}</option>)}
-          </select>
+            onChange={value => { setStreamFilter(value); setPage(1) }}
+            options={[{ value: 'All', label: 'All Streams' }, ...[...new Set(courses.map(course => course.streamName || 'Unassigned'))].map(name => ({ value: name, label: name }))]}
+            className="min-w-28 max-w-36 rounded-lg border-primary/20 bg-white"
+            menuWidthClass="min-w-full max-w-[240px]"
+          />
 
           <TableToolbarActions showColumns={false} onPrint={() => window.print()} onExportCsv={handleExport} onExportPdf={handleExportPdf} />
         </div>
@@ -300,8 +302,7 @@ export default function DemoStudentsTable({
                 <th scope="col" className="px-4 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">CANDIDATE DETAILS</th>
                 <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">ACADEMIC STREAM</th>
                 <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">TARGET PROGRAM</th>
-                <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">TRIAL SCHEDULE &amp; HALL</th>
-                <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">TRIAL FACULTY</th>
+                <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">TRIAL DATE</th>
                 <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">REMARKS / NOTES</th>
                 <th scope="col" className="px-3 py-3 whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">STATUS</th>
                 <th scope="col" className="px-4 py-3 text-right whitespace-nowrap font-bold text-slate-700 dark:text-slate-200">ACTIONS</th>
@@ -310,7 +311,7 @@ export default function DemoStudentsTable({
             <tbody className="divide-y divide-slate-100 bg-white">
               {paginatedDemos.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-slate-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-slate-500">
                     No candidate trial sessions found matching current filters.
                   </td>
                 </tr>
@@ -362,28 +363,15 @@ export default function DemoStudentsTable({
                         </button><span className="mt-0.5 block truncate text-[10px] text-muted-foreground" title={item.batchName}>{item.batchName || 'Batch not selected'}</span>
                       </td>
 
-                      {/* TRIAL SCHEDULE & HALL */}
+                      {/* TRIAL DATE */}
                       <td className="px-3 py-3.5 whitespace-nowrap">
                         <div className="text-xs font-semibold text-slate-900">
-                          {formatScheduleTime(item)}
-                        </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {item.scheduledSession?.location || item.batchName || 'Room not configured'}
+                          {item.scheduledSession?.classDate || item.requestedDate || 'Not set'}
                         </div>
                       </td>
 
-                      {/* TRIAL FACULTY */}
-                      <td className="px-3 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
-                          <User className="size-3.5 text-[#940016] shrink-0" />
-                          <span>
-                            {item.scheduledSession?.teacherName || 'Not assigned'}
-                          </span>
-                        </div>
-                      </td>
 
-                      {/* REMARKS / NOTES */}
-                      <td className="px-3 py-3.5 whitespace-nowrap max-w-[220px] truncate text-xs text-slate-500" title={item.notes || '—'}>
+                      <td className="px-3 py-3.5 whitespace-nowrap truncate text-xs text-slate-500" title={item.notes || '—'}>
                         {item.notes || '—'}
                       </td>
 
@@ -394,59 +382,7 @@ export default function DemoStudentsTable({
 
                       {/* ACTIONS */}
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {(item.status === 'Registered' || item.status === 'Scheduled') && canManage && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => item.status==='Registered' ? onSchedule(item) : onAttendance(item)}
-                                className="border border-slate-300 hover:bg-[#F9EBEE]/50 hover:text-[#940016] text-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
-                              >
-                                {item.status==='Registered'?'Schedule Trial':'Mark Attended'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onDirectConvert ? onDirectConvert(item) : onConvert(item)}
-                                className="bg-[#940016] hover:bg-[#72000E] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
-                              >
-                                <span>Convert</span>
-                                <ArrowRight className="size-3.5" />
-                              </button>
-                            </>
-                          )}
-
-                          {item.status === 'Attended' && canManage && (
-                            <button
-                              type="button"
-                              onClick={() => onDirectConvert ? onDirectConvert(item) : onConvert(item)}
-                              className="bg-[#940016] hover:bg-[#72000E] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors whitespace-nowrap cursor-pointer"
-                            >
-                              <GraduationCap className="size-4" />
-                              <span>Convert to Admission</span>
-                            </button>
-                          )}
-
-                          {item.status === 'Converted' && (
-                            <button
-                              type="button"
-                              onClick={() => onViewDetails(item)}
-                              className="text-slate-800 hover:text-[#940016] font-mono text-xs font-semibold flex items-center gap-1 whitespace-nowrap cursor-pointer"
-                            >
-                              <span>{item.convertedAdmissionDisplayId || 'Admission linked'}</span>
-                              <ExternalLink className="size-3.5 text-slate-500" />
-                            </button>
-                          )}
-
-                          {(item.status === 'Missed' || item.status === 'Cancelled') && canManage && (
-                            <button
-                              type="button"
-                              onClick={() => onSchedule(item)}
-                              className="border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer shadow-2xs"
-                            >
-                              Reschedule Trial
-                            </button>
-                          )}
-                        </div>
+                        <DemoRowActions item={item} canManage={canManage} onView={onViewDetails} onAttendance={onAttendance} onConvert={onDirectConvert || onConvert} onCancel={onCancel} onDelete={onDelete} />
                       </td>
                     </tr>
                   )
@@ -486,53 +422,13 @@ export default function DemoStudentsTable({
                   <p className="truncate"><strong>Field:</strong> {item.streamName || courses.find(course=>course.id===item.courseId)?.streamName || 'Unassigned'}</p>
                   <p className="truncate"><strong>Batch:</strong> {item.batchName || 'Not selected'}</p>
                   <p className="truncate"><strong>Branch:</strong> {branchName}</p>
-                  <p className="truncate"><strong>Schedule:</strong> {formatScheduleTime(item)}</p>
-                  <p className="truncate"><strong>Faculty:</strong> {item.scheduledSession?.teacherName || 'Not assigned'}</p>
-                  <p className="truncate"><strong>Venue:</strong> {item.scheduledSession?.location || 'Not configured'}</p>
+                  <p className="truncate"><strong>Trial Date:</strong> {item.scheduledSession?.classDate || item.requestedDate || 'Not set'}</p>
                 </div>
 
                 {item.notes && <p className="text-[11px] italic text-slate-500 truncate">{item.notes}</p>}
 
-                {canManage && (
-                  <div className="flex items-center gap-2 pt-1">
-                    {item.status === 'Converted' ? <span className="text-xs font-medium text-primary">{item.convertedAdmissionDisplayId || 'Admission linked'}</span> : item.status === 'Attended' ? (
-                      <button
-                        type="button"
-                        onClick={() => onDirectConvert ? onDirectConvert(item) : onConvert(item)}
-                        className="w-full bg-[#940016] hover:bg-[#72000E] text-white text-xs font-semibold py-1.5 rounded-lg flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <GraduationCap className="size-3.5" />
-                        <span>Convert to Admission</span>
-                      </button>
-                    ) : item.status === 'Registered' || item.status === 'Scheduled' ? (
-                      <div className="flex w-full items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => item.status==='Registered' ? onSchedule(item) : onAttendance(item)}
-                          className="flex-1 border border-slate-300 hover:bg-[#F9EBEE]/50 hover:text-[#940016] text-slate-700 text-xs font-medium py-1.5 rounded-lg text-center transition-colors cursor-pointer"
-                        >
-                          {item.status==='Registered'?'Schedule Trial':'Mark Attended'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDirectConvert ? onDirectConvert(item) : onConvert(item)}
-                          className="flex-1 bg-[#940016] hover:bg-[#72000E] text-white text-xs font-semibold py-1.5 rounded-lg text-center transition-colors shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <span>Convert</span>
-                          <ArrowRight className="size-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onSchedule(item)}
-                        className="w-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium py-1.5 rounded-lg text-center cursor-pointer"
-                      >
-                        Reschedule Trial
-                      </button>
-                    )}
-                  </div>
-                )}
+                <div className="flex justify-end"><DemoRowActions item={item} canManage={canManage} onView={onViewDetails} onAttendance={onAttendance} onConvert={onDirectConvert || onConvert} onCancel={onCancel} onDelete={onDelete} /></div>
+
               </div>
             )
           })}

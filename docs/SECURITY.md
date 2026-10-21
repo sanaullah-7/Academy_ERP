@@ -1516,3 +1516,36 @@ CONFIRMED and superseding the unresolved proposal immediately above: Super Admin
 CONFIRMED only for the browser-local DEMO enrollment ticket: **Enroll Student** is visible to a Super Admin with the existing `admissions.decide` permission in the active authorized branch. The service rechecks session identity/branch and permission, and the mock database independently checks its canonical current mock session and branch before creating an enrollment. No All Branches bypass, new permission or production authorization grant is introduced. These controls are mock UX/data-integrity safeguards, not server-side security; real backend enforcement remains deferred. Implementation is IN_REVIEW pending owner acceptance; targeted tests/lint pass, full suite/build NOT_RUN.
 
 Approve/Reject remains Pending-only with confirmation, same-status idempotency, stale/opposite/reopen denial and an atomic append-only actor/time history. The unique reciprocal same-branch linked Student remains Provisional. Approved/Rejected admissions are read-only and cannot be deleted. Pending Delete requires the existing verified Provisional link and atomically deletes only that linked pair. UI, service and mock-database boundaries enforce the named permissions. This is browser-local DEMO policy, not production security; backend authorization remains deferred.
+
+
+## BRANCH-CREATION-PAUSE-20261019
+
+CONFIRMED: New branch creation is temporarily disabled for every role, including Super Admin, until explicit owner reauthorization. All currently saved branches and existing view/edit/lifecycle behavior remain preserved. Central branch policy gates UI and organization service; unknown IDs cannot create records disguised as edit. No user-facing enable toggle. Frontend/mock enforcement only; the eventual backend must independently enforce this rule. No license migration or branch deletion authorized. Verification in PROGRESS.md.
+
+
+## BRANCH-EDIT-DELETE-20261019
+
+CONFIRMED frontend/mock policy: branch editing/deletion uses existing branches.manage permission and current canonical mock session. Deletion requires inactive target, different from current branch, no records in any of14 operational collections, and no staff assignments including disabled users; deny on unreadable storage. Checks and organization deletion execute within the mock adapter database lock. Confirmation UI is required. No cascading operational deletion; only empty branch counter metadata is removed with rollback if organization save fails. Core IDs preserved on edit. Add Branch pause preserved. Production backend enforcement remains deferred; no production-security claim.
+
+
+## BRANCH-STATUS-NAME-20261019
+
+CONFIRMED superseding earlier core-lifecycle read-only restriction: branches.manage may use separate core/custom activate/deactivate action. Current branch cannot be deactivated until switching away, last usable branch and pending admissions/active enrollments/unpaid challans remain protected. Toggle rechecks canonical identity/branch and latest saved status after asynchronous checks. Editing changes only name, never code/location/contact/IDs/active. Creation pause/deletion safeguards unchanged. Frontend/mock boundary only.
+
+
+## BRANCH-DELETE-ADMIN-EXCEPTION-20261019
+
+CONFIRMED deletion-policy refinement: Super Admin-only branch assignments are exempt from the staff blocker. Missing/unknown or any non-Super-Admin role still denies deletion, including mixed-role assignments and disabled staff. All operational records must remain absent and branch inactive/not current. Successful deletion removes only target-branch assignment overrides/custom-user assignments; deleted base-branch assignments are omitted by identity projection. Accounts and other branches remain intact. Canonical adapter checks/locking/rollback preserved. Frontend/mock boundary only.
+
+
+## Entry flow update - 2026-10-19
+
+REMOVE-WORKSPACE-FLOW-20261019 supersedes the former Workspace entry flow. Root opens login even with a saved demo session; successful login and branch selection open Dashboard. The baseline permission identifier is dashboard.view (formerly workspace.view); role/branch checks and deny-by-default behavior are preserved. Authentication remains frontend mock authentication. No backend security claim or owner data migration.
+
+
+## STAFF-LOGIN-BRANCH-20261020 - explicit mock boundary
+Owner authorizes email/password UX and current-branch staff assignments in frontend mock mode. Initial local credentials come from ignored VITE_MOCK_* config (public browser configuration, never production secrets). Changed credentials use salted PBKDF2 digests; bad stored credentials fail closed and initial password does not override changed credentials. Browser storage and programmatic fixture login remain user-controlled: this is not production authentication or backend authorization. No Server implementation or production deployment is authorized by this UI change. Current-branch staff creation and assigned-branch organization management are enforced by mock service checks and existing canonical guards; backend secure sessions, authorization and password recovery require their own implementation ticket. IN_REVIEW.
+
+
+## AUDIT-LOG-20261020 - confirmed mock access and privacy policy
+Owner explicitly authorizes Audit Log visibility for active-branch single-role Super Admin only through audit.view (supersedes earlier TBD audit visibility for this frontend scope). Canonical service gate + protected route + hidden unauthorized navigation enforce demo scope. Current branch records only, no unrestricted All Branches. Safe before/after allowlist; credentials/tokens/photos/contact/notes values excluded. Password changes produce generic metadata only. Journal embedded in successful domain storage writes preserves atomicity; no readonly seed/migration backfill or failed-write events. No UI/API edit/delete history. Browser-local storage is user-controlled, so production server audit integrity, retention, authentication/security-event coverage and backend authorization remain separate tickets. This saved-change journal does not record page views, sign-in/out or exports. IN_REVIEW.

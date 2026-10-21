@@ -25,10 +25,10 @@ function Draft() {
   const [text, setText] = useState('fresh')
   return <input aria-label="Branch draft" value={text} onChange={(event) => setText(event.target.value)} />
 }
-function Harness({ permission = 'workspace.view' }) {
-  return <AuthProvider><BranchProvider><MemoryRouter initialEntries={['/workspace']}>
+function Harness({ permission = 'dashboard.view' }) {
+  return <AuthProvider><BranchProvider><MemoryRouter initialEntries={['/dashboard']}>
     <Controls /><Routes>
-      <Route path="/workspace" element={<ProtectedRoute permission={permission}><Draft /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute permission={permission}><Draft /></ProtectedRoute>} />
       <Route path="/login" element={<p>Login required</p>} />
       <Route path="/unauthorized" element={<p>Permission denied</p>} />
     </Routes>

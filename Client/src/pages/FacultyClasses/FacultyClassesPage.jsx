@@ -1,3 +1,5 @@
+import { formatScheduleLabel } from '../../utils/timeFormat.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useTableSelection } from '../../hooks/useTableUtilities.js'
 import BatchStudentsModal from '../../components/FacultyClasses/BatchStudentsModal.jsx'
 import { selectedClassStatus } from '../../utils/selectedClassStatus.js'
@@ -14,6 +16,7 @@ import { classScheduleService, resolveDailyClasses } from '../../services/classS
 import { useEffect, useMemo, useState } from 'react'
 import {
   AlertCircle,
+  Banknote,
   BookOpen,
   CalendarDays,
   ChevronLeft,
@@ -40,6 +43,7 @@ import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card.jsx'
 import { Input } from '../../components/ui/input.jsx'
+import { payrollService } from '../../services/payrollService.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
@@ -326,7 +330,7 @@ const TEACHER_ENRICHMENT = {
     ],
   },
   'demo-teacher': {
-    displayName: 'Demo Teacher',
+    displayName: 'Faculty Teacher',
     qualification: 'Faculty Member',
     subject: 'General Faculty',
     department: 'Faculty Department',
@@ -367,10 +371,10 @@ function enrichTeacher(rawTeacher) {
     else inferredSubject = 'General Faculty'
   }
 
-  // Display name: for demo-teacher, keep exact 'Demo Teacher'; for others strip parenthesis
+  // Display name: keep the seeded faculty label; for others strip parenthesis.
   let cleanName =
     rawTeacher.id === 'demo-teacher'
-      ? 'Demo Teacher'
+      ? 'Faculty Teacher'
       : meta.displayName || rawName.replace(/\s*\([A-Za-z0-9\s]+\)$/, '')
 
   const qualification =
@@ -462,9 +466,13 @@ export default function FacultyClassesPage({ section = 'directory' }) {
   const navigate = useNavigate()
   const { branchId, branch, scopeKey } = useBranch()
   const { can } = usePermissions()
+  const [payrollEnabled, setPayrollEnabled] = useState(false)
+  useEffect(() => {
+    payrollService.getSettings({ branchId }).then(res => setPayrollEnabled(Boolean(res.enabled))).catch(() => setPayrollEnabled(false))
+  }, [branchId])
   const canManage = can(PERMISSIONS.CLASSES_MANAGE) || can(PERMISSIONS.COURSES_MANAGE)
 
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(() => peekPageResource(`faculty:${section}`, { scopeKey, retryCount: 0, section }))
   const [retryCount, setRetryCount] = useState(0)
 
   // Filters and Selection
@@ -488,6 +496,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     if (!branchId) return () => { active = false }
 
     const load = async () => {
@@ -511,7 +520,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
 
     load().then(
       (data) => {
-        if (active) setResult({ scopeKey, retryCount, section, data })
+        if (active) setResult(rememberPageResource(`faculty:${section}`, { scopeKey, retryCount, section, data }, loadVersion))
       },
       (error) => {
         if (active) setResult({ scopeKey, retryCount, section, error: error.message })
@@ -754,7 +763,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
       rows: slots.map((s) => [
         `${s.course} (${s.batch})`,
         s.subject,
-        `${s.days} • ${s.time}`,
+        `${s.days} • ${formatScheduleLabel(s.time)}`,
         s.room,
         `${s.students} Students`,
       ]),
@@ -764,7 +773,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-12">
+      <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-col gap-5 pb-12">
         {/* TOP BAR / HEADER */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -916,11 +925,11 @@ export default function FacultyClassesPage({ section = 'directory' }) {
               {/* MAIN CONTENT: 2-COLUMN DESKTOP (~65% LEFT, ~35% RIGHT) */}
               <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
                 {/* LEFT COLUMN: ROSTER + CAMPUS SHIFT DISTRIBUTION */}
-                <div className="space-y-4 lg:col-span-7 xl:col-span-8">
+                <div className="min-w-0 space-y-4 lg:col-span-7 xl:col-span-8">
                   {/* Faculty Roster Card */}
                   <Card className="rounded-xl border border-border/80 bg-white shadow-xs overflow-hidden">
                     {/* Roster Header with Circular Toolbar Buttons */}
-                    <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
+                    <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between bg-slate-50/50">
                       <div className="flex items-center gap-2.5">
                         <input
                           type="checkbox"
@@ -1173,7 +1182,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                       {shiftCards.map(shift=><div key={shift.label} className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-slate-50/60 p-3">
                         <div className="flex items-center justify-between text-xs">
                           <span className="min-w-0 truncate font-bold text-slate-900" title={shift.label}>{shift.label}</span>
-                          <span className="min-w-0 truncate font-mono text-[10px] text-muted-foreground" title={shift.time}>{shift.time}</span>
+                          <span className="min-w-0 truncate font-mono text-[10px] text-muted-foreground" title={formatScheduleLabel(shift.time)}>{formatScheduleLabel(shift.time)}</span>
                         </div>
                         <p className="mt-1.5 text-xs text-muted-foreground">{shift.lectures} Lectures today &middot; {shift.batches} Batches active</p>
                         <div className="mt-2 text-[11px] text-muted-foreground">Class time elapsed <strong>{shift.lectures?`${shift.progress}%`:"No classes today"}</strong><div role="progressbar" aria-label={`${shift.label} scheduled time elapsed`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={shift.progress} className="mt-1 h-1.5 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-primary" style={{width:`${shift.progress}%`}} /></div></div>
@@ -1192,12 +1201,12 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                 </div>
 
                 {/* RIGHT COLUMN: SELECTED TEACHER DETAIL PANEL (~35%) */}
-                <div id="faculty-mobile-details" tabIndex={-1} className="lg:col-span-5 xl:col-span-4">
+                <div id="faculty-mobile-details" tabIndex={-1} className="min-w-0 lg:col-span-5 xl:col-span-4">
                   {selectedTeacher ? (
                     <Card className="rounded-xl border border-border/80 bg-white p-5 shadow-xs space-y-4">
                       {/* Teacher Profile Card Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex min-w-0 max-w-full items-center gap-3">
                           <div className="flex size-13 shrink-0 items-center justify-center rounded-full bg-[#940016]/10 text-[#940016] font-bold text-base border border-[#940016]/20">
                             {selectedTeacher.displayName
                               .split(' ')
@@ -1206,7 +1215,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                               .slice(0, 2)
                               .toUpperCase()}
                           </div>
-                          <div>
+                          <div className="min-w-0 [overflow-wrap:anywhere]">
                             <h3 className="text-base font-bold text-slate-900">
                               {selectedTeacher.displayName}
                             </h3>
@@ -1234,7 +1243,19 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex shrink-0 flex-wrap items-center gap-1">
+                          {payrollEnabled && can(PERMISSIONS.FINANCE_VIEW) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs font-semibold text-[#940016] border-[#f0d5d9] bg-[#F9EBEE]/60 hover:bg-[#F9EBEE] cursor-pointer inline-flex items-center gap-1"
+                              onClick={() => navigate(`/finance/payroll?teacherId=${encodeURIComponent(selectedTeacher.id)}`)}
+                              title="Salary Details"
+                            >
+                              <Banknote size={12} />
+                              Salary Details
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -1353,7 +1374,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                                   <div className="mt-2.5 flex min-w-0 flex-col gap-2 text-[10px] text-muted-foreground">
                                     <span className="flex min-w-0 items-center gap-1.5 font-medium text-slate-700">
                                       <Clock size={12} className="text-slate-400" />
-                                      <span className="truncate" title={`${slot.days} - ${slot.time}`}>{slot.days} • {slot.time}</span>
+                                      <span className="truncate" title={`${slot.days} - ${formatScheduleLabel(slot.time)}`}>{slot.days} • {formatScheduleLabel(slot.time)}</span>
                                     </span>
                                     <div className="flex w-full items-center justify-between gap-2 whitespace-nowrap">
                                       <span className="font-semibold text-slate-800">
@@ -1441,7 +1462,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
               <p className="text-sm text-muted-foreground">
                 {data.subjectAssignments?.available
                   ? 'No teacher subject assignments are saved for this branch.'
-                  : 'Subject records and teacher-subject assignment links are not available in the approved DEMO data model yet. This view is read-only; no assignments were inferred.'}
+                  : 'Subject records and teacher-subject assignment links are not available yet. This view is read-only; no assignments were inferred.'}
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
                 Current teacher accounts: {data.teachers.length}. New or removed assignments require an approved subject model and assignment policy.
@@ -1472,7 +1493,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                 </div>
               )}
               <p className="mt-4 text-sm text-muted-foreground">
-                Teacher-batch assignment records are not part of the current DEMO data model. No teacher is assumed to belong to a batch.
+                Teacher-batch assignment records are not available yet. No teacher is assumed to belong to a batch.
               </p>
             </SectionCard>
           )}

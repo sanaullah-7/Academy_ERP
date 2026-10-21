@@ -37,7 +37,7 @@ describe('F03 Students module', () => {
 
     render(<App />)
     const user = userEvent.setup()
-    const table = await screen.findByRole('table', { name: 'Saved DEMO students in the selected branch' })
+    const table = await screen.findByRole('table', { name: 'Saved students in the selected branch' })
     expect(within(table).getByRole('link', { name: 'View student Zed DEMO' })).toBeInTheDocument()
     const search = screen.getByRole('searchbox', { name: 'Search students' })
     await user.type(search, 'Guardian Beta')
@@ -65,7 +65,7 @@ describe('F03 Students module', () => {
     history.replaceState(null, '', `/students/${admission.studentId}`)
 
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Student Profile' })).toBeInTheDocument()
+    expect(await screen.findByText('Student details')).toBeInTheDocument()
     expect((await screen.findAllByText('Active')).length).toBeGreaterThan(0)
     expect(screen.getByText('Demo Course Two', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.getAllByText('DEMO Batch - Demo Course Two', { selector: 'dd' })).toHaveLength(2)
@@ -131,7 +131,7 @@ describe('F03 Students module', () => {
     const admission = createMockDatabase().createAdmission(input, central)
     await signIn('demo-owner')
     render(<App />)
-    await screen.findByRole('table', { name: 'Saved DEMO students in the selected branch' })
+    await screen.findByRole('table', { name: 'Saved students in the selected branch' })
     await userEvent.setup().click(screen.getByRole('button', { name: `Actions for ${admission.studentName}` }))
     expect(screen.queryByRole('menuitem', { name: 'Edit Student' })).not.toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: 'Delete Student' })).not.toBeInTheDocument()

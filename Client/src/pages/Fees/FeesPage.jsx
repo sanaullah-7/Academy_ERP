@@ -1,7 +1,9 @@
+import { REPORTING_PERIODS, reportingDay, matchesReportingPeriod } from '../../utils/reportingPeriod.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 import Pagination from '../../components/Shared/Pagination.jsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Banknote, CircleAlert, Download, Loader2, MoreVertical, Printer, ReceiptText, RefreshCw, Search } from 'lucide-react'
+import { Banknote, CheckCircle2, CircleAlert, Download, Loader2, MoreVertical, Printer, ReceiptText, RefreshCw, Search } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
 import { Badge } from '../../components/ui/badge.jsx'
@@ -16,6 +18,7 @@ import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf, exportChallanPdf, exportReceiptPdf } from '../../utils/pdfHelpers.js'
 import tsaLogo from '../../assets/images/tsa-logo.png'
 import { getLocalDateOnly } from '../../utils/formatDate.js'
+import { feeCardMetrics } from '../../utils/feeCardMetrics.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   TableToolbarActions,
@@ -148,29 +151,34 @@ function FeeActionMenu({ item, paymentItem, canCollect, onChallan, onCollect, on
 export default function FeesPage() {
   const { branchId, branch, scopeKey } = useBranch(), { can } = usePermissions()
   const location=useLocation(), navigate=useNavigate()
-  const [result,setResult]=useState(null), [request,setRequest]=useState(0), [search,setSearch]=useState(''), [status,setStatus]=useState('All'), [dialog,setDialog]=useState(null), [error,setError]=useState(''), [exportError,setExportError]=useState(''), [message,setMessage]=useState(''), [busy,setBusy]=useState(false), [selectedChallanId,setSelectedChallanId]=useState(''), [selectedBranchId,setSelectedBranchId]=useState('')
+  const [result,setResult]=useState(() => peekPageResource('fees', { scopeKey, request: 0 })), [request,setRequest]=useState(0), [search,setSearch]=useState(''), [status,setStatus]=useState('All'), [dialog,setDialog]=useState(null), [error,setError]=useState(''), [exportError,setExportError]=useState(''), [message,setMessage]=useState(''), [busy,setBusy]=useState(false), [selectedChallanId,setSelectedChallanId]=useState(''), [selectedBranchId,setSelectedBranchId]=useState('')
   const [challan,setChallan]=useState({enrollmentId:'',description:'',amount:'',issueDate:today(),dueDate:today()}), [payment,setPayment]=useState({challanId:'',amount:'',method:'Cash'})
+  const [pageState,setPageState]=useState({key:'',page:1})
+  const [period,setPeriod]=useState('All')
+  const [dateRange,setDateRange]=useState({start:'',end:''})
+  const [academyToday,setAcademyToday]=useState(()=>reportingDay(new Date()))
+  useEffect(()=>{const timer=window.setInterval(()=>setAcademyToday(reportingDay(new Date())),60000);return()=>window.clearInterval(timer)},[])
   const requestedReceiptId=location.state?.receiptId
-  useEffect(()=>{let active=true;financialService.overview({branchId}).then(data=>{if(active){setResult({scopeKey,request,data});const selectedPayment=requestedReceiptId?data.payments.find(item=>item.receiptId===requestedReceiptId):null;if(selectedPayment){setSelectedChallanId(selectedPayment.challanId);setSelectedBranchId(branchId);setMessage('Dashboard se selected verified payment neeche highlight ki gayi hai.');setSearch('');setStatus('All')}if(requestedReceiptId)navigate(location.pathname,{replace:true,state:null})}},e=>active&&setResult({scopeKey,request,error:e.message}));return()=>{active=false}},[branchId,scopeKey,request,location.pathname,requestedReceiptId,navigate])
+  useEffect(()=>{let active=true;const loadVersion=capturePageVersion();financialService.overview({branchId}).then(data=>{if(active){setResult(rememberPageResource('fees',{scopeKey,request,data},loadVersion));const selectedPayment=requestedReceiptId?data.payments.find(item=>item.receiptId===requestedReceiptId):null;if(selectedPayment){setSelectedChallanId(selectedPayment.challanId);setSelectedBranchId(branchId);setMessage('Dashboard se selected verified payment neeche highlight ki gayi hai.');setSearch('');setStatus('All');setPeriod('All');setDateRange({start:'',end:''});setPageState({key:'',page:1})}if(requestedReceiptId)navigate(location.pathname,{replace:true,state:null})}},e=>active&&setResult({scopeKey,request,error:e.message}));return()=>{active=false}},[branchId,scopeKey,request,location.pathname,requestedReceiptId,navigate])
   const current=result?.scopeKey===scopeKey&&result.request===request?result:null, data=current?.data
   const highlightedChallanId=selectedBranchId===branchId?selectedChallanId:''
   useEffect(()=>{if(highlightedChallanId&&data)document.getElementById(`fee-row-${highlightedChallanId}`)?.scrollIntoView?.({block:'center'})},[highlightedChallanId,data])
-  const rows=useMemo(()=>{const needle=search.trim().toLowerCase(); return (data?.challans??[]).filter(x=>(status==='All'||x.status===status||(status==='Due'&&['Unpaid','Partial'].includes(x.status)))&&(!needle||`${x.studentName} ${x.reference} ${x.courseName} ${x.batchName}`.toLowerCase().includes(needle)))},[data,search,status])
+  const datedChallans=useMemo(()=>(data?.challans??[]).filter(item=>item.branchId===branchId&&matchesReportingPeriod(item.issueDate,period,dateRange,academyToday)),[data,branchId,period,dateRange,academyToday])
+  const rows=useMemo(()=>{const needle=search.trim().toLowerCase(); return datedChallans.filter(x=>(status==='All'||x.status===status||(status==='Due'&&['Unpaid','Partial'].includes(x.status)))&&(!needle||`${x.studentName} ${x.reference} ${x.courseName} ${x.batchName}`.toLowerCase().includes(needle)))},[datedChallans,search,status])
   const statusCounts = useMemo(() => {
-    const challans = data?.challans ?? []
+    const challans = datedChallans
     return {
       All: challans.length,
       Paid: challans.filter(x => x.status === 'Paid').length,
       Due: challans.filter(x => ['Unpaid', 'Partial'].includes(x.status)).length,
       Overdue: challans.filter(x => x.status === 'Overdue').length,
     }
-  }, [data])
-  const [pageState,setPageState]=useState({key:'',page:1})
+  }, [datedChallans])
   const [pageSize,setPageSize]=useState(15)
-  const pageKey=`${branchId}|${search}|${status}|${pageSize}`
+  const pageKey=JSON.stringify([branchId,search,status,pageSize,period,dateRange.start,dateRange.end,academyToday])
   const page=Math.min(pageState.key===pageKey?pageState.page:1,Math.max(1,Math.ceil(rows.length/pageSize)))
   const pageRows=rows.slice((page-1)*pageSize,page*pageSize)
-  const totals={collected:(data?.payments??[]).reduce((s,x)=>s+x.amount,0),outstanding:(data?.challans??[]).reduce((s,x)=>s+x.balance,0),overdue:(data?.challans??[]).filter(x=>x.status==='Overdue').reduce((s,x)=>s+x.balance,0),today:(data?.payments??[]).filter(x=>x.paidAt.slice(0,10)===today()).reduce((s,x)=>s+x.amount,0)}
+  const totals=feeCardMetrics(data,branchId)
   async function submitChallan(e){e.preventDefault();setBusy(true);setError('');try{await financialService.createChallan({...challan,amount:Number(challan.amount)},{branchId});setDialog(null);setMessage('Challan issued successfully.');setRequest(x=>x+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
   async function submitPayment(e){e.preventDefault();setBusy(true);setError('');try{await financialService.recordPayment({...payment,amount:Number(payment.amount)},{branchId});setDialog(null);setMessage('Verified payment and receipt saved. Use the Receipt action when you want to view it.');setRequest(x=>x+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
   const openPayment=x=>{setPayment({challanId:x.id,amount:String(x.balance),method:'Cash'});setDialog({type:'payment',item:x});setError('')}
@@ -180,7 +188,10 @@ export default function FeesPage() {
     setChallan(previous => ({ ...previous, enrollmentId, amount: Number.isFinite(expected) ? String(expected) : previous.amount }))
   }
   const columnVisibility = useColumnVisibility(feeColumns, 'fees')
-  const selection = useTableSelection(rows, x => x.id)
+  const selection = useTableSelection(rows, x => x.id, pageRows)
+  const updateFilter=callback=>{selection.clearSelection();setPageState({key:'',page:1});callback()}
+  const resetFilters=()=>updateFilter(()=>{setSearch('');setStatus('All');setPeriod('All');setDateRange({start:'',end:''})})
+  const invalidRange=period==='Custom'&&dateRange.start&&dateRange.end&&dateRange.start>dateRange.end
 
   function exportReport() {
     setExportError('')
@@ -237,7 +248,7 @@ export default function FeesPage() {
   return <DashboardLayout><div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Financial Registry · {branch?.name}</p>
+
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Fees &amp; Payment Ledger</h1>
         <p className="text-xs text-muted-foreground mt-0.5">Saved branch challans, balances and verified receipts.</p>
       </div>
@@ -266,23 +277,38 @@ export default function FeesPage() {
         ["Today's Counter Inflow", totals.today, Banknote, 'text-primary bg-[#F9EBEE] border-[#f0d5d9]', 'kpi-sky']
       ].map(([label, value, Icon, tone, theme]) => (
         <Card key={label} className={`top-kpi-card ${theme} py-0 overflow-hidden border shadow-xs`}>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
+          <CardContent className="flex h-full flex-col justify-between gap-4 p-4">
+            <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
               <strong className="mt-1.5 block text-2xl font-bold tracking-tight text-foreground tabular-nums">{money(value)}</strong>
             </div>
             <span className={`grid size-10 place-items-center rounded-xl border ${tone}`}><Icon size={19} /></span>
+            </div>
+            <div className="mt-auto text-[10px] leading-relaxed text-slate-600">
+              {label === 'Total Collected' && <>
+                <div className="flex flex-wrap items-center justify-between gap-1"><span>{totals.recovery == null ? 'No issued fees yet' : `${totals.recovery}% of issued fees collected`}</span><span className="font-semibold text-emerald-700">{money(totals.thisWeek)} this week</span></div>
+                <div role="progressbar" aria-label="Issued fee recovery" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, totals.recovery ?? 0)} aria-valuetext={totals.recovery == null ? 'No issued fees yet' : `${totals.recovery}% of issued fees collected`} className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-emerald-600" style={{ width: `${Math.min(100, Math.max(0, totals.recovery ?? 0))}%` }} /></div>
+              </>}
+              {label === 'Outstanding Dues' && <div className="flex flex-wrap items-center justify-between gap-1"><span><span className="mr-1 inline-block size-1.5 rounded-full bg-amber-500" />{totals.pendingStudents} students with unpaid fees</span><span>{totals.pendingChallans} unpaid challans</span></div>}
+              {label === 'Overdue Dues' && <div className="flex flex-wrap items-center justify-between gap-1"><span><span className="mr-1 rounded-full bg-rose-100 px-1.5 py-0.5 font-semibold text-rose-700">{totals.overdueStudents} accounts</span>{totals.overdueChallans} overdue challans</span><button type="button" disabled={!totals.overdueChallans} onClick={()=>updateFilter(()=>{setSearch('');setStatus('Overdue');setPeriod('All');setDateRange({start:'',end:''})})} className="font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default disabled:opacity-50" aria-label="View all overdue fee challans">View All</button></div>}
+              {label === "Today's Counter Inflow" && <div className="flex items-center gap-1.5 text-emerald-700"><CheckCircle2 size={13} aria-hidden="true" /><span>{totals.todayReceipts} verified receipts today</span></div>}
+            </div>
           </CardContent>
         </Card>
       ))}
     </section>
     <Card className="py-0 border border-border/80 shadow-xs">
-      <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5">
-        <label className="relative flex-1">
+      <CardContent className="flex flex-wrap items-center gap-2 p-3.5">
+        <div role="group" aria-label="Fee reporting period" className="grid w-full shrink-0 grid-cols-6 overflow-hidden rounded-lg border border-foreground/70 bg-card sm:w-auto">
+          {REPORTING_PERIODS.map(value=><button key={value} type="button" aria-pressed={period===value} onClick={()=>updateFilter(()=>setPeriod(value))} className={`min-w-0 border-r border-primary/15 px-2 py-2 text-[10px] transition-colors last:border-r-0 sm:px-2.5 sm:text-[11px] ${period===value?'bg-primary/10 font-semibold text-primary':'text-muted-foreground hover:bg-primary/5 hover:text-foreground'}`}>{value}</button>)}
+        </div>
+        <p className="sr-only">Filter challans by issue date, Asia/Karachi. Weekly periods run Monday to Sunday.</p>
+        <label className="relative min-w-0 w-full sm:w-40 sm:flex-1 sm:max-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15}/>
-          <Input className="pl-9 h-9 text-xs" placeholder="Search student, course or challan..." value={search} onChange={e=>setSearch(e.target.value)}/>
+          <Input className="pl-9 h-9 text-xs" aria-label="Search fees" placeholder="Search student or challan..." value={search} onChange={e=>updateFilter(()=>setSearch(e.target.value))}/>
         </label>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
           <div className="mobile-fee-status flex items-center gap-1 rounded-xl border border-border/70 bg-slate-50/80 p-1">
             {['All', 'Paid', 'Due', 'Overdue'].map(x => {
               const isCurrent = status === x
@@ -296,7 +322,7 @@ export default function FeesPage() {
                       ? 'bg-[#940016] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                   }`}
-                  onClick={() => setStatus(x)}
+                  onClick={() => updateFilter(() => setStatus(x))}
                 >
                   <span>{x}</span>
                   <span
@@ -312,11 +338,16 @@ export default function FeesPage() {
               )
             })}
           </div>
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={()=>{setSearch('');setStatus('All')}}>
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={resetFilters}>
             <RefreshCw size={13}/>
             Reset
           </Button>
         </div>
+        {period==='Custom'&&<div className="flex w-full flex-wrap items-end gap-3 border-t border-border/60 pt-3">
+          <label className="grid gap-1 text-xs text-muted-foreground">Start date<Input type="date" aria-label="Fee start date" value={dateRange.start} max={dateRange.end||undefined} onChange={event=>updateFilter(()=>setDateRange(current=>({...current,start:event.target.value})))} className="h-9 w-full sm:w-44"/></label>
+          <label className="grid gap-1 text-xs text-muted-foreground">End date<Input type="date" aria-label="Fee end date" value={dateRange.end} min={dateRange.start||undefined} onChange={event=>updateFilter(()=>setDateRange(current=>({...current,end:event.target.value})))} className="h-9 w-full sm:w-44"/></label>
+          <p role={invalidRange?'alert':undefined} className={`text-xs ${invalidRange?'text-destructive':'text-muted-foreground'}`}>{invalidRange?'End date must be on or after start date.':!dateRange.start||!dateRange.end?'Select both dates to show matching challans.':'Challan issue dates, including both dates (Asia/Karachi).'}</p>
+        </div>}
       </CardContent>
     </Card>
     {selection.selectedCount > 0 && (
@@ -481,11 +512,11 @@ export default function FeesPage() {
         <Pagination label="Fees" page={page} rows={pageSize} total={rows.length} onPage={value=>setPageState({key:pageKey,page:value})} onRows={setPageSize}/>
       </div>
     )}
-    <Dialog open={!!dialog} onOpenChange={open=>!open&&!busy&&setDialog(null)}><DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto"><DialogTitle>{dialog?.type==='challan'?'Generate Challan':dialog?.type==='payment'?'Collect Payment':dialog?.type==='receipt'?'Verified Receipt':'Challan'}</DialogTitle><DialogDescription>Branch-scoped fictional DEMO financial record.</DialogDescription>{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+    <Dialog open={!!dialog} onOpenChange={open=>!open&&!busy&&setDialog(null)}><DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto print:max-h-none print:max-w-none print:overflow-visible print:border-none print:shadow-none print:p-0 print:m-0 print:bg-white"><DialogTitle className="print:hidden">{dialog?.type==='challan'?'Generate Challan':dialog?.type==='payment'?'Collect Payment':dialog?.type==='receipt'?'Verified Receipt':'Challan'}</DialogTitle><DialogDescription className="print:hidden">Financial record for the selected branch.</DialogDescription>{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
       {dialog?.type==='challan'&&<form onSubmit={submitChallan} className="grid gap-3"><select required className="min-h-11 rounded-md border px-3" value={challan.enrollmentId} onChange={e=>chooseEnrollment(e.target.value)}><option value="">Select enrolled student</option>{data.enrollments.filter(x=>!data.challans.some(challanRecord=>challanRecord.enrollmentId===x.id)).map(x=><option value={x.id} key={x.id}>{x.studentName} · {x.courseName} · {x.batchName}{Number.isFinite(x.netFee??x.configuredFee)?` · ${money(x.netFee??x.configuredFee)}`:''}</option>)}</select><Input required placeholder="Fee description" value={challan.description} onChange={e=>setChallan({...challan,description:e.target.value})}/><Input required min="1" type="number" placeholder="Amount PKR" value={challan.amount} readOnly={Number.isFinite(data.enrollments.find(item=>item.id===challan.enrollmentId)?.netFee??data.enrollments.find(item=>item.id===challan.enrollmentId)?.configuredFee)} onChange={e=>setChallan({...challan,amount:e.target.value})}/>{Number.isFinite(data.enrollments.find(item=>item.id===challan.enrollmentId)?.netFee??data.enrollments.find(item=>item.id===challan.enrollmentId)?.configuredFee)&&<p className="text-xs text-muted-foreground">Amount is the confirmed net fee saved with this enrollment.</p>}<label>Issue date<Input required type="date" value={challan.issueDate} onChange={e=>setChallan({...challan,issueDate:e.target.value})}/></label><label>Due date<Input required type="date" value={challan.dueDate} onChange={e=>setChallan({...challan,dueDate:e.target.value})}/></label><Button type="submit" disabled={busy}>{busy?'Saving...':'Issue Challan'}</Button></form>}
       {dialog?.type==='payment'&&<form onSubmit={submitPayment} className="grid gap-3"><p>Outstanding: <strong>{money(dialog.item.balance)}</strong></p><Input required min="1" max={dialog.item.balance} type="number" value={payment.amount} onChange={e=>setPayment({...payment,amount:e.target.value})}/><select className="min-h-11 rounded-md border px-3" value={payment.method} onChange={e=>setPayment({...payment,method:e.target.value})}>{['Cash','Bank Transfer','Mobile Wallet','EasyPaisa'].map(x=><option key={x}>{x}</option>)}</select><Button type="submit" disabled={busy}>{busy?'Recording...':'Record Verified Payment'}</Button></form>}
       {['viewChallan','receipt'].includes(dialog?.type)&&(
-        <div className="rounded-xl border border-border/80 bg-slate-50/50 p-5 space-y-4 print:p-8">
+        <div className="rounded-xl border border-border/80 bg-slate-50/50 p-5 space-y-4 print:p-0 print:border-none print:bg-white print:space-y-4 print:w-full">
           <div className="flex items-center gap-3 border-b border-border/80 pb-4">
             <img src={tsaLogo} alt="TSA Logo" className="size-14 object-contain rounded shrink-0 bg-white p-1 border border-slate-200 shadow-2xs" />
             <div className="flex-1 min-w-0">
@@ -568,7 +599,7 @@ export default function FeesPage() {
                 Download Receipt PDF (Template C)
               </Button>
             )}
-            <Button variant="outline" className="h-8 gap-1.5 text-xs" onClick={()=>window.print()}>
+            <Button variant="outline" className="h-8 gap-1.5 text-xs" onClick={()=>{document.body.classList.add('is-printing-modal');window.print();setTimeout(()=>document.body.classList.remove('is-printing-modal'),500)}}>
               <Printer size={14}/>
               Print
             </Button>

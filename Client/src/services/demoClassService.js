@@ -29,6 +29,7 @@ export const demoClassService = {
   update: async (id, record, query) => mockApi.demoClassOperation('update', { id, record, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
   schedule: async (id, record, query) => mockApi.demoClassOperation('schedule', { id, record, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
   recordAttendance: async (id, record, query) => mockApi.demoClassOperation('attendance', { id, record, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
+  delete: async (id, query) => mockApi.demoClassOperation('delete', { id, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
   cancel: async (id, record, query) => mockApi.demoClassOperation('cancel', { id, record, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
   convertToAdmission: async (id, record, query) => mockApi.demoClassOperation('convert', { id, record, query }, await scopeCheck(query, PERMISSIONS.DEMO_CLASSES_MANAGE)),
 }
