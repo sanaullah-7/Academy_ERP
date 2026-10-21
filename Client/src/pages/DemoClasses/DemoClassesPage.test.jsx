@@ -95,7 +95,8 @@ describe('F08 Demo Classes Page — UI Component Integration', () => {
     await screen.findAllByText('Hamza Malik')
 
     // Find the row action button specifically, not the 'Converted' tab
-    const actionConvertBtn = screen.getAllByRole('button', { name: /^Convert$/i })[0]
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    const actionConvertBtn = screen.getByRole('menuitem', { name: 'Convert to Admission' })
     expect(actionConvertBtn).toBeInTheDocument()
 
     await user.click(actionConvertBtn)
@@ -103,4 +104,38 @@ describe('F08 Demo Classes Page — UI Component Integration', () => {
     expect(await screen.findByRole('heading', { name: /Student Admissions/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /New Student Admission/i })).toBeInTheDocument()
   })
+  it('requires confirmation and deletes only the chosen candidate from the registry', async () => {
+    const user = userEvent.setup()
+    await signIn('demo-admin', 'demo-central')
+    render(<App />)
+    await screen.findAllByText('Hamza Malik')
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
+    expect(await screen.findByRole('heading', { name: 'Delete Demo Student?' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cancel', exact: true }))
+    expect(screen.getAllByText('Hamza Malik').length).toBeGreaterThan(0)
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
+    await user.click(screen.getByRole('button', { name: 'Delete', exact: true }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Actions for Hamza Malik' })).not.toBeInTheDocument())
+    expect(screen.getAllByText('Zainab Fatima').length).toBeGreaterThan(0)
+  })
+
+  it('offers direct attendance instead of scheduling for a registered candidate', async () => {
+    const user = userEvent.setup()
+    await signIn('demo-admin', 'demo-central')
+    render(<App />)
+    await screen.findAllByText('Hamza Malik')
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    expect(screen.queryByRole('menuitem', { name: /Schedule Trial/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('menuitem', { name: 'Mark Attended' }))
+    await user.click(screen.getByRole('button', { name: 'Save Attendance' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await user.click(screen.getAllByRole('button', { name: 'Actions for Hamza Malik' })[0])
+    expect(screen.getByRole('menuitem', { name: 'Update Attendance' })).toBeInTheDocument()
+  })
+
 })

@@ -1,3 +1,4 @@
+import { formatTimestamp } from './timeFormat.js'
 /**
  * Purpose: Universal PDF Document Generator for The Scholar Coaching Academy (TSA) ERP.
  * Implements:
@@ -232,7 +233,7 @@ export function exportTablePdf({
 
     doc.setFont('helvetica', 'italic')
     doc.setTextColor(...TSA_MUTED)
-    doc.text(`Generated: ${new Date().toLocaleString('en-PK')}`, pw - 18, contentY + 4.5, { align: 'right' })
+    doc.text(`Generated: ${formatTimestamp(new Date())}`, pw - 18, contentY + 4.5, { align: 'right' })
 
     contentY += 9
   }
@@ -698,5 +699,199 @@ export function exportReceiptPdf({
   drawFooter(doc, 1, `The Scholar Coaching Academy — Official Verified Payment Receipt • Receipt: ${payment.receiptReference || 'N/A'}`)
 
   const outName = filename || `${(payment.studentName || 'student').toLowerCase().replace(/\s+/g, '-')}-receipt-${payment.receiptReference || 'ref'}.pdf`
+  doc.save(outName)
+}
+
+export function exportPayslipPdf({
+  payslip = {},
+  branchName = 'Main Campus',
+  filename = null,
+}) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  })
+
+  const pw = doc.internal.pageSize.getWidth()
+  const teacher = payslip.teacher || {}
+  const line = payslip.line || {}
+
+  // 1. Draw branded header
+  const headerEndY = drawPremiumHeader(doc, 'PAYSLIP', branchName)
+
+  // 2. Payslip Strip
+  doc.setFillColor(...TSA_MAROON_L)
+  doc.rect(14, headerEndY, pw - 28, 8, 'F')
+  doc.setDrawColor(...TSA_MAROON)
+  doc.setLineWidth(0.2)
+  doc.rect(14, headerEndY, pw - 28, 8, 'D')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9.5)
+  doc.setTextColor(...TSA_MAROON)
+  doc.text('OFFICIAL TEACHER SALARY PAYSLIP — ' + (line.yearMonth || 'Oct 2026'), pw / 2, headerEndY + 5.5, { align: 'center' })
+
+  // Status Badge
+  const status = line.status || 'Draft'
+  const isPaid = status === 'Paid'
+  doc.setFillColor(isPaid ? 16 : 148, isPaid ? 185 : 0, isPaid ? 129 : 22)
+  doc.roundedRect(pw - 46, headerEndY + 1.5, 30, 5.2, 1, 1, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7)
+  doc.setTextColor(...TSA_WHITE)
+  doc.text((status || 'APPROVED').toUpperCase(), pw - 31, headerEndY + 5, { align: 'center' })
+
+  // 3. Faculty & Period Metadata Grid
+  const metaY = headerEndY + 12
+  doc.setFillColor(...TSA_ZEBRA)
+  doc.roundedRect(14, metaY, pw - 28, 22, 1.5, 1.5, 'F')
+  doc.setDrawColor(...TSA_BORDER)
+  doc.setLineWidth(0.2)
+  doc.roundedRect(14, metaY, pw - 28, 22, 1.5, 1.5, 'D')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
+  doc.setTextColor(...TSA_MUTED)
+  doc.text('FACULTY MEMBER', 18, metaY + 5)
+  doc.text('QUALIFICATION / ROLE', 75, metaY + 5)
+  doc.text('PAYROLL PERIOD', 135, metaY + 5)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(...TSA_SLATE)
+  doc.text(safeText(teacher.name || 'Faculty Member'), 18, metaY + 11)
+  doc.text(safeText(teacher.qualification || 'Teacher'), 75, metaY + 11)
+  doc.text(safeText(line.yearMonth || '2026-10'), 135, metaY + 11)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(...TSA_MUTED)
+  doc.text('ID: ' + safeText(teacher.id) + ' • Contact: ' + safeText(teacher.contact || 'N/A'), 18, metaY + 17)
+  doc.text('Method: ' + safeText(line.calculationMethod).toUpperCase(), 75, metaY + 17)
+  doc.text('Ref: ' + safeText(line.id), 135, metaY + 17)
+
+  // 4. Earnings & Deductions Tables (Side by side)
+  const tblY = metaY + 26
+  const colW = (pw - 32) / 2
+
+  // Earnings Header
+  doc.setFillColor(...TSA_MAROON)
+  doc.rect(14, tblY, colW, 7, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(...TSA_WHITE)
+  doc.text('EARNINGS & BREAKDOWN', 18, tblY + 5)
+  doc.text('AMOUNT (PKR)', 14 + colW - 4, tblY + 5, { align: 'right' })
+
+  // Deductions Header
+  doc.setFillColor(...TSA_SLATE)
+  doc.rect(14 + colW + 4, tblY, colW, 7, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(...TSA_WHITE)
+  doc.text('DEDUCTIONS & ADJUSTMENTS', 18 + colW + 4, tblY + 5)
+  doc.text('AMOUNT (PKR)', pw - 18, tblY + 5, { align: 'right' })
+
+  // Earnings Rows
+  let earnY = tblY + 7
+  const earnItems = [
+    ['Base Salary (' + (line.calculationDetails?.description || safeText(line.calculationMethod)) + ')', line.baseEarnings || 0],
+    ['Conveyance / Medical Allowances', line.allowances || 0],
+  ]
+  if (line.adjustments > 0) earnItems.push(['Approved Performance Bonus', line.adjustments])
+
+  earnItems.forEach(([label, amt], idx) => {
+    if (idx % 2 === 1) doc.setFillColor(...TSA_ZEBRA)
+    else doc.setFillColor(...TSA_WHITE)
+    doc.rect(14, earnY, colW, 7, 'F')
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(...TSA_SLATE)
+    doc.text(label.length > 35 ? label.slice(0, 33) + '..' : label, 18, earnY + 4.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(Number(amt).toLocaleString('en-PK'), 14 + colW - 4, earnY + 4.8, { align: 'right' })
+    earnY += 7
+  })
+
+  // Deductions Rows
+  let dedY = tblY + 7
+  const dedItems = [
+    ['Standard Tax / Fund Deductions', line.deductions || 0],
+    ['Staff Advance Salary Recovery', line.advancesDeducted || 0],
+  ]
+  if (line.adjustments < 0) dedItems.push(['Manual Deduction / Fine', Math.abs(line.adjustments)])
+
+  dedItems.forEach(([label, amt], idx) => {
+    if (idx % 2 === 1) doc.setFillColor(...TSA_ZEBRA)
+    else doc.setFillColor(...TSA_WHITE)
+    doc.rect(14 + colW + 4, dedY, colW, 7, 'F')
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(...TSA_SLATE)
+    doc.text(label.length > 35 ? label.slice(0, 33) + '..' : label, 18 + colW + 4, dedY + 4.8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(Number(amt).toLocaleString('en-PK'), pw - 18, dedY + 4.8, { align: 'right' })
+    dedY += 7
+  })
+
+  // 5. Net Salary Highlights Banner
+  const summaryY = Math.max(earnY, dedY) + 4
+  doc.setFillColor(...TSA_MAROON)
+  doc.roundedRect(14, summaryY, pw - 28, 14, 1.5, 1.5, 'F')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(...TSA_WHITE)
+  doc.text('NET SALARY PAYABLE:', 20, summaryY + 9)
+  doc.setFontSize(13)
+  doc.text('PKR ' + Number(line.netPayable || 0).toLocaleString('en-PK'), pw - 20, summaryY + 9.5, { align: 'right' })
+
+  // 6. Disbursements & Outstanding Details
+  const disY = summaryY + 18
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8)
+  doc.setTextColor(...TSA_SLATE)
+  doc.text('DISBURSEMENT & SETTLEMENT RECORD', 14, disY)
+
+  doc.setFillColor(...TSA_ZEBRA)
+  doc.roundedRect(14, disY + 3, pw - 28, 22, 1.5, 1.5, 'F')
+  doc.setDrawColor(...TSA_BORDER)
+  doc.setLineWidth(0.2)
+  doc.roundedRect(14, disY + 3, pw - 28, 22, 1.5, 1.5, 'D')
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(...TSA_MUTED)
+  doc.text('Total Disbursed (Paid):', 18, disY + 9)
+  doc.text('Remaining Outstanding:', 85, disY + 9)
+  doc.text('Disbursement Status:', 140, disY + 9)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.setTextColor(16, 185, 129)
+  doc.text('PKR ' + Number(line.totalPaid || 0).toLocaleString('en-PK'), 18, disY + 16)
+  doc.setTextColor(line.outstanding > 0 ? 148 : 100, line.outstanding > 0 ? 0 : 116, line.outstanding > 0 ? 22 : 139)
+  doc.text('PKR ' + Number(line.outstanding || 0).toLocaleString('en-PK'), 85, disY + 16)
+  doc.setTextColor(...TSA_SLATE)
+  doc.text(safeText(line.status).toUpperCase(), 140, disY + 16)
+
+  // 7. Signature Line
+  const sigY = disY + 40
+  doc.setDrawColor(...TSA_BORDER)
+  doc.setLineWidth(0.3)
+  doc.line(20, sigY, 75, sigY)
+  doc.line(pw - 75, sigY, pw - 20, sigY)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...TSA_MUTED)
+  doc.text('Faculty Member Signature', 47.5, sigY + 4, { align: 'center' })
+  doc.text('Campus Accountant / Super Admin', pw - 47.5, sigY + 4, { align: 'center' })
+
+  // 8. Footer
+  drawFooter(doc, 1, 'The Scholar Coaching Academy — Official Verified Payslip • Ref: ' + (line.id || 'N/A'))
+
+  const outName = filename || ((teacher.name || 'teacher').toLowerCase().replace(/\s+/g, '-') + '-payslip-' + (line.yearMonth || 'month') + '.pdf')
   doc.save(outName)
 }

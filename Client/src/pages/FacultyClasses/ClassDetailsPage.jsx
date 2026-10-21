@@ -36,7 +36,7 @@ export default function ClassDetailsPage() {
 
   return <DashboardLayout><div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
     <Button asChild variant="outline" className="self-start"><Link to={ROUTE_PATHS.FACULTY_CLASSES}><ArrowLeft size={16} aria-hidden="true" />Back to Faculty &amp; Classes</Link></Button>
-    <header><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold tracking-tight">Enrolled Students</h1><Badge variant="secondary">DEMO</Badge></div><p className="mt-2 text-muted-foreground">Only saved Active Enrollment → Student → Batch links in {branch?.name ?? 'the selected branch'} are shown.</p></header>
+    <header><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold tracking-tight">Enrolled Students</h1></div><p className="mt-2 text-muted-foreground">Only saved Active Enrollment → Student → Batch links in {branch?.name ?? 'the selected branch'} are shown.</p></header>
     {!current ? <div role="status" className="flex items-center gap-3 rounded-lg border p-8 text-muted-foreground"><Loader2 size={20} aria-hidden="true" className="animate-spin motion-reduce:animate-none" />Loading enrolled students...</div>
       : current.error ? <div className="flex flex-col items-start gap-3 rounded-lg border p-8"><AlertCircle aria-hidden="true" className="text-destructive" /><p role="alert" className="text-destructive">{current.error.code === 'NOT_FOUND' ? 'This batch was not found in the selected branch.' : `Unable to load class students. ${current.error.message}`}</p><Button variant="outline" onClick={() => setRetryCount(value => value + 1)}>Retry</Button></div>
         : <Card className="min-w-0 overflow-hidden shadow-sm">

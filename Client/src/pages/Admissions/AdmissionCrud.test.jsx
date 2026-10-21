@@ -128,7 +128,7 @@ describe('accessible saved admission DEMO CRUD', () => {
     const editDialog = await screen.findByRole('dialog', { name: `Edit DEMO Admission ${record.admissionId}` })
     expect(within(editDialog).getByLabelText(/Student Full Name/)).toBeInTheDocument()
     fireEvent.click(document.getElementById('active-demo-branch'))
-    fireEvent.click(screen.getByRole('option', { name: 'Demo North Campus', hidden: true }))
+    fireEvent.click(screen.getByRole('option', { name: 'North Campus', hidden: true }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(await screen.findByText('Bilal Qureshi')).toBeInTheDocument()
     expect(screen.queryByText(input.studentName)).not.toBeInTheDocument()

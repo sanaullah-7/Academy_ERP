@@ -6,8 +6,8 @@ import { DEMO_USERS, getAuthorizedBranches } from '../mock/authFixtures.js'
 describe('approved roles and permission definitions', () => {
   it('defines only four roles and the confirmed implemented module permissions', () => {
     expect(Object.values(ROLES)).toEqual(['super_admin', 'owner', 'receptionist', 'teacher'])
-    expect(Object.values(PERMISSIONS)).toEqual(['workspace.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage', 'demoClasses.view', 'demoClasses.manage', 'assets.view', 'assets.manage', 'reports.view', 'reports.compareBranches', 'branches.manage', 'users.manage', 'settings.manage'])
-    expect(isKnownPermission('workspace.view')).toBe(true)
+    expect(Object.values(PERMISSIONS)).toEqual(['dashboard.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage', 'demoClasses.view', 'demoClasses.manage', 'assets.view', 'assets.manage', 'reports.view', 'reports.compareBranches', 'branches.manage', 'users.manage', 'settings.manage', 'audit.view'])
+    expect(isKnownPermission('dashboard.view')).toBe(true)
     expect(isKnownPermission('payments.reverse')).toBe(false)
   })
 
@@ -76,7 +76,7 @@ describe('approved roles and permission definitions', () => {
   ])('fails closed for malformed/ambiguous assignments %j', (user) => {
     expect(getBranchRoles(user, 'demo-central')).toEqual([])
     expect(getAuthorizedBranches(user)).toEqual([])
-    expect(canAccess('workspace.view', user, 'demo-central')).toBe(false)
+    expect(canAccess('dashboard.view', user, 'demo-central')).toBe(false)
   })
 
   it('does not leak roles across branches or expose mutable fixture arrays', () => {

@@ -1,3 +1,4 @@
+import { formatTime } from '../../utils/timeFormat.js'
 /**
  * Purpose: Will define Student Profile Page for the Students area of the Academy frontend.
  * Module: Students
@@ -437,7 +438,7 @@ export default function StudentProfilePage() {
                     const theme = getSubjectTheme(subject.name)
                     const SubjectIcon = theme.icon
                     const daysText = Array.isArray(subject.days) ? subject.days.join(', ') : (subject.days || theme.defaultDays)
-                    const timeText = subject.startTime ? `${subject.startTime}${subject.endTime ? ` – ${subject.endTime}` : ''}` : theme.defaultTime
+                    const timeText = subject.startTime ? `${formatTime(subject.startTime)}${subject.endTime ? ` - ${formatTime(subject.endTime)}` : ''}` : formatTime(theme.defaultTime)
                     const teacherDisplay = subject.teacherName ? `${subject.teacherName} (${theme.facultyDegree})` : `Faculty Assigned (${theme.facultyDegree})`
 
                     return (
@@ -613,7 +614,7 @@ export default function StudentProfilePage() {
                     const theme = getSubjectTheme(sub.name)
                     const SubIcon = theme.icon
                     const daysText = Array.isArray(sub.days) ? sub.days.join(', ') : (sub.days || theme.defaultDays)
-                    const timeText = sub.startTime ? `${sub.startTime}${sub.endTime ? ` – ${sub.endTime}` : ''}` : theme.defaultTime
+                    const timeText = sub.startTime ? `${formatTime(sub.startTime)}${sub.endTime ? ` - ${formatTime(sub.endTime)}` : ''}` : formatTime(theme.defaultTime)
 
                     return (
                       <div key={sub.id || idx} className="rounded-xl border border-slate-200 p-3.5 bg-slate-50/50 space-y-2">

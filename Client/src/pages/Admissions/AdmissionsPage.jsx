@@ -1,3 +1,6 @@
+import Pagination from '../../components/Shared/Pagination.jsx'
+import { ADMISSION_PERIODS, admissionDay, matchesAdmissionPeriod } from '../../utils/admissionPeriod.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useTableSelection, useColumnVisibility } from '../../hooks/useTableUtilities.js'
 /**
  * Purpose: Will define Admissions Page for the Admissions area of the Academy frontend.
@@ -45,8 +48,8 @@ export default function AdmissionsPage() {
   const navigate=useNavigate()
   const [actionFeedback, setActionFeedback] = useState(null)
   const [successRecordId, setSuccessRecordId] = useState(routeState?.createdBranchId === branchId ? routeState.createdAdmissionInternalId : null)
-  const [admissions, setAdmissions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [admissions, setAdmissions] = useState(() => peekPageResource('admissions') ?? [])
+  const [loading, setLoading] = useState(() => !peekPageResource('admissions'))
   const [error, setError] = useState(null)
 
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -55,16 +58,27 @@ export default function AdmissionsPage() {
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [period, setPeriod] = useState('All')
+  const [range, setRange] = useState({ start: '', end: '' })
+  const [today, setToday] = useState(() => admissionDay(new Date()))
+  const [rows, setRows] = useState(10)
+  const [pagination, setPagination] = useState({ key: '', page: 1 })
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(admissionDay(new Date())), 60000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     let mounted = true
+    const loadVersion = capturePageVersion()
     async function fetchAdmissions() {
       if (!branchId) return
-      setLoading(true)
+      setLoading(!peekPageResource('admissions'))
       setError(null)
       try {
         const data = await admissionService.list({ branchId })
-        if (mounted) setAdmissions(data)
+        if (mounted) setAdmissions(rememberPageResource('admissions', data, loadVersion))
       } catch (err) {
         if (mounted) setError(err.message)
       } finally {
@@ -81,12 +95,17 @@ export default function AdmissionsPage() {
         adm.studentName.toLowerCase().includes(search.toLowerCase()) ||
         (adm.displayAdmissionId ?? adm.admissionId ?? adm.id).toLowerCase().includes(search.toLowerCase())
       const matchStatus = statusFilter === 'All' || adm.status === statusFilter
-      return matchSearch && matchStatus
+      return adm.branchId === branchId && matchSearch && matchStatus && matchesAdmissionPeriod(adm.createdAt, period, range, today)
     })
-  }, [admissions, search, statusFilter])
+  }, [admissions, branchId, search, statusFilter, period, range, today])
 
   const columnVisibility = useColumnVisibility(admissionColumns, 'admissions')
-  const selection = useTableSelection(filteredAdmissions, adm => adm.id)
+  const pageKey = JSON.stringify([branchId, search, statusFilter, period, range.start, range.end, today, rows])
+  const page = Math.min(pagination.key === pageKey ? pagination.page : 1, Math.max(1, Math.ceil(filteredAdmissions.length / rows)))
+  const pageAdmissions = useMemo(() => filteredAdmissions.slice((page - 1) * rows, page * rows), [filteredAdmissions, page, rows])
+  const selection = useTableSelection(filteredAdmissions, adm => adm.id, pageAdmissions)
+  const updateFilter = callback => { selection.clearSelection(); setPagination({ key: '', page: 1 }); callback() }
+  const invalidRange = period === 'Custom' && range.start && range.end && range.start > range.end
 
   function handleExportCsv() {
     const scope = selection.getExportScope()
@@ -178,7 +197,7 @@ export default function AdmissionsPage() {
         {successAdmission && (
           <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-sm font-medium">
             {successAdmission.status === 'Approved'
-              ? `DEMO admission ${successAdmission.displayAdmissionId ?? successAdmission.admissionId} confirmed, student enrolled as Active, and official challan issued.`
+              ? `Admission ${successAdmission.displayAdmissionId ?? successAdmission.admissionId} confirmed, student enrolled as Active, and official challan issued.`
               : `DEMO admission ${successAdmission.displayAdmissionId ?? successAdmission.admissionId} saved as Pending with a linked Provisional student.`}
           </p>
         )}
@@ -187,24 +206,28 @@ export default function AdmissionsPage() {
 
         <Card className="overflow-hidden shadow-sm border border-border/80">
           <CardHeader className="p-3.5 border-b border-border/60 bg-slate-50/50">
-            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="relative w-full sm:max-w-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-0 w-full sm:w-40 sm:flex-1 sm:max-w-56">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
                   placeholder="Search name or ID..."
                   className="pl-9 h-9 text-xs bg-background"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => updateFilter(() => setSearch(e.target.value))}
                   aria-label="Search admissions"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+              <div role="group" aria-label="Admission reporting period" className="grid w-full shrink-0 grid-cols-6 overflow-hidden rounded-lg border border-foreground/70 bg-card sm:w-auto">
+                {ADMISSION_PERIODS.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => updateFilter(() => setPeriod(value))} className={`min-w-0 border-r border-primary/15 px-2 py-2 text-[10px] transition-colors last:border-r-0 sm:px-2.5 sm:text-[11px] ${period === value ? 'bg-primary/10 font-semibold text-primary' : 'text-muted-foreground hover:bg-primary/5 hover:text-foreground'}`}>{value}</button>)}
+              </div>
+              <p className="sr-only">Application date, Asia/Karachi. Weekly periods run Monday to Sunday.</p>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:ml-auto sm:w-auto justify-end">
                 <div className="hidden sm:flex items-center rounded-lg border border-border/60 bg-background p-0.5">
                   {['All', 'Pending', 'Approved'].map(st => (
                     <button
                       key={st}
                       type="button"
-                      onClick={() => setStatusFilter(st)}
+                      onClick={() => updateFilter(() => setStatusFilter(st))}
                       className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${statusFilter === st ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                       {st}
@@ -216,7 +239,7 @@ export default function AdmissionsPage() {
                   <select
                     className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => updateFilter(() => setStatusFilter(e.target.value))}
                     aria-label="Filter by status"
                   >
                     <option value="All">All Statuses</option>
@@ -237,6 +260,11 @@ export default function AdmissionsPage() {
                 />
               </div>
             </div>
+            {period === 'Custom' && <div className="flex flex-wrap items-end gap-3">
+              <label className="grid gap-1 text-xs text-muted-foreground">Start date<Input type="date" aria-label="Admission start date" value={range.start} max={range.end || undefined} onChange={event => updateFilter(() => setRange(current => ({ ...current, start: event.target.value })))} className="h-9 w-full sm:w-44" /></label>
+              <label className="grid gap-1 text-xs text-muted-foreground">End date<Input type="date" aria-label="Admission end date" value={range.end} min={range.start || undefined} onChange={event => updateFilter(() => setRange(current => ({ ...current, end: event.target.value })))} className="h-9 w-full sm:w-44" /></label>
+              <p role={invalidRange ? 'alert' : undefined} className={`text-xs ${invalidRange ? 'text-destructive' : 'text-muted-foreground'}`}>{invalidRange ? 'End date must be on or after start date.' : !range.start || !range.end ? 'Select both dates to show matching applications.' : 'Includes both start and end dates.'}</p>
+            </div>}
           </CardHeader>
           <CardContent className="p-0">
             {selection.selectedCount > 0 && (
@@ -274,7 +302,7 @@ export default function AdmissionsPage() {
                   {admissions.length === 0 ? "There are no admission applications in this branch yet." : "No admissions match your search criteria."}
                 </p>
                 {admissions.length > 0 && (
-                  <Button variant="link" size="sm" onClick={() => { setSearch(''); setStatusFilter('All'); }} className="mt-2 text-xs">
+                  <Button variant="link" size="sm" onClick={() => updateFilter(() => { setSearch(''); setStatusFilter('All'); setPeriod('All'); setRange({ start: '', end: '' }); })} className="mt-2 text-xs">
                     Clear filters
                   </Button>
                 )}
@@ -302,7 +330,7 @@ export default function AdmissionsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {filteredAdmissions.map(adm => {
+                    {pageAdmissions.map(adm => {
                       const isSelected = selection.isSelected(adm.id)
                       return (
                         <tr
@@ -349,6 +377,7 @@ export default function AdmissionsPage() {
                 </table>
               </div>
             )}
+            {!loading && !error && <Pagination label="Admissions" page={page} rows={rows} total={filteredAdmissions.length} onPage={value => setPagination({ key: pageKey, page: value })} onRows={value => { setRows(value); setPagination({ key: '', page: 1 }) }} />}
           </CardContent>
         </Card>
         {canCreate && <section ref={newAdmissionSection} tabIndex={-1} aria-labelledby="new-student-admission-heading" className="scroll-mt-4 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring">

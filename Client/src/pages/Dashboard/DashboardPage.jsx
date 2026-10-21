@@ -1,3 +1,4 @@
+import { formatScheduleLabel } from '../../utils/timeFormat.js'
 import { useEffect, useState } from 'react'
 import { Activity, ChartNoAxesCombined, Layers3, Sparkles, Users, BookOpen, UserCheck, CreditCard, BarChart3, Settings, FileText, ArrowRight, UserPlus, CreditCard as PaymentIcon, PhoneCall, CalendarDays, ClipboardList, Clock } from 'lucide-react'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
@@ -115,14 +116,14 @@ function DefaultDashboard() {
             <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">This is a shared layout preview. Metrics, charts and actions will arrive in separately approved tickets.</p>
           </div>
           <div className="min-w-0 rounded-lg border border-primary/20 bg-card px-4 py-3">
-            <p className="text-xs text-muted-foreground">Active demo branch</p>
+            <p className="text-xs text-muted-foreground">Active branch</p>
             <p className="mt-1 break-words text-sm font-semibold">{branch?.name ?? 'No authorized branch selected'}</p>
           </div>
         </CardContent>
       </Card>
       <section aria-labelledby="dashboard-kpis">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="dashboard-kpis" className="text-base font-semibold">Demo Metrics</h2>
+          <h2 id="dashboard-kpis" className="text-base font-semibold">Key Metrics</h2>
           <span className="text-xs text-muted-foreground">Approved mock data</span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -143,18 +144,18 @@ function DefaultDashboard() {
             description="Mock courses configured"
           />
           <KpiCard
-            title="Demo Admissions"
+            title="Admissions"
             icon={UserCheck}
             value={12}
             isLoading={false}
-            description="Fictional static demo value"
+            description="Current branch summary"
           />
           <KpiCard
-            title="Demo Revenue"
+            title="Revenue"
             icon={CreditCard}
             value="PKR 45,000"
             isLoading={false}
-            description="Fictional static demo value"
+            description="Current branch summary"
           />
         </div>
       </section>
@@ -244,18 +245,18 @@ function OwnerDashboard() {
               description="Mock courses configured"
             />
             <KpiCard
-              title="Demo Admissions"
+              title="Admissions"
               icon={UserCheck}
               value={8}
               isLoading={false}
-              description="Fictional static demo value"
+              description="Current branch summary"
             />
             <KpiCard
-              title="Demo Revenue"
+              title="Revenue"
               icon={CreditCard}
               value="PKR 85,000"
               isLoading={false}
-              description="Fictional static demo value"
+              description="Current branch summary"
             />
           </div>
         </section>
@@ -267,7 +268,6 @@ function OwnerDashboard() {
                 <BarChart3 size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Enrollment Trend
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <DemoBarChart />
@@ -280,7 +280,6 @@ function OwnerDashboard() {
                 <Activity size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Recent Activity
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
@@ -294,7 +293,7 @@ function OwnerDashboard() {
                     <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${act.type === 'success' ? 'bg-green-500' : act.type === 'info' ? 'bg-blue-500' : 'bg-primary/40'}`} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">{act.title}</p>
-                      <p className="text-[10px] text-muted-foreground">{act.time}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatScheduleLabel(act.time)}</p>
                     </div>
                   </div>
                 ))}
@@ -310,7 +309,6 @@ function OwnerDashboard() {
                 <CreditCard size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Financial Overview
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="grid sm:grid-cols-3 gap-4">
@@ -421,21 +419,21 @@ function ReceptionistDashboard() {
               icon={UserCheck}
               value={4}
               isLoading={false}
-              description="Fictional static demo value"
+              description="Current branch summary"
             />
             <KpiCard
               title="Pending Inquiries"
               icon={ClipboardList}
               value={12}
               isLoading={false}
-              description="Fictional static demo value"
+              description="Current branch summary"
             />
             <KpiCard
               title="Demo Follow-ups"
               icon={PhoneCall}
               value={8}
               isLoading={false}
-              description="Fictional static demo value"
+              description="Current branch summary"
             />
             <KpiCard
               title="Active Students"
@@ -455,7 +453,6 @@ function ReceptionistDashboard() {
                 <Clock size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Recent Inquiries
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
@@ -471,7 +468,7 @@ function ReceptionistDashboard() {
                     </div>
                     <div className="text-right">
                       <Badge variant="secondary" className="text-[10px] font-normal">{act.type}</Badge>
-                      <p className="text-[10px] text-muted-foreground mt-1">{act.time}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{formatScheduleLabel(act.time)}</p>
                     </div>
                   </div>
                 ))}
@@ -485,7 +482,6 @@ function ReceptionistDashboard() {
                 <CalendarDays size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Today's Schedule
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
@@ -500,7 +496,7 @@ function ReceptionistDashboard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">{act.title}</p>
-                      <p className="text-xs text-muted-foreground">{act.time}</p>
+                      <p className="text-xs text-muted-foreground">{formatScheduleLabel(act.time)}</p>
                     </div>
                   </div>
                 ))}
@@ -578,32 +574,28 @@ function TeacherDashboard() {
               icon={BookOpen}
               value={3}
               isLoading={false}
-              description="Fictional static demo value"
-              isDemo={true}
+              description="Current branch summary"
             />
             <KpiCard
               title="Pending Assignments"
               icon={FileText}
               value={12}
               isLoading={false}
-              description="Fictional static demo value"
-              isDemo={true}
+              description="Current branch summary"
             />
             <KpiCard
               title="Average Attendance"
               icon={UserCheck}
               value="85%"
               isLoading={false}
-              description="Fictional static demo value"
-              isDemo={true}
+              description="Current branch summary"
             />
             <KpiCard
               title="Assigned Batches"
               icon={Layers3}
               value={4}
               isLoading={false}
-              description="Fictional static demo value"
-              isDemo={true}
+              description="Current branch summary"
             />
           </div>
         </section>
@@ -615,7 +607,6 @@ function TeacherDashboard() {
                 <CalendarDays size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Upcoming Sessions
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
@@ -632,7 +623,7 @@ function TeacherDashboard() {
                       <p className="text-sm font-semibold text-foreground">{session.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{session.batch}</p>
                       <div className="flex items-center gap-2 mt-2 text-xs font-medium">
-                        <Badge variant="secondary" className="font-normal text-[10px]">{session.time}</Badge>
+                        <Badge variant="secondary" className="font-normal text-[10px]">{formatScheduleLabel(session.time)}</Badge>
                         <span className="text-muted-foreground">• {session.room}</span>
                       </div>
                     </div>
@@ -648,7 +639,6 @@ function TeacherDashboard() {
                 <Activity size={18} className="shrink-0 text-primary" aria-hidden="true" />
                 Recent Teaching Activity
               </h2>
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">DEMO</Badge>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
@@ -663,7 +653,7 @@ function TeacherDashboard() {
                       <p className="text-xs text-muted-foreground mt-1">{act.batch}</p>
                     </div>
                     <div className="text-right whitespace-nowrap">
-                      <p className="text-[10px] text-muted-foreground">{act.time}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatScheduleLabel(act.time)}</p>
                     </div>
                   </div>
                 ))}

@@ -1,3 +1,6 @@
+import './DashboardPage.jsx'
+import '../../components/Dashboard/SuperAdminDashboard.jsx'
+import { studentService } from '../../services/studentService.js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -11,6 +14,39 @@ beforeEach(() => window.history.replaceState(null, '', '/dashboard'))
 afterEach(() => vi.useRealTimers())
 
 describe('approved shared dashboard skeleton', () => {
+  it('paginates only today enrollments and resets after row-size or search changes', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-20T12:00:00Z'))
+    await authService.login({ userId: 'demo-admin' })
+    await authService.selectBranch('demo-admin', 'demo-north')
+    const directory = Array.from({ length: 12 }, (_, index) => ({
+      id: `pagination-student-${index}`, name: `Pagination Student ${String(index + 1).padStart(2, '0')}`,
+      enrollments: [{ id: `pagination-enrollment-${index}`, enrolledAt: `2026-10-20T10:${String(59 - index).padStart(2, '0')}:00Z`, courseName: 'Pagination Course', batchName: 'Pagination Batch', balance: 0 }],
+    }))
+    directory.push({ id: 'yesterday-student', name: 'Yesterday Student', enrollments: [{ id: 'yesterday-enrollment', enrolledAt: '2026-10-19T10:00:00Z' }] })
+    const directorySpy = vi.spyOn(studentService, 'listDirectory').mockResolvedValue(directory)
+    await import('../../components/Dashboard/SuperAdminDashboard.jsx')
+    try {
+      render(<App />)
+      expect(await screen.findByText('1\u201310 of 12')).toBeInTheDocument()
+      expect(screen.queryByText('Yesterday Student')).not.toBeInTheDocument()
+      expect(screen.queryByText('Pagination Student 11')).not.toBeInTheDocument()
+      const user = userEvent.setup()
+      await user.click(screen.getByRole('button', { name: 'Next Recent enrollments page' }))
+      expect(screen.getByText('11\u201312 of 12')).toBeInTheDocument()
+      expect(screen.getAllByText('Pagination Student 11').length).toBeGreaterThan(0)
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Recent enrollments rows per page' }), '15')
+      expect(screen.getByText('1\u201312 of 12')).toBeInTheDocument()
+      await user.selectOptions(screen.getByRole('combobox', { name: 'Recent enrollments rows per page' }), '10')
+      await user.click(screen.getByRole('button', { name: 'Next Recent enrollments page' }))
+      await user.type(screen.getByRole('searchbox', { name: 'Search dashboard records' }), 'Student 01')
+      expect(screen.getByText('1\u20131 of 1')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Previous Recent enrollments page' })).toBeDisabled()
+    } finally {
+      directorySpy.mockRestore()
+    }
+  })
+
   it.each([
     ['2026-10-18T18:58:00Z', '2026-10-18'],
     ['2026-10-18T19:01:00Z', '2026-10-19'],
@@ -44,13 +80,13 @@ describe('approved shared dashboard skeleton', () => {
   })
   it('redirects unauthenticated dashboard access to login', async () => {
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Demo login' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
     expect(location.pathname).toBe('/login')
   })
   it('requires a selected authorized branch and denies zero assignments', async () => {
     await authService.login({ userId: 'demo-admin' })
     const first = render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Select a demo branch' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Select a branch' })).toBeInTheDocument()
     first.unmount()
     await authService.login({ userId: 'demo-unassigned' })
     window.history.replaceState(null, '', '/dashboard')
@@ -60,7 +96,7 @@ describe('approved shared dashboard skeleton', () => {
   it.each(['demo-teacher'])('renders the teacher dashboard for %s with mock courses', async (userId) => {
     await authService.login({ userId })
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
     for (const title of ['Instructor Hub', 'Today\'s Schedule', 'Upcoming Sessions', 'Recent Teaching Activity', 'Instructor Actions']) expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     for (const title of ['Today\'s Classes', 'Pending Assignments', 'Average Attendance', 'Assigned Batches']) expect(await screen.findByText(title)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
@@ -73,7 +109,7 @@ describe('approved shared dashboard skeleton', () => {
     expect(await screen.findByRole('heading', { name: 'Upcoming Classes Today' })).toBeInTheDocument()
     expect(screen.queryByText('Select Dashboard View')).not.toBeInTheDocument()
     expect(screen.queryByText('View Dashboard As')).not.toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
     for (const title of ['Monthly Cashflow Performance', 'Recent Student Enrollments', 'Quick Operations', 'Upcoming Classes Today', 'Recent Payments']) expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
     for (const title of ['Active Students', 'New Admissions', 'Fees Collected', 'Outstanding Fees']) expect(screen.getByText(title)).toBeInTheDocument()
     for (const action of [/Collect Fee.*Open Fees/, /Record Expense.*Open Finance/, /Add Demo.*Open Demo Classes/]) expect(screen.getByRole('button', { name: action })).toBeEnabled()
@@ -111,20 +147,21 @@ describe('approved shared dashboard skeleton', () => {
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /Collect Fee.*Open Fees/ }))
     expect(location.pathname).toBe('/fees')
-    expect(await screen.findByRole('heading', { name: 'Fees', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Fees & Payment Ledger' })).toBeInTheDocument()
   })
   it('renders the owner dashboard for demo-owner', async () => {
     await authService.login({ userId: 'demo-owner' })
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
     for (const title of ['Key Metrics', 'Enrollment Trend', 'Recent Activity', 'Financial Overview', 'Quick Operations']) expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
-    for (const title of ['Total Students', 'Active Courses', 'Demo Admissions', 'Demo Revenue']) expect(await screen.findByText(title)).toBeInTheDocument()
+    for (const title of ['Total Students', 'Active Courses', 'Revenue']) expect(await screen.findByText(title)).toBeInTheDocument()
+    expect((await screen.findAllByText('Admissions')).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
   })
   it('renders the receptionist dashboard for demo-reception', async () => {
     await authService.login({ userId: 'demo-reception' })
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
     for (const title of ['Today\'s Overview', 'Recent Inquiries', 'Today\'s Schedule', 'Front Desk Actions']) expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     for (const title of ['Today\'s Admissions', 'Pending Inquiries', 'Demo Follow-ups', 'Active Students']) expect(await screen.findByText(title)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
@@ -133,37 +170,37 @@ describe('approved shared dashboard skeleton', () => {
     await authService.login({ userId: 'demo-multi' })
     await authService.selectBranch('demo-multi', 'demo-north')
     const first = render(<App />)
-    await screen.findByRole('heading', { name: 'Dashboard', level: 4 })
-    expect(screen.getByText(/Demo North Campus/i, { selector: 'p' })).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByLabelText('Active demo branch'))
-    await userEvent.setup().click(screen.getByRole('option', { name: 'Demo Central Campus' }))
-    expect(await screen.findByText(/Demo Central Campus/i, { selector: 'p' })).toBeInTheDocument()
+    await screen.findByRole('navigation', { name: 'Breadcrumb' })
+    expect(screen.getByText(/North Campus/i, { selector: 'p' })).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByLabelText('Active branch'))
+    await userEvent.setup().click(screen.getByRole('option', { name: 'Central Campus' }))
+    expect(await screen.findByText(/Central Campus/i, { selector: 'p' })).toBeInTheDocument()
     expect(location.pathname).toBe('/dashboard')
     first.unmount()
     render(<App />)
-    expect(await screen.findByText(/Demo Central Campus/i, { selector: 'p' })).toBeInTheDocument()
+    expect(await screen.findByText(/Central Campus/i, { selector: 'p' })).toBeInTheDocument()
   })
   it('allows keyboard sidebar navigation and preserves logout protection', async () => {
     await authService.login({ userId: 'demo-owner' })
-    window.history.replaceState(null, '', '/workspace')
+    window.history.replaceState(null, '', '/dashboard')
     render(<App />)
     const user = userEvent.setup()
     const link = await screen.findByRole('link', { name: 'Dashboard' })
     link.focus()
     await user.keyboard('{Enter}')
-    expect(await screen.findByRole('heading', { name: 'Dashboard', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
     await user.click(screen.getByRole('button', { name: 'Open user menu' }))
-    await user.click(screen.getByRole('menuitem', { name: 'Log out of demo' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Log out' }))
     await waitFor(() => expect(location.pathname).toBe('/login'))
-    expect(screen.queryByRole('heading', { name: 'Dashboard', level: 4 })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
   it('opens the implemented Fees module from the sidebar', async () => {
     await authService.login({ userId: 'demo-owner' })
     render(<App />)
     const user = userEvent.setup()
-    await screen.findByRole('heading', { name: 'Dashboard', level: 4 })
+    await screen.findByRole('navigation', { name: 'Breadcrumb' })
     await user.click(screen.getByRole('link', { name: 'Fees' }))
-    expect(await screen.findByRole('heading', { name: 'Fees', level: 4 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Fees & Payment Ledger' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Fees & Payment Ledger' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
   })

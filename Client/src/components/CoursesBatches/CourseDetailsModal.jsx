@@ -1,3 +1,5 @@
+import { formatBatchDuration } from '../../utils/batchDuration.js'
+import { formatTimeRange } from '../../utils/timeFormat.js'
 import { useEffect, useState } from 'react'
 import {
   BookOpen,
@@ -186,8 +188,9 @@ export default function CourseDetailsModal({
                             <h3 className="font-bold text-xs text-slate-900">{batch.name}</h3>
                             <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
                               <Clock size={11} className="text-slate-500" />
-                              {batch.startTime && batch.endTime ? `${batch.startTime} – ${batch.endTime}` : 'Time not set'}
+                              {batch.shift || (batch.startTime && batch.endTime ? formatTimeRange(batch.startTime, batch.endTime) : 'Shift not selected')}
                             </span>
+                            {batch.durationMonths && <span className="text-[11px] font-medium text-slate-700">{formatBatchDuration(batch.durationMonths)}</span>}
                             {batch.room && (
                               <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
                                 <MapPin size={11} className="text-slate-500" />
@@ -309,7 +312,7 @@ export default function CourseDetailsModal({
                                 <span className="font-bold text-slate-900 block">{slot.subjectName}</span>
                                 <div className="mt-1 flex items-center justify-between text-[10px] text-slate-600">
                                   <span>{slot.teacherName}</span>
-                                  <span className="font-medium text-primary">{slot.startTime} – {slot.endTime}</span>
+                                  <span className="font-medium text-primary">{formatTimeRange(slot.startTime, slot.endTime)}</span>
                                 </div>
                                 <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground border-t border-primary/10 pt-1">
                                   <span>{slot.batchName}</span>

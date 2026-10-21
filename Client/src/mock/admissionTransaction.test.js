@@ -153,3 +153,19 @@ describe('atomic admission/student sequence and compatibility', () => {
     } finally { vi.unstubAllGlobals() }
   })
 })
+
+
+it.each([
+  ['2026-10-19T18:59:59Z', '2026-10-19'],
+  ['2026-10-19T19:00:00Z', '2026-10-20'],
+])('saves new application date in academy timezone at %s', (instant, expectedDay) => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  try {
+    vi.setSystemTime(new Date(instant))
+    const admission = createMockDatabase().createAdmission(input, north)
+    expect(admission.createdAt).toBe(expectedDay)
+    expect(saved().admissions.find(item => item.id === admission.id).createdAt).toBe(expectedDay)
+  } finally {
+    vi.useRealTimers()
+  }
+})

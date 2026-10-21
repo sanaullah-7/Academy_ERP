@@ -1,3 +1,4 @@
+import { formatTimeRange } from '../../utils/timeFormat.js'
 import { useState } from 'react'
 import { Button } from '../ui/button.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
@@ -17,6 +18,7 @@ export default function DemoAttendanceDialog({
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (busy) return
     setLocalError('')
 
     if (!['Present', 'Absent'].includes(status)) {
@@ -47,9 +49,10 @@ export default function DemoAttendanceDialog({
           <div className="rounded-lg border border-border/80 bg-muted/30 p-3 text-xs space-y-1">
             <p><strong>Student:</strong> {demo.studentName} ({demo.demoId})</p>
             <p><strong>Course:</strong> {demo.courseName}</p>
+            {demo.requestedClasses?.map(item => <p key={item.key}><strong>{item.subject}:</strong> {item.classDate} ? {item.teacherName} ? {item.room}</p>)}
             {demo.scheduledSession && (
               <p>
-                <strong>Scheduled:</strong> {demo.scheduledSession.classDate} at {demo.scheduledSession.startTime}–{demo.scheduledSession.endTime} ({demo.scheduledSession.location})
+                <strong>Scheduled:</strong> {demo.scheduledSession.classDate} at {formatTimeRange(demo.scheduledSession.startTime, demo.scheduledSession.endTime)} ({demo.scheduledSession.location})
               </p>
             )}
             <p><strong>Teacher:</strong> {demo.scheduledSession?.teacherName || 'Not specified'}</p>

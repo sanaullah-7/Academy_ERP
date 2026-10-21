@@ -31,12 +31,13 @@ import { facultyService } from '../../services/facultyService.js'
 import { academicService } from '../../services/academicService.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import AssignFacultyModal from '../../components/CoursesBatches/AssignFacultyModal.jsx'
+import AcademyLogo from '../../components/Layout/AcademyLogo.jsx'
 import { classTimeLabel } from '../../utils/classTime.js'
 
 function ProfileCard({ title, icon: Icon, action, children }) {
   return (
-    <Card className="min-w-0 shadow-xs border border-slate-200/90 bg-white rounded-2xl overflow-hidden">
-      <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5 sm:py-3.5">
+    <Card className="min-w-0 shadow-xs border border-slate-200/90 bg-white rounded-2xl overflow-hidden print:border-none print:shadow-none print:p-0">
+      <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-5 sm:py-3.5 print:hidden">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-800">
             <Icon size={16} className="text-[#940016]" aria-hidden="true" />
@@ -45,7 +46,7 @@ function ProfileCard({ title, icon: Icon, action, children }) {
           {action}
         </div>
       </CardHeader>
-      <CardContent className="p-4 sm:p-5">{children}</CardContent>
+      <CardContent className="p-4 sm:p-5 print:p-0">{children}</CardContent>
     </Card>
   )
 }
@@ -147,7 +148,7 @@ export default function FacultyProfilePage() {
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-5 pb-12">
         {/* Top Navigation & Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Button asChild variant="outline" size="sm" className="rounded-xl gap-1.5">
             <Link to={ROUTE_PATHS.FACULTY_CLASSES}>
               <ArrowLeft size={16} aria-hidden="true" />
@@ -159,7 +160,14 @@ export default function FacultyProfilePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.print()}
+              onClick={() => {
+                if (activeTab !== 'classes') {
+                  setActiveTab('classes')
+                  setTimeout(() => window.print(), 100)
+                } else {
+                  window.print()
+                }
+              }}
               className="rounded-xl text-xs gap-1.5 border-slate-200"
             >
               <Printer size={14} />
@@ -195,7 +203,7 @@ export default function FacultyProfilePage() {
         ) : (
           <div className="space-y-4 sm:space-y-5">
             {/* 1. Hero Header Area (Matching and elevating beyond Student Profile) */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs">
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs print:hidden">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-3.5 sm:gap-4">
                   {/* Avatar */}
@@ -311,7 +319,7 @@ export default function FacultyProfilePage() {
             </div>
 
             {/* 3. 4 Premium Metric KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 print:hidden">
               <Card className="rounded-2xl border border-slate-200/90 bg-white shadow-xs py-0 overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div>
@@ -370,7 +378,7 @@ export default function FacultyProfilePage() {
             </div>
 
             {/* 4. Horizontal Navigation Tabs */}
-            <div className="flex items-center gap-1.5 border-b border-slate-200/80 pb-2 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 border-b border-slate-200/80 pb-2 overflow-x-auto no-scrollbar print:hidden">
               {[
                 { id: 'overview', label: 'Overview & Bio', icon: Layers },
                 { id: 'classes', label: 'Class Schedule & Timetable', icon: CalendarDays },
@@ -398,7 +406,7 @@ export default function FacultyProfilePage() {
 
             {/* 5. Tab Content Panes */}
             {activeTab === 'overview' && (
-              <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
+              <div className="grid gap-4 sm:gap-5 lg:grid-cols-2 print:hidden">
                 <ProfileCard title="Teacher particulars" icon={UserRound}>
                   <dl className="grid gap-4 sm:grid-cols-2">
                     <Detail label="Full Name" value={teacher.name} />
@@ -428,11 +436,39 @@ export default function FacultyProfilePage() {
                     </div>
                   )}
                 </ProfileCard>
+
+
               </div>
             )}
 
             {activeTab === 'classes' && (
-              <div className="space-y-4">
+              <div className="space-y-4 print:space-y-2">
+                {/* Official Institutional Branded Header for Browser Print */}
+                <div className="hidden print:flex items-center gap-3.5 border-b-2 border-[#940016] pb-3 mb-4">
+                  <div className="size-14 shrink-0 rounded-xl bg-white border border-slate-200 grid place-items-center p-1 shadow-2xs print:border-none print:shadow-none">
+                    <AcademyLogo className="size-10" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-[#940016]">
+                      THE SCHOLAR COACHING ACADEMY
+                    </p>
+                    <h2 className="text-lg font-bold text-slate-900 truncate">
+                      Faculty Teaching Timetable &amp; Schedule
+                    </h2>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Instructor: <strong className="text-slate-900">{teacher.name}</strong> • Department: {teacher.department || 'Academic Faculty'} • Campus: {branch?.name || 'Main Campus'}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-[#940016] text-white">
+                      OFFICIAL TIMETABLE
+                    </span>
+                    <p className="mt-1 text-[10px] text-slate-500 font-mono font-semibold">
+                      Printed: {new Date().toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
                 <ProfileCard
                   title="Weekly Class Timetable Slots"
                   icon={CalendarDays}
@@ -441,7 +477,7 @@ export default function FacultyProfilePage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-xl text-xs gap-1.5 h-8"
+                        className="rounded-xl text-xs gap-1.5 h-8 print:hidden"
                         onClick={() => setAssignOpen(true)}
                       >
                         <Plus size={13} />
@@ -451,7 +487,7 @@ export default function FacultyProfilePage() {
                   }
                 >
                   {teacher.schedules?.length > 0 ? (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 print:border-none">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50/90 border-b border-slate-200 font-bold text-slate-700">
                           <tr>
@@ -460,7 +496,7 @@ export default function FacultyProfilePage() {
                             <th className="px-3.5 py-2.5">Days &amp; Time</th>
                             <th className="px-3.5 py-2.5">Room</th>
                             <th className="px-3.5 py-2.5">Enrolled</th>
-                            {canManage && <th className="px-3.5 py-2.5 text-right">Actions</th>}
+                            {canManage && <th className="px-3.5 py-2.5 text-right print:hidden">Actions</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -497,7 +533,7 @@ export default function FacultyProfilePage() {
                                 {slot.enrolledCount ?? 0}
                               </td>
                               {canManage && (
-                                <td className="px-3.5 py-3 text-right">
+                                <td className="px-3.5 py-3 text-right print:hidden">
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -529,7 +565,7 @@ export default function FacultyProfilePage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="mt-3 gap-1.5 text-xs h-8 rounded-xl"
+                          className="mt-3 gap-1.5 text-xs h-8 rounded-xl print:hidden"
                           onClick={() => setAssignOpen(true)}
                         >
                           <Plus size={13} />
@@ -539,11 +575,27 @@ export default function FacultyProfilePage() {
                     </div>
                   )}
                 </ProfileCard>
+
+                {/* Official Institutional Document Signatures for Print */}
+                <div className="hidden print:flex items-center justify-between pt-10 mt-8 border-t border-slate-300 text-[11px] text-slate-600">
+                  <div className="text-center">
+                    <div className="w-36 border-b border-slate-400 mb-1.5" />
+                    <span className="font-semibold">Faculty Instructor</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-36 border-b border-slate-400 mb-1.5" />
+                    <span className="font-semibold">Academic Coordinator</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-36 border-b border-slate-400 mb-1.5" />
+                    <span className="font-semibold">Principal / Branch Admin</span>
+                  </div>
+                </div>
               </div>
             )}
 
             {activeTab === 'assignments' && (
-              <ProfileCard title="Academic Teaching Relationships" icon={BookOpen}>
+              <div className="print:hidden"><ProfileCard title="Academic Teaching Relationships" icon={BookOpen}>
                 <p className="mb-3 text-[11px] text-muted-foreground">
                   Saved academic courses, batches, and subject relationships for this faculty member.
                 </p>
@@ -601,7 +653,7 @@ export default function FacultyProfilePage() {
                     No saved academic assignments.
                   </p>
                 )}
-              </ProfileCard>
+              </ProfileCard></div>
             )}
           </div>
         )}

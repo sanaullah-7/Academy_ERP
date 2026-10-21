@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 /**
  * Purpose: Will define Protected Route for the routes area of the Academy frontend.
  * Module: routes
@@ -13,7 +14,7 @@ import { PERMISSIONS } from '../constants/permissions.js'
 import { ROUTE_PATHS } from './routePaths.js'
 import SessionStatus from '../components/Auth/SessionStatus.jsx'
 
-export default function ProtectedRoute({ children, permission = PERMISSIONS.WORKSPACE_VIEW }) {
+export default function ProtectedRoute({ children, permission = PERMISSIONS.DASHBOARD_VIEW }) {
   const { user, status } = useAuth()
   const { branches, branch, scopeKey } = useBranch()
   const { can } = usePermissions()
@@ -22,5 +23,5 @@ export default function ProtectedRoute({ children, permission = PERMISSIONS.WORK
   if (branches.length === 0) return <Navigate to={ROUTE_PATHS.UNAUTHORIZED} replace />
   if (!branch) return <Navigate to={ROUTE_PATHS.SELECT_BRANCH} replace />
   if (!can(permission)) return <Navigate to={ROUTE_PATHS.UNAUTHORIZED} replace />
-  return <div key={scopeKey}>{children}</div>
+  return <div key={scopeKey}><Suspense fallback={<SessionStatus message="Loading module..." />}>{children}</Suspense></div>
 }

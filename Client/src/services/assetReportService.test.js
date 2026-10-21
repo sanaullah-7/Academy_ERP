@@ -35,7 +35,7 @@ describe('F09 assets and F10 reports services', () => {
     const created = await assetService.create(asset, central)
     await expect(assetService.assign(created.id, { assignedToId: 'demo-reception', location: 'QA Room' }, central)).rejects.toMatchObject({ code: 'INVALID_REFERENCE' })
     const assigned = await assetService.assign(created.id, { assignedToId: 'demo-owner', location: 'QA Room' }, central)
-    expect(assigned).toMatchObject({ status: 'Assigned', assignedToName: 'Demo Owner' })
+    expect(assigned).toMatchObject({ status: 'Assigned', assignedToName: 'Academy Owner' })
     await assetService.inspect(created.id, { condition: 'Needs Maintenance', remarks: 'QA inspection' }, central)
     await expect(assetService.assign(created.id, { assignedToId: 'demo-admin', location: 'QA Room' }, central)).rejects.toMatchObject({ code: 'INVALID_TRANSITION' })
   })

@@ -163,3 +163,39 @@ describe('provisional student/course service contracts', () => {
     await expect(studentService.getById('student-demo-2', central)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })
+
+
+describe('saved version 9 compatibility', () => {
+  it('loads a validated version 9 database without replacing records or downgrading its version', async () => {
+    localStorage.clear()
+    await signIn(north.branchId)
+    const db = createMockDatabase()
+    db.run('courses', 'list', { query: north })
+    const saved = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    saved.version = 9
+    localStorage.setItem(MOCK_DATABASE_KEY, JSON.stringify(saved))
+    const before = localStorage.getItem(MOCK_DATABASE_KEY)
+    expect(db.run('courses', 'list', { query: north })).toEqual(saved.courses.filter(item => item.branchId === north.branchId))
+    expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+    db.assetOperation('create', { record: { assetCode: 'V9-QA', name: 'Version compatibility check', category: 'QA', trackingType: 'Individual', quantity: 1, purchaseCost: 10 }, query: north })
+    const after = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    expect(after.version).toBe(9)
+    expect(after.assets).toHaveLength(saved.assets.length + 1)
+    expect({ ...after, assets: [], auditLogs: [] }).toEqual({ ...saved, assets: [], auditLogs: [] })
+    expect(after.auditLogs).toEqual(expect.arrayContaining([expect.objectContaining({module:'Assets',action:'Created'})]))
+  })
+
+  it('still rejects invalid version 9 records without rewriting saved bytes', async () => {
+    localStorage.clear()
+    await signIn(north.branchId)
+    const db = createMockDatabase()
+    db.run('courses', 'list', { query: north })
+    const saved = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    saved.version = 9
+    saved.courses = 'invalid'
+    const raw = JSON.stringify(saved)
+    localStorage.setItem(MOCK_DATABASE_KEY, raw)
+    expect(() => db.run('courses', 'list', { query: north })).toThrow(expect.objectContaining({ code: 'CORRUPTED_STORAGE' }))
+    expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(raw)
+  })
+})

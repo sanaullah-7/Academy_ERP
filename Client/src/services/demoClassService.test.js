@@ -122,7 +122,7 @@ describe('F08 Demo Classes Module — Service & Workflow Tests', () => {
         startTime: '10:00',
         endTime: '11:00',
         teacherId: 'demo-teacher',
-        teacherName: 'Demo Teacher',
+        teacherName: 'Faculty Teacher',
         location: 'Lab 1',
       })
       expect(scheduled.statusHistory.slice(-1)[0].toStatus).toBe('Scheduled')
@@ -270,10 +270,11 @@ describe('F08 Demo Classes Module — Service & Workflow Tests', () => {
       expect(missed.attendance.status).toBe('Absent')
     })
 
-    it('rejects attendance marking on unscheduled demo inquiry', async () => {
+    it('records direct attendance on a registered demo inquiry without separate scheduling', async () => {
       const demo = await demoClassService.register(sampleRegistration, central)
-      await expect(demoClassService.recordAttendance(demo.id, { status: 'Present' }, central))
-        .rejects.toMatchObject({ code: 'INVALID_TRANSITION' })
+      const attended = await demoClassService.recordAttendance(demo.id, { status: 'Present' }, central)
+      expect(attended).toMatchObject({ status: 'Attended', scheduledSession: null, attendance: { status: 'Present' } })
+      expect(attended.statusHistory.at(-1)).toMatchObject({ fromStatus: 'Registered', toStatus: 'Attended' })
     })
 
     it('resets attendance status when session is rescheduled', async () => {
@@ -541,4 +542,46 @@ describe('Demo to editable Admissions workflow',()=>{
   expect((await demoClassService.getById(demo.id,central)).convertedAdmissionId).toBe(result.admission.id)
   expect((await financialService.financeOverview(central)).payments.some(payment=>payment.id===result.payment.id)).toBe(true)
  })
+})
+
+
+describe('Demo inquiry deletion', () => {
+  beforeEach(async () => {
+    localStorage.clear()
+    await signIn('demo-admin', central.branchId)
+  })
+
+  it('rejects invalid or foreign requested classes without writing an inquiry', async () => {
+    await demoClassService.list(central)
+    const before = localStorage.getItem(MOCK_DATABASE_KEY)
+    await expect(demoClassService.register({ ...sampleRegistration, requestedClasses: [{ key: 'recurring:foreign-class', classDate: sampleRegistration.requestedDate }] }, central)).rejects.toMatchObject({ code: 'INVALID_REFERENCE' })
+    expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+  })
+
+  it('deletes only the selected inquiry without changing other academy records', async () => {
+    const created = await demoClassService.register(sampleRegistration, central)
+    const before = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    await demoClassService.delete(created.id, central)
+    const after = JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+    expect(after.demoClasses).toEqual(before.demoClasses.filter(item => item.id !== created.id))
+    expect({ ...after, demoClasses: [], auditLogs: [] }).toEqual({ ...before, demoClasses: [], auditLogs: [] })
+    expect(after.auditLogs).toEqual(expect.arrayContaining([expect.objectContaining({module:'Demo Classes',action:'Deleted',recordId:created.id})]))
+  })
+
+  it('rejects deletion from another branch or a read-only role', async () => {
+    const created = await demoClassService.register(sampleRegistration, central)
+    await expect(demoClassService.delete(created.id, north)).rejects.toBeDefined()
+    await signIn('demo-owner', central.branchId)
+    await expect(demoClassService.delete(created.id, central)).rejects.toMatchObject({ code: 'DEMO_ACTION_DENIED' })
+    expect(await demoClassService.getById(created.id, central)).toMatchObject({ id: created.id })
+  })
+
+  it('preserves converted inquiries and linked admissions', async () => {
+    const demos = await demoClassService.list(central)
+    const converted = demos.find(item => item.status === 'Converted')
+    expect(converted).toBeDefined()
+    const before = localStorage.getItem(MOCK_DATABASE_KEY)
+    await expect(demoClassService.delete(converted.id, central)).rejects.toMatchObject({ code: 'DEMO_LINKED_ADMISSION' })
+    expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+  })
 })

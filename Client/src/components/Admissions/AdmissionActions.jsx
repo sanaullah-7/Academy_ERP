@@ -1,3 +1,5 @@
+import { formatBatchDuration } from '../../utils/batchDuration.js'
+import { formatTimestamp } from '../../utils/timeFormat.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MoreHorizontal, Eye, Pencil, Trash2, Check, Clock3, UserPlus } from 'lucide-react'
@@ -127,7 +129,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
     busy.current = true; setPending(true); setError('')
     try {
       const result = await admissionService.delete(admission.id, { branchId })
-      if (mounted.current) { committed.current = true; setAction(null); onChanged(`DEMO admission ${result.displayAdmissionId} deleted. Display serials have been updated.`) }
+      if (mounted.current) { committed.current = true; setAction(null); onChanged(`Admission ${result.displayAdmissionId} deleted. Display serials have been updated.`) }
     } catch (failure) { if (mounted.current) setError(failure.message) }
     finally { busy.current = false; if (mounted.current) setPending(false) }
   }
@@ -155,7 +157,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
       if (mounted.current) {
         committed.current = true
         setAction(null)
-        onChanged(`DEMO student ${result.student.name} is Active and enrolled in ${result.enrollment.status.toLowerCase()}.`)
+        onChanged(`Student ${result.student.name} is Active and enrolled in ${result.enrollment.status.toLowerCase()}.`)
       }
     } catch (failure) { if (mounted.current) setError(failure.message) }
     finally { busy.current = false; if (mounted.current) setPending(false) }
@@ -182,7 +184,7 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
         }}>
         <DialogTitle className={action === 'Edit' ? 'sr-only' : ''}>{action} DEMO Admission {label}</DialogTitle>
         <DialogDescription className={action === 'Edit' ? 'sr-only' : ''}>
-          {decision ? 'Confirm this DEMO status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its verified linked student, enrollment, challan and receipts, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved fictional admission details in the selected branch.'}
+          {decision ? 'Confirm this status decision. The linked student remains Provisional. No enrollment is created.' : action === 'Enroll Student' ? 'Confirm the active-branch enrollment. The Admission remains Approved.' : action === 'Delete' ? 'Delete this admission and its verified linked student, enrollment, challan and receipts, if present? Unrelated records will be kept. This cannot be undone.' : 'Saved admission details in the selected branch.'}
         </DialogDescription>
         {error && <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
         {pending && !record && <p role="status">Loading saved details...</p>}
@@ -193,9 +195,9 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
           <div className="flex flex-wrap justify-end gap-3"><Button variant="outline" disabled={pending} onClick={() => setAction(null)}>Cancel</Button><Button disabled={pending || record.status === targetStatus} onClick={decide}>{pending ? 'Saving status...' : record.status === targetStatus ? `Already ${record.status}` : `Confirm ${targetStatus}`}</Button></div>
         </div>}
         {record && action === 'View' && <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-          {Object.entries({ 'Admission ID': record.displayAdmissionId, 'Permanent Admission Reference': record.admissionId, 'Student Number': record.student?.displaySerial ?? 'No linked student', 'Student Name': record.studentName, 'Date of Birth': record.dob, Guardian: record.guardianName, 'Student Phone': record.studentPhone || 'Not provided', 'Guardian Phone': record.contact, 'CNIC / B-Form': record.identityNumber || 'Not provided', Gender: record.gender || 'Not provided', Residence: record.residenceType || 'Not provided', Address: record.address || 'Not provided', Course: record.courseLabel ?? record.course, Batch: record.batchLabel ?? 'Not selected', Status: record.status, 'Created On': record.createdAt, 'Previous School': record.previousSchool || 'Not provided', Notes: record.notes || 'Not provided' }).map(([title, value]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
+          {Object.entries({ 'Admission ID': record.displayAdmissionId, 'Permanent Admission Reference': record.admissionId, 'Student Number': record.student?.displaySerial ?? 'No linked student', 'Student Name': record.studentName, 'Date of Birth': record.dob, Guardian: record.guardianName, 'Student Phone': record.studentPhone || 'Not provided', 'Guardian Phone': record.contact, 'CNIC / B-Form': record.identityNumber || 'Not provided', Gender: record.gender || 'Not provided', Residence: record.residenceType || 'Not provided', Address: record.address || 'Not provided', Course: record.courseLabel ?? record.course, Batch: record.batchLabel ?? 'Not selected', Status: record.status, 'Created On': formatTimestamp(record.createdAt), 'Previous School': record.previousSchool || 'Not provided', Notes: record.notes || 'Not provided' }).map(([title, value]) => <div key={title}><dt className="text-muted-foreground">{title}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
         </dl>}
-        {record && action === 'View' && record.statusHistory?.length > 0 && <section aria-label="DEMO status history" className="space-y-2 border-t pt-4"><h3 className="font-semibold">DEMO status history</h3>{record.statusHistory.map(event => <p key={event.id} className="break-words text-sm text-muted-foreground">{event.fromStatus} → {event.toStatus} · {event.actorUserId} · <time dateTime={event.occurredAt}>{event.occurredAt}</time>{event.reason ? ` · ${event.reason}` : ''}</p>)}</section>}
+        {record && action === 'View' && record.statusHistory?.length > 0 && <section aria-label="DEMO status history" className="space-y-2 border-t pt-4"><h3 className="font-semibold">DEMO status history</h3>{record.statusHistory.map(event => <p key={event.id} className="break-words text-sm text-muted-foreground">{event.fromStatus} → {event.toStatus} · {event.actorUserId} · <time dateTime={event.occurredAt}>{formatTimestamp(event.occurredAt)}</time>{event.reason ? ` · ${event.reason}` : ''}</p>)}</section>}
         {record && action === 'Enroll Student' && <div className="space-y-4">
           <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             <div><dt className="text-muted-foreground">Student</dt><dd className="mt-1 font-medium">{record.student?.name ?? record.studentName} ({record.student?.status ?? 'Unresolved'})</dd></div>
@@ -207,12 +209,12 @@ export default function AdmissionActions({ admission, branchId, onChanged, saved
           <label htmlFor={`enrollment-batch-${admission.id}`} className="block text-sm font-medium">Batch</label>
           {!record.courseId ? null : batchLoadState === 'loading' ? <p role="status">Loading available batches...</p> : batchLoadState === 'loaded' && batches.length === 0 ? <p role="alert">No valid batch is available for this course in the active branch.</p> : batchLoadState === 'loaded' && <select ref={batchSelect} id={`enrollment-batch-${admission.id}`} className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm" value={selectedBatchId} onChange={event => { setSelectedBatchId(event.target.value); setError('') }} disabled={pending}>
             <option value="">Select a batch</option>
-            {batches.map(batch => <option key={batch.id} value={batch.id}>{batch.name}{batch.id === record.preferredBatchId ? ' (Preferred)' : ''}</option>)}
+            {batches.map(batch => <option key={batch.id} value={batch.id}>{batch.name}{batch.shift ? ` (${batch.shift})` : ''}{batch.durationMonths ? ` - ${formatBatchDuration(batch.durationMonths)}` : ''}{batch.id === record.preferredBatchId ? ' (Preferred)' : ''}</option>)}
           </select>}
           <div className="flex flex-wrap justify-end gap-3"><Button variant="outline" disabled={pending} onClick={() => setAction(null)}>Cancel</Button><Button disabled={pending || batchLoadState !== 'loaded' || !record.courseId || batches.length === 0} onClick={enroll}>{pending ? 'Enrolling...' : 'Confirm Enrollment'}</Button></div>
         </div>}
         {record && action === 'Edit' && <NewAdmissionForm admission={record} onPendingChange={setPending} onCancel={() => setAction(null)}
-          onSuccess={(updated) => { committed.current = true; setAction(null); onChanged(`DEMO admission ${updated.displayAdmissionId} updated.`) }} />}
+          onSuccess={(updated) => { committed.current = true; setAction(null); onChanged(`Admission ${updated.displayAdmissionId} updated.`) }} />}
         {action === 'Delete' && <div className="flex flex-wrap justify-end gap-3">
           <Button variant="outline" disabled={pending} onClick={() => setAction(null)}>Cancel</Button>
           <Button variant="destructive" disabled={pending || !record} onClick={remove}>{pending ? 'Deleting...' : 'Delete Admission'}</Button>

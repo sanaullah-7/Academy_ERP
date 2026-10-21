@@ -7,71 +7,71 @@
 /* F00-003: PROPOSED neutral shell tokens, not verified client brand values. */
 /* F00-004 supersedes the provisional values above with verified reference styling. */
 :root {
-  --workspace-font: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --workspace-background: #F7F8FC;
-  --workspace-surface: #ffffff;
-  --workspace-foreground: #0b1c30;
-  --workspace-muted: #565e74;
-  --workspace-border: #f0d5d9;
-  --workspace-accent: #940016;
-  --workspace-accent-foreground: #ffffff;
-  --workspace-hover: #F9EBEE;
-  --workspace-focus: #72000E;
-  --workspace-radius: 12px;
-  --workspace-control-radius: 8px;
-  --workspace-space: 4px;
-  --workspace-sidebar-width: 220px;
-  --workspace-sidebar-compact: 68px;
-  --workspace-sidebar-background: #ffffff;
-  --workspace-sidebar-text: #111827;
-  --workspace-sidebar-icon: #111827;
-  --workspace-sidebar-active: #940016;
-  --workspace-topbar-height: 72px;
-  --workspace-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
-  --workspace-drawer-shadow: 12px 0 48px rgb(16 24 40 / 14%);
-  --workspace-duration: 180ms;
-  --workspace-easing: cubic-bezier(0.2, 0, 0, 1);
+  --app-font: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --app-background: #F7F8FC;
+  --app-surface: #ffffff;
+  --app-foreground: #0b1c30;
+  --app-muted: #565e74;
+  --app-border: #f0d5d9;
+  --app-accent: #940016;
+  --app-accent-foreground: #ffffff;
+  --app-hover: #F9EBEE;
+  --app-focus: #72000E;
+  --app-radius: 12px;
+  --app-control-radius: 8px;
+  --app-space: 4px;
+  --app-sidebar-width: 220px;
+  --app-sidebar-compact: 68px;
+  --app-sidebar-background: #ffffff;
+  --app-sidebar-text: #111827;
+  --app-sidebar-icon: #111827;
+  --app-sidebar-active: #940016;
+  --app-topbar-height: 72px;
+  --app-shadow: 0 1px 3px rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+  --app-drawer-shadow: 12px 0 48px rgb(16 24 40 / 14%);
+  --app-duration: 180ms;
+  --app-easing: cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Semantic shadcn tokens reuse the approved shell rather than defining a second palette. */
 :root {
-  --background: var(--workspace-background);
-  --foreground: var(--workspace-foreground);
-  --card: var(--workspace-surface);
-  --card-foreground: var(--workspace-foreground);
-  --primary: var(--workspace-accent);
-  --primary-foreground: var(--workspace-accent-foreground);
+  --background: var(--app-background);
+  --foreground: var(--app-foreground);
+  --card: var(--app-surface);
+  --card-foreground: var(--app-foreground);
+  --primary: var(--app-accent);
+  --primary-foreground: var(--app-accent-foreground);
   --primary-hover: #72000E;
-  --dashboard-revenue: var(--workspace-accent);
+  --dashboard-revenue: var(--app-accent);
   --secondary: #F9EBEE;
   --secondary-foreground: #940016;
   --muted: #f8fafc;
-  --muted-foreground: var(--workspace-muted);
+  --muted-foreground: var(--app-muted);
   --accent: #F9EBEE;
   --accent-foreground: #940016;
   --destructive: #ba1a1a;
   --destructive-foreground: #ffffff;
-  --border: var(--workspace-border);
+  --border: var(--app-border);
   --input: #e2e8f0;
-  --ring: var(--workspace-accent);
-  --radius: var(--workspace-radius);
+  --ring: var(--app-accent);
+  --radius: var(--app-radius);
   --chart-1: #940016;
   --chart-2: #2563eb;
   --chart-3: #d97706;
   --chart-4: #059669;
   --chart-5: #7c3aed;
   --sidebar-background: #ffffff;
-  --sidebar-foreground: var(--workspace-foreground);
+  --sidebar-foreground: var(--app-foreground);
   --sidebar-primary: #940016;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #F9EBEE;
   --sidebar-accent-foreground: #940016;
-  --sidebar-border: var(--workspace-border);
+  --sidebar-border: var(--app-border);
   --sidebar-ring: #940016;
 }
 
 @theme inline {
-  --font-sans: var(--workspace-font);
+  --font-sans: var(--app-font);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -100,8 +100,8 @@
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
-  --radius-md: var(--workspace-control-radius);
+  --radius-md: var(--app-control-radius);
   --radius-lg: var(--radius);
   --radius-xl: var(--radius);
-  --shadow-sm: var(--workspace-shadow);
+  --shadow-sm: var(--app-shadow);
 }

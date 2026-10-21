@@ -1,5 +1,9 @@
+import { formatBatchDuration } from '../../utils/batchDuration.js'
+import { formatTimeRange } from '../../utils/timeFormat.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, AlertTriangle, Banknote, BookOpenCheck, Check, CheckCircle2, Clock, Download, GraduationCap, IdCard, Loader2, MapPin, Printer, ReceiptText, User, UserRound, UsersRound } from 'lucide-react'
+import AcademyLogo from '../Layout/AcademyLogo.jsx'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog.jsx'
@@ -22,7 +26,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
   const { branchId, branch, currentBranch, scopeKey } = useBranch()
   const { can } = usePermissions()
   const isSuperAdmin = can(PERMISSIONS.ADMISSIONS_DECIDE) && can(PERMISSIONS.FEES_MANAGE)
-  const [references, setReferences] = useState(null)
+  const [references, setReferences] = useState(() => peekPageResource('admission-references', { scopeKey, retry: 0 }))
   const [retry, setRetry] = useState(0)
   const [formData, setFormData] = useState({
     studentName: admission?.studentName ?? '', dob: admission?.dob ?? '', guardianName: admission?.guardianName ?? '', contact: admission?.contact ?? '',
@@ -46,6 +50,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     Promise.all([
       courseService.list({ branchId }),
       batchService.list({ branchId }),
@@ -55,7 +60,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
       let master = { streams: [], subjects: [] }
       try { master = await academicService.overview({ branchId }) } catch { /* Legacy course/batch reads remain usable. */ }
       if (active) {
-        setReferences({ ...master, courses, batches, classes, facultyAssignments: facultyAssignments || [], scopeKey, retry })
+        setReferences(rememberPageResource('admission-references', { ...master, courses, batches, classes, facultyAssignments: facultyAssignments || [], scopeKey, retry }, loadVersion))
         // Auto-resolve stream, course, and batch when prefilled from Demo Class or another module.
         // Saved admissions retain an explicitly unselected batch during unrelated edits.
         if (admission && courses.length) {
@@ -158,8 +163,8 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
             subjectA: assigned[i].subject.name,
             subjectB: assigned[j].subject.name,
             days: sharedDays.join(', '),
-            timeA: `${a.startTime} – ${a.endTime}`,
-            timeB: `${b.startTime} – ${b.endTime}`,
+            timeA: formatTimeRange(a.startTime, a.endTime),
+            timeB: formatTimeRange(b.startTime, b.endTime),
           })
         }
       }
@@ -247,6 +252,10 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
         const s = (current?.subjects ?? []).find(sub => sub.id === sId)
         return s && nextIds.includes(s.courseId)
       })
+      if (!currentIds.includes(courseId)) {
+        const addedSubjectIds = (current?.subjects ?? []).filter(subject => subject.courseId === courseId && subject.active).map(subject => subject.id)
+        nextSubjectIds.push(...addedSubjectIds.filter(id => !nextSubjectIds.includes(id)))
+      }
 
       const validBatch = (current?.batches ?? []).find(b => b.id === previous.preferredBatchId && nextIds.includes(b.courseId))
 
@@ -277,7 +286,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
         courseId: course.id,
         courseIds: [course.id],
         preferredBatchId: null,
-        subjectIds: [],
+        subjectIds: (current?.subjects ?? []).filter(subject => subject.courseId === course.id && subject.active).map(subject => subject.id),
       }))
     }
     if (errors.course) setErrors(previous => ({ ...previous, course: null }))
@@ -536,7 +545,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                 )}
                 {batches.map(batch => (
                   <option key={batch.id} value={batch.id} disabled={batch.capacity != null && batch.remainingSeats === 0}>
-                    {batch.name}
+                    {batch.name}{batch.shift ? ` (${batch.shift})` : ''}{batch.durationMonths ? ` - ${formatBatchDuration(batch.durationMonths)}` : ''}
                   </option>
                 ))}
               </select>
@@ -568,7 +577,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                       >
                         <div>
                           <div className="flex items-start justify-between gap-1.5">
-                            <span className="font-bold text-xs sm:text-sm text-slate-900 leading-snug">{batch.name}</span>
+                            <span className="font-bold text-xs sm:text-sm text-slate-900 leading-snug">{batch.name}{batch.shift && <span className="ml-2 inline-flex rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{batch.shift}</span>}</span>
                             <span
                               className={`size-3.5 rounded-full border ${
                                 isSelected ? 'border-[#940016] bg-[#940016] shadow-[inset_0_0_0_2px_white]' : 'border-slate-300 bg-white'
@@ -576,10 +585,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                             />
                           </div>
                           <div className="mt-1.5 space-y-0.5 text-[11px] text-slate-600">
-                            <div className="flex items-center gap-1.5">
-                              <Clock size={11} className="text-slate-400 shrink-0" />
-                              <span className="truncate">{batch.startTime && batch.endTime ? `${batch.startTime} – ${batch.endTime}` : 'Timing not set'}</span>
-                            </div>
+                            {batch.durationMonths && <div className="text-[11px] font-medium text-slate-700">{formatBatchDuration(batch.durationMonths)}</div>}
                             {batch.days && batch.days.length > 0 && (
                               <div className="text-[10px] text-muted-foreground truncate">
                                 {batch.days.join(', ')}
@@ -627,6 +633,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                     <button
                       type="button"
                       key={subject.id}
+                      aria-pressed={isChecked}
                       onClick={() => toggleSubject(subject.id)}
                       className={`flex items-start gap-2.5 rounded-xl border p-2.5 sm:p-3 text-left transition-all cursor-pointer ${
                         isChecked
@@ -661,7 +668,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                                 {assignment.room}
                               </span>
                               <span className="block w-full text-[10px] text-slate-500 mt-0.5">
-                                {assignment.days?.join(', ')} · {assignment.startTime} – {assignment.endTime}
+                                {assignment.days?.join(', ')} · {formatTimeRange(assignment.startTime, assignment.endTime)}
                               </span>
                             </>
                           ) : (
@@ -1008,8 +1015,8 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
     </div>
 
     <Dialog open={instantDialogOpen} onOpenChange={open => { if (!open) { setInstantDialogOpen(false); onSuccess?.(instantResult?.admission) } }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg print:max-w-none print:border-none print:shadow-none print:p-0 print:m-0 print:bg-white">
+        <DialogHeader className="print:hidden">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-6 text-emerald-600" />
             <DialogTitle>Admission &amp; Enrollment Confirmed</DialogTitle>
@@ -1021,6 +1028,15 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
 
         {instantResult && (
           <div className="space-y-4 py-2 text-xs">
+            {/* Branded Official Header for Print */}
+            <div className="hidden print:flex items-center gap-3 border-b-2 border-[#940016] pb-3 mb-2">
+              <AcademyLogo className="size-10" />
+              <div className="flex-1">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#940016]">Official Admissions Record</p>
+                <h2 className="text-base font-black uppercase text-[#940016] leading-tight">The Scholar Coaching Academy</h2>
+                <p className="text-xs text-slate-600 font-medium">{branch?.name ?? currentBranch?.name ?? 'Main Campus'} • Enrolled Student Particulars</p>
+              </div>
+            </div>
             <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3.5 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-emerald-900 text-sm">{instantResult.student.name}</span>
@@ -1059,7 +1075,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
               )}
             </div>
 
-            <div className="flex flex-col gap-2 pt-2 border-t border-border">
+            <div className="flex flex-col gap-2 pt-2 border-t border-border print:hidden">
               <Button
                 className="w-full gap-2 text-xs bg-[#940016] text-white hover:bg-[#7a0012] cursor-pointer"
                 onClick={() => exportChallanPdf({ challan: instantResult.challan, student: instantResult.student, branchName: branch?.name ?? currentBranch?.name ?? 'The Scholar Coaching Academy' })}
@@ -1077,7 +1093,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
               <Button
                 variant="outline"
                 className="w-full gap-2 text-xs cursor-pointer"
-                onClick={() => window.print()}
+                onClick={() => { document.body.classList.add('is-printing-modal'); window.print(); setTimeout(() => document.body.classList.remove('is-printing-modal'), 500) }}
               >
                 <Printer size={14} /> Print Documents
               </Button>
@@ -1085,7 +1101,7 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="print:hidden">
           <Button
             className="w-full sm:w-auto cursor-pointer"
             onClick={() => {

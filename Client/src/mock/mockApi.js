@@ -119,6 +119,9 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
         return database.demoClassOperation(operation, args)
       })
     },
+    async payrollOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.payrollOperation(operation, args) })
+    },
     async financialOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.financialOperation(operation, args) })
     },
@@ -127,6 +130,9 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
     },
     async reportOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.reportOperation(operation, args) })
+    },
+    async deleteEmptyBranch(id) {
+      return serialize(() => database.deleteEmptyBranch(id))
     },
     async request(collection, operation, args) {
       if (beforeRequest) {

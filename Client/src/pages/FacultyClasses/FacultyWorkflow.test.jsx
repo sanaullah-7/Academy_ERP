@@ -41,7 +41,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     render(<App/>)
     const pill=await screen.findByRole('button',{name:/QA Saved Botany/})
     await userEvent.setup().click(pill)
-    expect(screen.queryByRole('link',{name:'Demo Teacher'})).not.toBeInTheDocument()
+    expect(screen.queryByRole('link',{name:'Faculty Teacher'})).not.toBeInTheDocument()
     const user=userEvent.setup()
     await user.click(screen.getByRole('button',{name:/Add Faculty Member/}))
     await user.click(await screen.findByRole('button',{name:'Primary Subject',exact:true}))
@@ -84,7 +84,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     await user.click(await screen.findByRole('button',{name:'Assign to Batch & Subject'}))
     expect(screen.getByRole('option',{name:'QA Profile Field'})).toBeInTheDocument()
     expect(screen.getByRole('option',{name:'QA Profile Course'})).toBeInTheDocument()
-    await user.selectOptions(screen.getByLabelText('Saved assignment'),screen.getByRole('option',{name:'QA Profile Subject / QA Profile Batch / 10:00'}))
+    await user.selectOptions(screen.getByLabelText('Saved assignment'),screen.getByRole('option',{name:'QA Profile Subject / QA Profile Batch / 10:00 AM'}))
     expect(screen.getByLabelText('Room / Lab')).toHaveValue('QA Profile Room')
   })
   it('renders circular Refresh, PDF, and CSV toolbar buttons and triggers reload on refresh', async () => {
@@ -113,7 +113,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await screen.findAllByRole('link', { name: 'Demo Teacher' })
+    await screen.findAllByRole('link', { name: 'Faculty Teacher' })
 
     // 1. Export with NO checkboxes selected -> exports all 6 teachers
     await user.click(screen.getByRole('button', { name: /Export CSV/i }))
@@ -127,7 +127,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     expect(allPdfRows.length).toBe(6)
 
     // 2. Select exactly one teacher checkbox
-    const demoTeacherCheckbox = screen.getByRole('checkbox', { name: 'Select Demo Teacher' })
+    const demoTeacherCheckbox = screen.getByRole('checkbox', { name: 'Select Faculty Teacher' })
     await user.click(demoTeacherCheckbox)
     expect(demoTeacherCheckbox).toBeChecked()
 
@@ -141,7 +141,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     expect(downloadCsvSpy).toHaveBeenCalled()
     const singleCsvRows = downloadCsvSpy.mock.calls[0][2]
     expect(singleCsvRows.length).toBe(1)
-    expect(singleCsvRows[0][0]).toBe('Demo Teacher')
+    expect(singleCsvRows[0][0]).toBe('Faculty Teacher')
 
     // Export PDF with 1 selected
     exportPdfSpy.mockClear()
@@ -150,7 +150,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     expect(exportPdfSpy).toHaveBeenCalled()
     const singlePdfRows = exportPdfSpy.mock.calls[0][0].rows
     expect(singlePdfRows.length).toBe(1)
-    expect(singlePdfRows[0][0]).toBe('Demo Teacher')
+    expect(singlePdfRows[0][0]).toBe('Faculty Teacher')
 
     // 3. Click Select All checkbox
     const selectAllCheckbox = screen.getByRole('checkbox', { name: 'Select all instructors' })
@@ -168,7 +168,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await screen.findAllByRole('link', { name: 'Demo Teacher' })
+    await screen.findAllByRole('link', { name: 'Faculty Teacher' })
     expect(screen.getByText('6 / 6 teachers')).toBeInTheDocument()
 
     // Click + Add Faculty Member

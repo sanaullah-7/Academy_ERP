@@ -9,7 +9,7 @@ beforeEach(async () => { localStorage.clear(); await authService.login({ userId:
 describe('class schedule service', () => {
   it('creates, persists, updates and deletes a branch class', async () => {
     const created = await classScheduleService.create(record, central)
-    expect(await classScheduleService.list(central)).toEqual([expect.objectContaining({ id: created.id, subject: 'Biology', teacherName: 'Demo Teacher', enrolledCount: 0 })])
+    expect(await classScheduleService.list(central)).toEqual([expect.objectContaining({ id: created.id, subject: 'Biology', teacherName: 'Faculty Teacher', enrolledCount: 0 })])
     expect(await classScheduleService.update(created.id, { ...record, subject: 'Chemistry' }, central)).toMatchObject({ subject: 'Chemistry' })
     await classScheduleService.delete(created.id, central)
     expect(await classScheduleService.list(central)).toEqual([])

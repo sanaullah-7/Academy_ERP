@@ -8,7 +8,7 @@ export function createReferenceService(collection) {
     const started = await authService.getSession()
     const validate = async () => {
       const current = await authService.getSession()
-      if (!started?.user || current?.user?.id !== started.user.id || !current?.branchId || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'Your active DEMO session or branch changed. Reload the form.')
+      if (!started?.user || current?.user?.id !== started.user.id || !current?.branchId || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'Your active session or branch changed. Reload the form.')
     }
     await validate()
     const result = await mockApi.request(collection, operation, { id, query, preserveSavedRecords: true })

@@ -7,8 +7,8 @@ async function scopeCheck(query, permission) {
   const started = await authService.getSession()
   return async () => {
     const current = await authService.getSession()
-    if (!started?.user || current?.user?.id !== started.user.id || current?.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active DEMO session or branch changed.')
-    if (!canAccess(permission, current.user, current.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for this Courses & Batches action.')
+    if (!started?.user || current?.user?.id !== started.user.id || current?.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'The active session or branch changed.')
+    if (!canAccess(permission, current.user, current.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This role is not authorized for this Courses & Batches action.')
   }
 }
 

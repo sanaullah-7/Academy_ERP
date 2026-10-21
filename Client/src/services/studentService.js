@@ -13,8 +13,8 @@ async function inScope(operation, query, permission) {
   const started = await authService.getSession()
   const validate = async () => {
     const current = await authService.getSession()
-    if (!started?.user || !current?.user || current.user.id !== started.user.id || !current.branchId || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'Choose your active authorized DEMO branch before reading students.')
-    if (!canAccess(permission, current.user, current.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for the requested Students action.')
+    if (!started?.user || !current?.user || current.user.id !== started.user.id || !current.branchId || current.branchId !== query?.branchId) throw new MockDataError('INVALID_SCOPE', 'Choose your active authorized branch before reading students.')
+    if (!canAccess(permission, current.user, current.branchId)) throw new MockDataError('DEMO_ACTION_DENIED', 'This role is not authorized for the requested Students action.')
   }
   await validate()
   const result = await operation()

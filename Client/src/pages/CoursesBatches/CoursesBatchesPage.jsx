@@ -1,3 +1,6 @@
+import { formatBatchDuration } from '../../utils/batchDuration.js'
+import { formatTimeRange, formatTime } from '../../utils/timeFormat.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 /**
  * Purpose: Will define Courses Batches Page for the CoursesBatches area of the Academy frontend.
  * Module: CoursesBatches
@@ -31,7 +34,7 @@ export default function CoursesBatchesPage() {
   const { can } = usePermissions()
   const canManage = can(PERMISSIONS.COURSES_MANAGE)
   const [tab, setTab] = useState('courses')
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(() => peekPageResource('academics'))
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')
@@ -64,8 +67,9 @@ export default function CoursesBatchesPage() {
   }
   useEffect(() => {
     let active = true
-    Promise.resolve().then(() => { if (active) { setData(null); setError('') } })
-    academicService.overview({ branchId }).then(result => { if (active) setData({ ...result, branchId }) }).catch(failure => { if (active) setError(failure.message) })
+    const loadVersion = capturePageVersion()
+    Promise.resolve().then(() => { if (active) { if (!peekPageResource('academics')) setData(null); setError('') } })
+    academicService.overview({ branchId }).then(result => { if (active) setData(rememberPageResource('academics', { ...result, branchId }, loadVersion)) }).catch(failure => { if (active) setError(failure.message) })
     facultyService.list({ branchId }).then(res => { if (active) setTeachers(res) }).catch(() => { if (active) setTeachers([]) })
     return () => { active = false }
   }, [branchId, reload])
@@ -199,12 +203,13 @@ export default function CoursesBatchesPage() {
     } else {
       downloadCsv(
         `tsa-batches-report-${new Date().toISOString().slice(0, 10)}.csv`,
-        ['Batch Name', 'Parent Course', 'Start Time', 'End Time', 'Enrolled Students', 'Capacity', 'Status'],
+        ['Batch Name', 'Parent Course', 'Duration', 'Start Time', 'End Time', 'Enrolled Students', 'Capacity', 'Status'],
         batches.map(b => [
           b.name,
           b.courseName,
-          b.startTime ?? 'N/A',
-          b.endTime ?? 'N/A',
+          formatBatchDuration(b.durationMonths),
+          formatTime(b.startTime, 'N/A'),
+          formatTime(b.endTime, 'N/A'),
           b.enrolledCount,
           b.capacity ?? 'N/A',
           b.active ? 'Active' : 'Inactive'
@@ -235,11 +240,12 @@ export default function CoursesBatchesPage() {
         filename: `tsa-batches-report-${new Date().toISOString().slice(0, 10)}.pdf`,
         title: 'Batches Directory Report',
         branchName: currentBranch?.name || 'The Scholar Coaching Academy',
-        headers: ['Batch Name', 'Parent Course', 'Schedule', 'Enrolled', 'Capacity', 'Status'],
+        headers: ['Batch Name', 'Parent Course', 'Duration', 'Schedule', 'Enrolled', 'Capacity', 'Status'],
         rows: batches.map(b => [
           b.name,
           b.courseName,
-          b.startTime && b.endTime ? `${b.startTime} - ${b.endTime}` : 'N/A',
+          formatBatchDuration(b.durationMonths),
+          b.startTime && b.endTime ? formatTimeRange(b.startTime, b.endTime) : 'N/A',
           String(b.enrolledCount),
           capacityLabel(b),
           b.active ? 'Active' : 'Inactive'
@@ -252,6 +258,7 @@ export default function CoursesBatchesPage() {
   const dialogEntity = dialog?.type?.split('-')[0]
   const entityLabel = { stream: 'Academic Stream', course: 'Course', batch: 'Batch', subject: 'Subject' }[dialogEntity] ?? (tab === 'courses' ? 'Course' : 'Batch')
   return <DashboardLayout><main className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+    <h1 className="text-2xl font-bold tracking-tight text-foreground">Courses &amp; Batches</h1>
 
     {message && <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm font-medium">{message}</p>}
     <Card className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs">
@@ -545,12 +552,7 @@ export default function CoursesBatchesPage() {
               <div className="hidden md:block">
                 <table className="academic-directory-table w-full table-fixed text-left text-xs">
                   <colgroup>
-                    <col className="w-[24%]" />
-                    <col className="w-[22%]" />
-                    <col className="w-[22%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[8%]" />
+                    {(tab === 'batches' ? [18, 18, 19, 17, 8, 13, 7] : [24, 22, 22, 10, 14, 8]).map((width, index) => <col key={index} style={{ width: `${width}%` }} />)}
                   </colgroup>
                   <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-normal dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
                     <tr>
@@ -561,8 +563,9 @@ export default function CoursesBatchesPage() {
                         {tab === 'courses' ? 'Academic stream' : 'Course'}
                       </th>
                       <th className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-200">
-                        {tab === 'courses' ? 'Subjects & Batches' : 'Schedule & Faculty'}
+                        {tab === 'courses' ? 'Subjects & Batches' : 'Schedule'}
                       </th>
+                      {tab === 'batches' && <th className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-200">Faculty</th>}
                       <th className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-200">
                         Enrolled
                       </th>
@@ -596,9 +599,15 @@ export default function CoursesBatchesPage() {
                             <div className="flex flex-col gap-1">
                               <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 text-xs">
                                 <Clock size={12} className="text-primary shrink-0" />
-                                {item.startTime && item.endTime ? `${item.startTime} – ${item.endTime}` : 'Schedule TBD'}
+                                {item.shift || (item.startTime && item.endTime ? formatTimeRange(item.startTime, item.endTime) : 'Shift not selected')}
                               </span>
-                              {item.teachers?.length > 0 ? (
+                              <span className="text-[11px] text-slate-600">Duration: {formatBatchDuration(item.durationMonths)}</span>
+
+                            </div>
+                          )}
+                        </td>
+                        {tab === 'batches' && <td className="break-words px-3 py-3 text-xs text-muted-foreground">
+                          {item.teachers?.length > 0 ? (
                                 <span className="inline-flex w-fit items-center gap-1 rounded bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[10px] font-medium text-slate-700">
                                   <User size={10} className="text-muted-foreground shrink-0" />
                                   {item.teachers.map(t => t.name).join(', ')}
@@ -606,9 +615,7 @@ export default function CoursesBatchesPage() {
                               ) : (
                                 <span className="text-[10px] text-muted-foreground italic">No faculty assigned</span>
                               )}
-                            </div>
-                          )}
-                        </td>
+                        </td>}
                         <td className="truncate px-3 py-3 text-xs font-bold tabular-nums text-foreground">
                           <span className="inline-flex items-center justify-center rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-800">
                             {item.enrolledCount}
@@ -658,7 +665,7 @@ export default function CoursesBatchesPage() {
         </CardContent>
       </Card>
     )}
-    <Dialog open={!!dialog} onOpenChange={open => { if (!open && !deleteBusy) { setDialog(null); setDeleteError('') } }}><DialogContent className="max-w-xl"><DialogTitle>{viewing ? dialog.item.name : dialog?.type?.endsWith('-delete') ? `Delete ${entityLabel}` : `${dialog?.item ? 'Edit' : 'Add'} ${entityLabel}`}</DialogTitle><DialogDescription>{viewing ? 'Saved branch-scoped DEMO details.' : dialog?.type?.endsWith('-delete') ? 'This action is permanent and is refused when linked records exist.' : 'Changes persist in the centralized browser-local mock database.'}</DialogDescription>
+    <Dialog open={!!dialog} onOpenChange={open => { if (!open && !deleteBusy) { setDialog(null); setDeleteError('') } }}><DialogContent className="max-w-xl"><DialogTitle>{viewing ? dialog.item.name : dialog?.type?.endsWith('-delete') ? `Delete ${entityLabel}` : `${dialog?.item ? 'Edit' : 'Add'} ${entityLabel}`}</DialogTitle><DialogDescription>{viewing ? 'Saved details for the selected branch.' : dialog?.type?.endsWith('-delete') ? 'This action is permanent and is refused when linked records exist.' : 'Changes are saved for the selected branch.'}</DialogDescription>
       {dialog?.type === 'course-form' && <CourseForm course={dialog.item} streams={streams} branchId={branchId} onSaved={record => saved(record, 'Course')} onCancel={() => setDialog(null)} />}
       {dialog?.type === 'batch-form' && <BatchForm batch={dialog.item} courses={courses} branchId={branchId} onSaved={record => saved(record, 'Batch')} onCancel={() => setDialog(null)} />}
       {dialog?.type === 'stream-form' && <AcademicRecordForm type="stream" item={dialog.item} branchId={branchId} onSaved={record => saved(record, 'Stream')} onCancel={() => setDialog(null)} />}

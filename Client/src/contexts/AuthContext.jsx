@@ -22,11 +22,11 @@ export function AuthProvider({ children }) {
     return () => { sequence.current += 1 }
   }, [])
 
-  async function login(userId) {
+  async function login(credentials) {
     const request = ++sequence.current
     setState((previous) => ({ ...previous, status: 'loading', session: null, error: '', revision: previous.revision + 1 }))
     try {
-      const session = await authService.login({ userId })
+      const session = await authService.login(typeof credentials === 'string' ? { userId: credentials } : credentials)
       if (request === sequence.current) setState((previous) => ({ ...previous, status: 'ready', session, error: '' }))
       return request === sequence.current
     } catch (error) {

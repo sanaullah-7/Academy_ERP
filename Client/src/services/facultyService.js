@@ -21,10 +21,10 @@ async function inScope(operation, query, permission = PERMISSIONS.FACULTY_VIEW) 
   const validate = async () => {
     const current = await authService.getSession()
     if (!started?.user || current?.user?.id !== started.user.id || !current?.branchId || current.branchId !== query?.branchId) {
-      throw new MockDataError('INVALID_SCOPE', 'Your active DEMO session or branch changed. Reload Faculty & Classes.')
+      throw new MockDataError('INVALID_SCOPE', 'Your active session or branch changed. Reload Faculty & Classes.')
     }
     if (!canAccess(permission, current.user, current.branchId)) {
-      throw new MockDataError('DEMO_ACTION_DENIED', 'This DEMO role is not authorized to view Faculty & Classes.')
+      throw new MockDataError('DEMO_ACTION_DENIED', 'This role is not authorized to view Faculty & Classes.')
     }
   }
   await validate()
@@ -139,7 +139,7 @@ export const facultyService = {
     return inScope(async branchId => {
       const teacher=getDemoUsers().find(user=>user.id===id&&getBranchRoles(user,branchId).includes(ROLES.TEACHER))
       if(!teacher)throw new MockDataError('NOT_FOUND','Faculty member was not found. Reload saved records.')
-      await organizationService.deleteUser(id)
+      await organizationService.deleteUser(id, { removeProfile: true })
       return teacher
     },query,PERMISSIONS.USERS_MANAGE)
   },

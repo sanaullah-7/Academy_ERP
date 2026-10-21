@@ -1,3 +1,7 @@
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
+import { payrollService } from '../../services/payrollService.js'
+import TeacherPayrollView from '../../components/Finance/TeacherPayrollView.jsx'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Banknote,
@@ -297,16 +301,33 @@ function ExpenseCategorySelect({ value, onChange }) {
   )
 }
 
-export default function FinancePage() {
+export default function FinancePage({ initialTab = 'overview' }) {
   const { branchId, branch, scopeKey } = useBranch()
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate=useNavigate()
+  const queryTab = searchParams.get('tab')
+  const teacherIdParam = searchParams.get('teacherId')
+  const isPayrollTarget = location.pathname.includes('/finance/payroll') || queryTab === 'payroll' || initialTab === 'payroll'
+
+  const [payrollEnabled, setPayrollEnabled] = useState(false)
+  useEffect(() => {
+    payrollService.getSettings({ branchId }).then(res => {
+      setPayrollEnabled(Boolean(res.enabled))
+    }).catch(() => setPayrollEnabled(false))
+  }, [branchId])
+
+  const activeSubTab = payrollEnabled && isPayrollTarget ? 'payroll' : 'overview'
   const { can } = usePermissions()
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(() => peekPageResource('finance', { scopeKey, request: 0 }))
   const [request, setRequest] = useState(0)
   const [type, setType] = useState('All')
   const [search, setSearch] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [exportError, setExportError] = useState('')
+  const [payrollExportTarget, setPayrollExportTarget] = useState(null)
+  const [payrollActionsTarget, setPayrollActionsTarget] = useState(null)
   const [form, setForm] = useState({ amount: '', category: '', customCategory: '', description: '', method: 'Cash', entryDate: today() })
 
   // Persistent manual month or auto-follow current month
@@ -360,8 +381,9 @@ export default function FinancePage() {
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     financialService.financeOverview({ branchId }).then(
-      data => active && setResult({ scopeKey, request, data }),
+      data => active && setResult(rememberPageResource('finance', { scopeKey, request, data }, loadVersion)),
       e => active && setResult({ scopeKey, request, error: e.message })
     )
     return () => {
@@ -439,7 +461,7 @@ export default function FinancePage() {
   }, [rawTransactions, activeMonthKey, type, search])
 
   const [pageState, setPageState] = useState({ key: '', page: 1 })
-  const [pageSize, setPageSize] = useState(15)
+  const [pageSize, setPageSize] = useState(10)
   const pageKey = `${branchId}|${activeMonthKey}|${type}|${search}|${pageSize}`
   const page = Math.min(pageState.key === pageKey ? pageState.page : 1, Math.max(1, Math.ceil(transactions.length / pageSize)))
   const pageRows = transactions.slice((page - 1) * pageSize, page * pageSize)
@@ -571,11 +593,13 @@ export default function FinancePage() {
       <div className="space-y-5">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Administrative Accounts · {branch?.name}</p>
+
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Academy Finance</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Verified fee revenue and branch operational expenses.</p>
           </div>
-          {can(PERMISSIONS.FINANCE_VIEW) && (
+          {payrollEnabled && activeSubTab === 'payroll' ? (
+            <div ref={setPayrollExportTarget} className="flex flex-wrap items-center gap-2" />
+          ) : can(PERMISSIONS.FINANCE_VIEW) && (
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector matching Screenshot 2 placed immediately to the left of Export CSV & PDF */}
               <div className="flex items-center gap-2">
@@ -609,6 +633,43 @@ export default function FinancePage() {
             </div>
           )}
         </header>
+
+        {payrollEnabled && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60 w-fit">
+            <button
+              type="button"
+              onClick={() => navigate('/finance')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeSubTab === 'overview'
+                  ? 'bg-[#940016] text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Wallet size={15} />
+              Finance Overview
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/finance?tab=payroll')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeSubTab === 'payroll'
+                  ? 'bg-[#940016] text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Banknote size={15} />
+              Teacher Payroll
+            </button>
+          </div>
+          {activeSubTab === 'payroll' && <div ref={setPayrollActionsTarget} className="min-w-0" />}
+          </div>
+        )}
+
+        {payrollEnabled && activeSubTab === 'payroll' ? (
+          <TeacherPayrollView branchId={branchId} branchName={branch?.name} initialTeacherId={teacherIdParam} exportTarget={payrollExportTarget} actionsTarget={payrollActionsTarget} />
+        ) : (
+          <>
 
         {message && (
           <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-sm font-medium text-emerald-800">
@@ -775,28 +836,28 @@ export default function FinancePage() {
               </CardContent>
             </Card>
 
-            <div className="overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
-              <table className="w-full min-w-[650px] text-left text-sm">
-                <thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-wide dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200">
+            <div className="min-w-0 rounded-xl border border-border/80 bg-card shadow-xs">
+              <table className="block w-full min-w-0! text-left text-sm sm:table [&_th]:px-2 [&_td]:px-2 2xl:[&_th]:px-3.5 2xl:[&_td]:px-3.5">
+                <thead className="hidden sm:table-header-group bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-wide dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200">
                   <tr>
                     {['Date & ID', 'Transaction Detail', 'Category', 'Method', 'Amount'].map(x => (
-                      <th key={x} className="px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">
+                      <th key={x} className="whitespace-nowrap px-3.5 py-2.5 font-bold text-slate-700 dark:text-slate-200">
                         {x}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="block sm:table-row-group divide-y divide-border/50">
                   {pageRows.map(x => (
-                    <tr key={x.id} className="hover:bg-[#F9EBEE]/20 transition-colors">
-                      <td className="px-3.5 py-2.5 text-xs text-muted-foreground font-mono">
+                    <tr key={x.id} className="grid grid-cols-2 sm:table-row hover:bg-[#F9EBEE]/20 transition-colors">
+                      <td className="block sm:table-cell whitespace-nowrap px-3.5 py-2.5 text-xs text-muted-foreground font-mono">
                         {x.date.slice(0, 10)}
                         <small className="block font-sans text-primary font-semibold">{x.reference}</small>
                       </td>
-                      <td className="px-3.5 py-2.5 font-medium text-foreground text-sm">{x.description}</td>
-                      <td className="px-3.5 py-2.5 text-xs text-muted-foreground">{x.category}</td>
-                      <td className="px-3.5 py-2.5 text-xs text-muted-foreground">{x.method}</td>
-                      <td className={`px-3.5 py-2.5 font-semibold tabular-nums text-sm ${x.amount >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                      <td className="block col-span-2 sm:table-cell w-full whitespace-normal [overflow-wrap:anywhere] px-3.5 py-2.5 font-medium text-foreground text-sm"><span className="mb-1 block text-[10px] font-semibold uppercase text-muted-foreground sm:hidden">Transaction Detail</span>{x.description}</td>
+                      <td className="block sm:table-cell whitespace-nowrap px-3.5 py-2.5 text-xs text-muted-foreground"><span className="mb-1 block text-[10px] font-semibold uppercase sm:hidden">Category</span>{x.category}</td>
+                      <td className="block sm:table-cell whitespace-nowrap px-3.5 py-2.5 text-xs text-muted-foreground"><span className="mb-1 block text-[10px] font-semibold uppercase sm:hidden">Method</span>{x.method}</td>
+                      <td className={`block sm:table-cell whitespace-nowrap px-3.5 py-2.5 font-semibold tabular-nums text-sm ${x.amount >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                         {x.amount >= 0 ? '+ ' : '− '}
                         {money(Math.abs(x.amount))}
                       </td>
@@ -997,6 +1058,8 @@ export default function FinancePage() {
             )}
           </aside>
         </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   )

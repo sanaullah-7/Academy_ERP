@@ -89,11 +89,11 @@ describe('fictional sessions and branch validation', () => {
   })
 })
 
-describe('only workspace viewing is granted', () => {
+describe('only app viewing is granted', () => {
   it.each(DEMO_USERS.filter((user) => user.enabled && user.assignments.length))('uses branch-scoped roles and denies every ERP action for $name', (user) => {
     for (const branch of getAuthorizedBranches(user)) {
-      expect(canAccess('workspace.view', user, branch.id)).toBe(true)
-      for (const permission of ['unknown', '', 'dashboard.view', 'students.read', 'payments.record', 'payments.reverse', 'discounts.approve']) {
+      expect(canAccess('dashboard.view', user, branch.id)).toBe(true)
+      for (const permission of ['unknown', '', 'dashboard.edit', 'students.read', 'payments.record', 'payments.reverse', 'discounts.approve']) {
         expect(canAccess(permission, user, branch.id)).toBe(false)
       }
     }
@@ -106,13 +106,13 @@ describe('only workspace viewing is granted', () => {
         expect(canAccess('branches.manage', user, branch.id)).toBe(false)
       }
     }
-    expect(canAccess('workspace.view', user, 'foreign')).toBe(false)
-    expect(canAccess('workspace.view', user, 'all')).toBe(false)
+    expect(canAccess('dashboard.view', user, 'foreign')).toBe(false)
+    expect(canAccess('dashboard.view', user, 'all')).toBe(false)
   })
 
   it('denies anonymous, disabled, unassigned and malformed assignments', () => {
-    expect(canAccess('workspace.view', null, 'demo-central')).toBe(false)
-    for (const user of DEMO_USERS.filter((candidate) => !candidate.enabled || !candidate.assignments.length)) expect(canAccess('workspace.view', user, 'demo-central')).toBe(false)
-    expect(canAccess('workspace.view', { enabled: true, assignments: [{ branchId: 'demo-central', roles: ['unknown'] }] }, 'demo-central')).toBe(false)
+    expect(canAccess('dashboard.view', null, 'demo-central')).toBe(false)
+    for (const user of DEMO_USERS.filter((candidate) => !candidate.enabled || !candidate.assignments.length)) expect(canAccess('dashboard.view', user, 'demo-central')).toBe(false)
+    expect(canAccess('dashboard.view', { enabled: true, assignments: [{ branchId: 'demo-central', roles: ['unknown'] }] }, 'demo-central')).toBe(false)
   })
 })

@@ -4,18 +4,31 @@
  * Status: Planned — functionality not implemented.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Building2, Check, ChevronDown } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useBranch } from '../../hooks/useBranch.js'
 
+// Keep keyboard focus through the dashboard's loading/content shell remounts.
+let pendingBranchFocus = null
+function setPendingBranchFocus(value) { pendingBranchFocus = value }
+
 export default function BranchSwitcher() {
-  const { error } = useAuth()
+  const { error, user } = useAuth()
   const { branches, branchId, selectBranch } = useBranch()
   const [pending, setPending] = useState(false)
 
   const [open, setOpen] = useState(false)
   const root = useRef(null)
+  useLayoutEffect(() => {
+    if (pendingBranchFocus?.userId === user?.id && pendingBranchFocus.branchId === branchId) document.getElementById('active-demo-branch')?.focus()
+  }, [branchId, user?.id])
+  useEffect(() => {
+    const clear = event => { if (event.type === 'pointerdown' || event.target.id !== 'active-demo-branch') pendingBranchFocus = null }
+    document.addEventListener('pointerdown', clear)
+    document.addEventListener('focusin', clear)
+    return () => { document.removeEventListener('pointerdown', clear); document.removeEventListener('focusin', clear) }
+  }, [])
   useEffect(() => {
     if (!open) return
     const close = event => { if (!root.current?.contains(event.target)) setOpen(false) }
@@ -37,7 +50,9 @@ export default function BranchSwitcher() {
     setOpen(false)
     if (pending || selectedId === branchId) { document.getElementById('active-demo-branch')?.focus(); return }
     setPending(true)
-    await selectBranch(selectedId)
+    setPendingBranchFocus({ userId: user?.id, branchId: selectedId })
+    const changed = await selectBranch(selectedId)
+    if (!changed) setPendingBranchFocus(null)
     setPending(false)
     // Protected branch content remounts; return keyboard focus to its new switcher.
     if (restoreFocus) requestAnimationFrame(() => document.getElementById('active-demo-branch')?.focus())
@@ -48,7 +63,7 @@ export default function BranchSwitcher() {
     if (event.key === 'Tab') setOpen(false)
   }}>
     <button id="active-demo-branch" type="button" className="demo-branch-trigger"
-      aria-label="Active demo branch" aria-haspopup="listbox" aria-expanded={open}
+      aria-label="Active branch" aria-haspopup="listbox" aria-expanded={open}
       aria-controls={open ? 'branch-options' : undefined}
       disabled={pending || branches.length < 2} aria-busy={pending}
       aria-describedby={error ? 'demo-branch-error' : undefined}

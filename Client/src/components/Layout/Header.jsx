@@ -19,13 +19,13 @@ export default function Header({ isCollapsed, onToggleSidebar, onOpenNavigation 
   useEffect(()=>{const syncFullscreen=()=>setIsFullscreen(Boolean(document.fullscreenElement));document.addEventListener('fullscreenchange',syncFullscreen);return()=>document.removeEventListener('fullscreenchange',syncFullscreen)},[])
   async function toggleFullscreen(){if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}
   return (
-    <header className="workspace-topbar">
+    <header className="app-topbar">
       <div className="flex min-w-0 flex-1 items-center gap-4">
-        <Button variant="ghost" size="icon" className="workspace-icon-button workspace-compact-control workspace-desktop-toggle" onClick={onToggleSidebar} aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!isCollapsed}>
+        <Button variant="ghost" size="icon" className="app-icon-button app-compact-control app-desktop-toggle" onClick={onToggleSidebar} aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!isCollapsed}>
           {isCollapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}
         </Button>
         <DialogTrigger asChild>
-          <Button variant="outline" size="icon" className="workspace-icon-button workspace-mobile-toggle" onClick={onOpenNavigation} aria-label="Open navigation">
+          <Button variant="outline" size="icon" className="app-icon-button app-mobile-toggle" onClick={onOpenNavigation} aria-label="Open navigation">
             <Menu size={20} aria-hidden="true" />
           </Button>
         </DialogTrigger>
@@ -34,7 +34,7 @@ export default function Header({ isCollapsed, onToggleSidebar, onOpenNavigation 
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="icon" className="workspace-icon-button workspace-compact-control" onClick={()=>void toggleFullscreen()} aria-label={isFullscreen?'Exit full screen':'Enter full screen'} title={isFullscreen?'Exit full screen':'Enter full screen'}>
+        <Button variant="ghost" size="icon" className="app-icon-button app-compact-control" onClick={()=>void toggleFullscreen()} aria-label={isFullscreen?'Exit full screen':'Enter full screen'} title={isFullscreen?'Exit full screen':'Enter full screen'}>
           {isFullscreen?<Minimize size={19} aria-hidden="true"/>:<Maximize size={19} aria-hidden="true"/>}
         </Button>
         <DemoSessionControls />

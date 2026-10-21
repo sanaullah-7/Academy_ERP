@@ -1,3 +1,7 @@
+import { formatTime, formatTimeRange, formatTimestamp } from '../../utils/timeFormat.js'
+import Pagination from '../Shared/Pagination.jsx'
+import { isOnAcademyDay } from '../../utils/formatDate.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { classPeriod } from '../../utils/classTime.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -54,8 +58,7 @@ function isInPeriod(value, period, range, now = new Date()) {
 }
 
 function formatDateTime(value) {
-  if (!value) return 'Date unavailable'
-  return new Intl.DateTimeFormat('en-PK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  return formatTimestamp(value, { dateOptions: { day: 'numeric', month: 'short' } })
 }
 
 function localDateKey(date) {
@@ -94,7 +97,7 @@ function CashflowChart({ period, periodLabel, range, payments, expenses }) {
     const now = new Date()
     const create = (key, label) => ({ key, label, revenue: 0, expenses: 0 })
     let buckets
-    if (period === 'daily') buckets = Array.from({ length: 6 }, (_, index) => create(index, `${String(index * 4).padStart(2, '0')}:00`))
+    if (period === 'daily') buckets = Array.from({ length: 6 }, (_, index) => create(index, formatTime(`${String(index * 4).padStart(2, '0')}:00`)))
     else if (period === 'weekly') { const monday = new Date(now); monday.setHours(0,0,0,0); monday.setDate(monday.getDate()-((monday.getDay()+6)%7)); buckets = Array.from({length:7},(_,index)=>{const date=new Date(monday);date.setDate(date.getDate()+index);return create(localDateKey(date),new Intl.DateTimeFormat('en-PK',{weekday:'short'}).format(date))}) }
     else if (period === 'monthly') buckets = Array.from({length:5},(_,index)=>create(index,`Week ${index+1}`))
     else if (period === 'custom' && range.start && range.end) { const start=new Date(`${range.start}T00:00:00`), end=new Date(`${range.end}T00:00:00`), days=Math.min(31,Math.floor((end-start)/86400000)+1); buckets=Array.from({length:Math.max(0,days)},(_,index)=>{const date=new Date(start);date.setDate(date.getDate()+index);return create(localDateKey(date),new Intl.DateTimeFormat('en-PK',{day:'numeric',month:'short'}).format(date))}) }
@@ -138,30 +141,8 @@ function FeeStatusBadge({ value }) {
   return <Badge variant="outline" className={`gap-1.5 whitespace-nowrap ${style}`}><span className={`size-2 rounded-full ${dot}`} />{status}</Badge>
 }
 
-function formatTime12(timeStr) {
-  if (!timeStr) return ''
-  const trimmed = timeStr.trim()
-  if (trimmed.includes('AM') || trimmed.includes('PM')) return trimmed
-  const parts = trimmed.split(':')
-  if (parts.length < 2) return trimmed
-  let h = parseInt(parts[0], 10)
-  const m = parts[1]
-  const ampm = h >= 12 ? 'PM' : 'AM'
-  h = h % 12 || 12
-  return `${String(h).padStart(2, '0')}:${m} ${ampm}`
-}
-
 function formatClassSlotTime(startTime, endTime) {
-  if (!startTime) return ''
-  if (!endTime) return formatTime12(startTime)
-  const s = formatTime12(startTime)
-  const e = formatTime12(endTime)
-  const sParts = s.split(' ')
-  const eParts = e.split(' ')
-  if (sParts.length === 2 && eParts.length === 2 && sParts[1] === eParts[1]) {
-    return `${sParts[0]} – ${e}`
-  }
-  return `${s} – ${e}`
+  return endTime ? formatTimeRange(startTime, endTime) : formatTime(startTime, '')
 }
 
 function getBatchBadgeColor(batchName = '', index = 0) {
@@ -242,14 +223,17 @@ export default function SuperAdminDashboard() {
   const navigate = useNavigate()
   const [period, setPeriod] = useState('all')
   const [search, setSearch] = useState('')
+  const [enrollmentRows, setEnrollmentRows] = useState(10)
+  const [enrollmentPagination, setEnrollmentPagination] = useState({ key: '', page: 1 })
   const [range, setRange] = useState({ start: '', end: '' })
   const [request, setRequest] = useState(0)
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(() => peekPageResource('dashboard', { scopeKey, request: 0 }))
   const [clock, setClock] = useState(() => new Date())
   useEffect(() => { const timer = window.setInterval(() => setClock(new Date()), 60000); return () => window.clearInterval(timer) }, [])
 
   useEffect(() => {
     let active = true
+    const loadVersion = capturePageVersion()
     if (branchId) Promise.all([
       studentService.listDirectory({ branchId }),
       admissionService.list({ branchId }),
@@ -259,7 +243,7 @@ export default function SuperAdminDashboard() {
       financialService.overview({ branchId }),
       financialService.financeOverview({ branchId }),
     ]).then(([students, admissions, academic, classes, assignments, financial, finance]) => {
-      if (active) setResult({ scopeKey, request, students, admissions, academic, classes, assignments, financial, finance })
+      if (active) setResult(rememberPageResource('dashboard', { scopeKey, request, students, admissions, academic, classes, assignments, financial, finance }, loadVersion))
     }, error => {
       if (active) setResult({ scopeKey, request, error: error.message })
     })
@@ -271,7 +255,10 @@ export default function SuperAdminDashboard() {
   const students = useMemo(() => current?.students ?? [], [current?.students])
   const enrollments = useMemo(() => students.flatMap(student => (student.enrollments ?? []).map(enrollment => ({ ...enrollment, studentId: student.id, studentName: student.name, admissionReference: student.admission?.displayAdmissionId ?? student.admission?.admissionId ?? enrollment.admissionId }))).sort((a, b) => Date.parse(b.enrolledAt) - Date.parse(a.enrolledAt)), [students])
   const needle = search.trim().toLocaleLowerCase()
-  const visibleEnrollments = enrollments.filter(item => isInPeriod(item.enrolledAt, period, range) && (!needle || `${item.studentName} ${item.courseName} ${item.batchName}`.toLocaleLowerCase().includes(needle))).slice(0, 5)
+  const matchingEnrollments = enrollments.filter(item => isOnAcademyDay(item.enrolledAt, clock) && isInPeriod(item.enrolledAt, period, range) && (!needle || `${item.studentName} ${item.courseName} ${item.batchName}`.toLocaleLowerCase().includes(needle)))
+  const enrollmentPageKey = JSON.stringify([scopeKey, period, range.start, range.end, needle, enrollmentRows, new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(clock)])
+  const enrollmentPage = Math.min(enrollmentPagination.key === enrollmentPageKey ? enrollmentPagination.page : 1, Math.max(1, Math.ceil(matchingEnrollments.length / enrollmentRows)))
+  const visibleEnrollments = matchingEnrollments.slice((enrollmentPage - 1) * enrollmentRows, enrollmentPage * enrollmentRows)
   const admissionCount = admissions.filter(item => isInPeriod(item.createdAt, period, range)).length
   const activeStudents = students.filter(student => {
     if ((student.status ?? 'Active') !== 'Active') return false
@@ -362,9 +349,9 @@ export default function SuperAdminDashboard() {
                 </Card>
 
                 <Card className="h-fit gap-0 overflow-visible rounded-xl border-border/70 py-0 shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
-                  <CardHeader className="flex min-h-20 grid-cols-none flex-row items-center justify-between gap-3 rounded-t-xl border-b border-border/60 px-4 py-4 sm:px-5"><div className="min-w-0"><h2 className="text-base font-semibold tracking-tight">Recent Student Enrollments</h2><p className="mt-0.5 truncate text-xs text-muted-foreground">Latest applicants processed across academic wings</p></div>{can(PERMISSIONS.ADMISSIONS_VIEW) && <Button asChild variant="link" size="sm" className="shrink-0 px-1 text-xs"><Link to={ROUTE_PATHS.ADMISSIONS}>View all admissions <ArrowRight size={17} aria-hidden="true" /></Link></Button>}</CardHeader>
+                  <CardHeader className="flex min-h-20 grid-cols-none flex-row items-center justify-between gap-3 rounded-t-xl border-b border-border/60 px-4 py-4 sm:px-5"><div className="min-w-0"><h2 className="text-base font-semibold tracking-tight">Recent Student Enrollments</h2><p className="mt-0.5 truncate text-xs text-muted-foreground">Today's enrollments across academic wings</p></div>{can(PERMISSIONS.ADMISSIONS_VIEW) && <Button asChild variant="link" size="sm" className="shrink-0 px-1 text-xs"><Link to={ROUTE_PATHS.ADMISSIONS}>View all admissions <ArrowRight size={17} aria-hidden="true" /></Link></Button>}</CardHeader>
                   <CardContent className="p-0">
-                    {visibleEnrollments.length === 0 ? <div className="p-6"><EmptyData icon={Users} title="No recent enrollments" description={`No saved enrollments were found for ${periodLabel?.toLowerCase()} in this branch.`} /></div> : <>
+                    {visibleEnrollments.length === 0 ? <div className="p-6"><EmptyData icon={Users} title="No enrollments today" description="No enrollments from today match the current filters in this branch." /></div> : <>
                       <div className="hidden w-full rounded-b-xl md:block"><table className="w-full table-fixed text-left text-[11px] xl:text-xs"><colgroup><col className="w-[24%]" /><col className="w-[18%]" /><col className="w-[18%]" /><col className="w-[16%]" /><col className="w-[12%]" /><col className="w-[12%]" /></colgroup><thead className="bg-slate-50/90 border-b border-slate-200 text-xs font-bold text-slate-700 tracking-normal dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"><tr><th className="whitespace-nowrap px-3 py-2.5 font-bold text-slate-700 dark:text-slate-200">Student Name</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Field / Program</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Batch</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Enrolled</th><th className="whitespace-nowrap px-2 py-2.5 font-bold text-slate-700 dark:text-slate-200">Fee Status</th><th className="whitespace-nowrap px-3 py-2.5 text-right font-bold text-slate-700 dark:text-slate-200">Dues</th></tr></thead><tbody>{visibleEnrollments.map((item, index) => {
                         const duesInfo = getEnrollmentDues(item)
                         return <tr key={item.id} tabIndex={0} role="button" aria-label={`View ${item.studentName} in Students directory`} onClick={() => navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } })} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } }) } }} className={`group cursor-pointer whitespace-nowrap transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring ${index % 2 ? 'bg-primary/[0.035]' : 'bg-card'} ${index === visibleEnrollments.length - 1 ? '[&>td:first-child]:rounded-bl-xl [&>td:last-child]:rounded-br-xl' : ''}`}><td className="min-w-0 px-3 py-2.5"><Link title={item.studentName} onClick={event => event.stopPropagation()} className="block truncate font-semibold text-foreground group-hover:text-primary group-hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{item.admissionReference}</span></td><td className="px-2 py-2.5"><span title={item.courseName} className={`block w-fit max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${index % 2 ? 'bg-indigo-100 text-indigo-800' : 'bg-cyan-100 text-cyan-800'}`}>{item.courseName}</span></td><td title={item.batchName} className="truncate px-2 py-2.5 text-muted-foreground">{item.batchName}</td><td className="truncate px-2 py-2.5 text-muted-foreground">{formatDateTime(item.enrolledAt)}</td><td className="px-2 py-2.5"><FeeStatusBadge value={duesInfo.feeStatus} /></td><td className="px-3 py-2.5 text-right whitespace-nowrap font-medium">{duesInfo.dueAmount > 0 ? <span className="font-bold text-rose-600 dark:text-rose-400">{money(duesInfo.dueAmount)}</span> : <span className="font-semibold text-emerald-600 dark:text-emerald-400">PKR 0</span>}</td></tr>
@@ -374,6 +361,7 @@ export default function SuperAdminDashboard() {
                         return <article key={item.id} tabIndex={0} role="button" aria-label={`View ${item.studentName} in Students directory`} onClick={() => navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } })} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(ROUTE_PATHS.STUDENTS, { state: { highlightStudentId: item.studentId, studentId: item.studentId } }) } }} className="group relative cursor-pointer rounded-xl border p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-2 focus-visible:outline-ring"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><Link title={item.studentName} onClick={event => event.stopPropagation()} className="block truncate font-semibold text-foreground group-hover:text-primary group-hover:underline" to={`/students/${item.studentId}`}>{item.studentName}</Link><span className="block truncate text-xs text-muted-foreground">{item.admissionReference}</span></div><div className="text-right shrink-0">{duesInfo.dueAmount > 0 ? <span className="text-xs font-bold text-rose-600 dark:text-rose-400">{money(duesInfo.dueAmount)}</span> : <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">PKR 0</span>}</div></div><p className="mt-2.5 truncate text-sm text-muted-foreground" title={`${item.courseName} • ${item.batchName}`}>{item.courseName} • {item.batchName}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="truncate text-xs text-muted-foreground">{formatDateTime(item.enrolledAt)}</span><FeeStatusBadge value={duesInfo.feeStatus} /></div></article>
                       })}</div>
                     </>}
+                    <Pagination label="Recent enrollments" page={enrollmentPage} rows={enrollmentRows} total={matchingEnrollments.length} onPage={page => setEnrollmentPagination({ key: enrollmentPageKey, page })} onRows={rows => { setEnrollmentRows(rows); setEnrollmentPagination({ key: '', page: 1 }) }} />
                   </CardContent>
                 </Card>
               </div>

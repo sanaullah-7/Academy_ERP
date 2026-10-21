@@ -9,13 +9,12 @@ import { ChevronRight, House } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 
-export default function PageHeader({ title, description = 'Your academy, thoughtfully organized.' }) {
+export default function PageHeader({ title }) {
   return (
-    <div className="workspace-page-header">
-      <div className="min-w-0"><h4 className="workspace-page-title">{title}</h4>{description && <p className="sr-only">{description}</p>}</div>
-      <nav className="workspace-page-breadcrumb" aria-label="Breadcrumb">
-        <Link to={ROUTE_PATHS.DASHBOARD}><House size={17} aria-hidden="true" />Home</Link>
-        <ChevronRight size={17} aria-hidden="true" />
+    <div className="app-page-header app-page-header-breadcrumb-only">
+      <nav className="app-page-breadcrumb" aria-label="Breadcrumb">
+        <Link to={ROUTE_PATHS.DASHBOARD}><House size={14} aria-hidden="true" />Home</Link>
+        <ChevronRight size={14} aria-hidden="true" />
         <span aria-current="page">{title}</span>
       </nav>
     </div>

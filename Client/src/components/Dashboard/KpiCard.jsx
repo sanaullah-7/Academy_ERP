@@ -1,9 +1,8 @@
 import { Card, CardContent } from '../ui/card.jsx'
-import { Badge } from '../ui/badge.jsx'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 
-export function KpiCard({ title, icon: Icon, value, description, isLoading, error, isDemo = true }) {
+export function KpiCard({ title, icon: Icon, value, description, isLoading, error }) {
   const shouldReduceMotion = useReducedMotion()
 
   return (
@@ -29,7 +28,6 @@ export function KpiCard({ title, icon: Icon, value, description, isLoading, erro
             ) : (
               <p className="text-2xl font-bold">{value !== undefined ? value : '—'}</p>
             )}
-            {isDemo && <Badge variant="secondary" className="text-[10px] uppercase tracking-wider bg-muted/50 hover:bg-muted text-muted-foreground border-transparent shadow-none">DEMO</Badge>}
           </div>
           {description && <p className="mt-2 text-xs text-muted-foreground">{description}</p>}
         </CardContent>
