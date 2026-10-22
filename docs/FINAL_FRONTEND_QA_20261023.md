@@ -45,5 +45,5 @@ Disposable headless Edge contexts exercised saved records without changing the o
 - Frontend/localStorage mock only: different browser profiles/devices do not synchronize without the deferred shared backend. This is not production authentication or backend authorization.
 - Physical-device software-keyboard testing and backend integration: NOT_RUN.
 - Initial `git fetch origin dev` found 0 local-only / 0 remote-only commits. Remote must be checked again immediately before committing/pushing.
-- Stage only reviewed source/tests and nonempty project documentation. Secrets, all `.env` files, build output, dependencies, artifacts and temporary files are excluded. Empty local `docs/API.md` and `docs/DATABASE.md` placeholders remain untouched and untracked.
+- Stage only reviewed source/tests and nonempty project documentation. Secrets, all `.env` files, build output, dependencies, artifacts and temporary files are excluded. Empty local `docs/02-DATABASE-AND-API/API.md` and `docs/02-DATABASE-AND-API/DATABASE.md` placeholders remain untouched and untracked.
 - Release criteria PASS. The owner-authorized normal commit/push follows the final index/path/remote checks; its actual hash and remote verification are reported after those commands complete.

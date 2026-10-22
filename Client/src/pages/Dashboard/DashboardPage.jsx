@@ -16,6 +16,7 @@ import { KpiCard } from '../../components/Dashboard/KpiCard.jsx'
 import { studentService } from '../../services/studentService.js'
 import { courseService } from '../../services/courseService.js'
 import { dashboardService } from '../../services/dashboardService.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import SuperAdminDashboard from '../../components/Dashboard/SuperAdminDashboard.jsx'
 import CashflowChart from '../../components/Dashboard/CashflowChart.jsx'
 import { PERIODS, isInPeriod } from '../../utils/dashboardCashflow.js'
@@ -28,15 +29,29 @@ const academyDate = value => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/
 
 function useDashboardData() {
   const { branchId, scopeKey } = useBranch()
-  const [state, setState] = useState({ scopeKey, loading: true, data: null, error: null })
+  const cacheKey = `dashboard:${scopeKey}`
+  const [state, setState] = useState(() => {
+    const cached = peekPageResource(cacheKey)
+    return cached
+      ? { scopeKey, loading: false, data: cached, error: null }
+      : { scopeKey, loading: true, data: null, error: null }
+  })
   useEffect(() => {
     let active = true
-    if (branchId) dashboardService.overview({ branchId }).then(
-      data => { if (active) setState({ scopeKey, loading: false, data, error: null }) },
-      error => { if (active) setState({ scopeKey, loading: false, data: null, error: error.message }) },
-    )
+    const version = capturePageVersion()
+    if (branchId) {
+      dashboardService.overview({ branchId }).then(
+        data => {
+          if (active) {
+            rememberPageResource(cacheKey, data, version)
+            setState({ scopeKey, loading: false, data, error: null })
+          }
+        },
+        error => { if (active) setState({ scopeKey, loading: false, data: null, error: error.message }) },
+      )
+    }
     return () => { active = false }
-  }, [branchId, scopeKey])
+  }, [branchId, scopeKey, cacheKey])
   return state.scopeKey === scopeKey ? state : { scopeKey, loading: true, data: null, error: null }
 }
 

@@ -73,22 +73,22 @@ Do not implement deferred functionality without explicit approval.
 
 Before starting any authorized implementation task, read:
 
-1. [Documentation Index](docs/README.md)
-2. [Engineering Rules](docs/RULES.md)
-3. [Current Tasks](docs/TASKS.md)
-4. [Feature Tickets](docs/FEATURE_TICKETS.md)
-5. [Decision History](docs/MEMORY.md)
-6. [Verified Progress](docs/PROGRESS.md)
+1. [Documentation Index](docs/00-CORE/README.md)
+2. [Engineering Rules](docs/00-CORE/RULES.md)
+3. [Current Tasks](docs/00-CORE/TASKS.md)
+4. [Feature Tickets](docs/00-CORE/FEATURE_TICKETS.md)
+5. [Decision History](docs/00-CORE/MEMORY.md)
+6. [Verified Progress](docs/00-CORE/PROGRESS.md)
 
 Read the applicable subject specifications:
 
-- [Product Requirements](docs/PRD.md)
-- [System Design](docs/SYSTEM_DESIGN.md)
-- [Technical Architecture](docs/ARCHITECTURE.md)
-- [Database Design](docs/ERD.md)
-- [Visual Design](docs/DESIGN.md)
+- [Product Requirements](docs/00-CORE/PRD.md)
+- [System Design](docs/00-CORE/SYSTEM_DESIGN.md)
+- [Technical Architecture](docs/01-ARCHITECTURE/ARCHITECTURE.md)
+- [Database Design](docs/01-ARCHITECTURE/ERD.md)
+- [Visual Design](docs/04-FRONTEND/DESIGN.md)
 - [Security Specification](docs/SECURITY.md)
-- [Frontend Integration](docs/FRONTEND_INTEGRATION.md)
+- [Frontend Integration](docs/04-FRONTEND/FRONTEND_INTEGRATION.md)
 
 Read the relevant sections completely enough to understand the approved ticket and its dependencies.
 

@@ -5,22 +5,16 @@
  */
 
 // F00-005: Approved frontend demo implementation; not production authentication.
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { AuthContext } from './accessContexts.js'
 import { authService } from '../services/authService.js'
 
 export function AuthProvider({ children }) {
-  const [state, setState] = useState({ status: 'loading', session: null, error: '', revision: 0 })
+  const [state, setState] = useState(() => {
+    try { return { status: 'ready', session: authService.restoreSession(), error: '', revision: 1 } }
+    catch (error) { return { status: 'ready', session: null, error: error.message, revision: 1 } }
+  })
   const sequence = useRef(0)
-  useEffect(() => {
-    const request = ++sequence.current
-    authService.getSession().then((session) => {
-      if (request === sequence.current) setState((previous) => ({ status: 'ready', session, error: '', revision: previous.revision + 1 }))
-    }).catch((error) => {
-      if (request === sequence.current) setState((previous) => ({ status: 'ready', session: null, error: error.message, revision: previous.revision + 1 }))
-    })
-    return () => { sequence.current += 1 }
-  }, [])
 
   async function login(credentials) {
     const request = ++sequence.current

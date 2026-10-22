@@ -1,248 +1,1326 @@
-<!-- Active task checklist â€” abhi kis ticket par kaam chal raha hai aur agla task kya hai -->
+<!-- Feature Ticket List — har module ke detailed development tickets, acceptance criteria aur tests -->
 
-# Academy Management ERP â€” Active Task Register
+# Academy Management ERP — Feature Ticket Register
 
-**Document:** TASKS.md
+**Document:** FEATURE_TICKETS.md
 **Version:** 1.0
-**Status:** ACTIVE - F04 Courses & Batches and F05 Faculty & Classes IN_REVIEW
-**Last Updated:** 2026-10-21
+**Status:** DRAFT — Pending Review and Ticket Approval
+**Updated:** 2026-10-10
 **Project:** Academy Management ERP
 **Development Strategy:** Frontend First
-**Current Milestone:** F00-011 login logo motion (authorized and in progress); F04/F05 delivery remains IN_REVIEW
+**Delivery Approach:** Incremental, Ticket-Based Development
 
+## F00-011 — Login logo motion (2026-10-21)
 
-## Teacher "My Profile" Navigation, Schedule & Salary Compensation Hub (2026-10-22)
+**Owner authorization: CONFIRMED. Status: IN_REVIEW; owner acceptance pending.** Add a restrained Three.js presentation to the existing login logo with GSAP-controlled idle float and gentle pointer tilt. Preserve the current white logo background, dynamic academy branding and surrounding login layout. Respect `prefers-reduced-motion` by retaining a static image; retain the image if WebGL is unavailable. Three.js and GSAP are explicitly approved for this isolated UI ticket. No other page, shared animation system, authentication, business behavior or design refresh is in scope.
 
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- **Sidebar & Routing**: Added "My Profile" navigation tab under Academics for the Teacher role with `UserRound` icon, linking to `/my-profile`.
-- **Teacher Profile Page (`FacultyProfilePage.jsx`)**:
-  - Automatically identifies the logged-in teacher when accessed via `/my-profile` or by a teacher.
-  - Context-aware `Back to Dashboard` button.
-  - 4 tabs: `Overview & Bio`, `Class Schedule & Timetable` (with printable institutional layout and coordinator signatures), `Academic Assignments`, and `Salary & Compensation`.
-- **Salary & Compensation Ledger**:
-  - 4 Executive Financial KPIs: Total Contracted Remuneration, Verified Disbursed / Paid, Remaining Outstanding Balance, and Settlement Ratio Gauge.
-  - Teaching Assignment Remuneration breakdown table (Courses, Batches, Subjects, Agreement Type, Agreed Total, Paid, Remaining, Status, and action button).
-  - Verified Payment Receipts and Disbursement History table (Date, Transaction Reference, Remuneration Scope, Payment Method, Amount, Verification status, and Official Payslip action).
-  - Integrated `PayslipModal` for instant preview, printing, and PDF export of official salary payslips.
-- **Salary Disbursal Notifications**:
-  - Connected `payrollService.recordPayment` and `notificationService` to publish a `salary_payment` notification to the teacher whenever a salary payment is recorded by administration.
-  - Added `Wallet` notification icon in `NotificationCenter.jsx`.
-- **Security**: Teacher self-read boundary enforced across `facultyService.getById`, `payrollService.getTeacherCompensation`, and `payrollService.getPayslip`. Cross-faculty salary inspection is denied.
-- **Verification**: `TeacherProfile.test.jsx` (5/5 PASS), `FacultyWorkflow.test.jsx` (10/10 PASS), `FacultyClasses.test.jsx` (4/4 PASS), `TeacherPayrollPage.test.jsx` (4/4 PASS), `payrollService.test.js` (19/19 PASS), `notificationService.test.js` (3/3 PASS), ESLint (0 errors, 0 warnings), Vite production build (PASS in 6.18s).
-
-## Teacher Profile Deletion — Dr. Irfan (Bio) Removed (2026-10-22)
-
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- Removed `teacher-irfan` (`Dr. Irfan (Bio)`) across authentication fixtures, salary agreements, demo classes, student profiles, and faculty roster enrichments.
-- Realigned test suites (`FacultyWorkflow.test.jsx`, `TeacherPayrollPage.test.jsx`, `staffLogin.test.js`, `payrollService.test.js`, `auditService.test.js`, `organizationService.test.js`, `roleMatrix.test.js`) to active faculty members.
-- Verified: All affected tests PASS (91 tests across 8 suites), ESLint (0 errors, 0 warnings), Vite production build (PASS in 3.73s).
-
-## Reports & Ledgers — Teacher Payroll Default, 5 KPI Cards & Dual Chart Alignment (2026-10-22)
-
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- **Default Tab**: `activeTab = 'payroll'` defaults to `Teacher Payroll & Salary Ledger`.
-- **KPI Redesign**: Configured exactly 5 high-impact cards in `xl:grid-cols-5` (Total Salary Payable, Verified Salary Paid, Outstanding Salary, Teachers in Payroll, Salary Settlement Rate with gauge).
-- **Dual-Panel Analytics**:
-  - Left: `ReportTrendCard` (`Salary Disbursement Trend`) with Recharts Area/Bar chart and multi-period filters (Day, Week, Month, Year, Date Range).
-  - Right: Recharts Doughnut Chart + categorical status cards (Cleared, Partially Paid, Pending Disbursement).
-- **Polished Table**: Formatted teacher avatars, badges for calculation method, formatted currency values, and status pills.
-- **Cleaned Footer**: Removed deprecated "Teacher salary totals" section below the table.
-- **Verification**: `ReportsPage.test.jsx` (6/6 PASS), `AdminOperations.integration.test.jsx` (4/4 PASS), ESLint (0 errors, 0 warnings), Vite production build (PASS in 6.08s).
-
-## Five-Role Permission Matrix & Administrative Boundary Enforcement (2026-10-22)
-
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- **Admin**: Full operational access across all 15 modules including Settings, Audit Log, Branches, and Users within authorized tenant and branch boundaries.
-- **Receptionist**: Full Admissions access (create, edit, view, review, approve, return to pending, enroll, and delete) and Full Fees access (view, collect, and manage/issue challans/instant admission). Strictly denied independent Finance, Payroll, Audit Log, Branches, Users, and Settings.
-- **Owner**: Financial overview and Finance full; view-only academic modules; strictly denied Audit Log, Branches, Users, and Settings.
-- **Teacher**: Self-service dashboard and assigned records only; strictly denied all administrative and operational management modules.
-- **Restricted Administration Modules (Audit Log, Branches, Users, Settings)**: Accessible exclusively to Super Admin and Admin. Hardened at route guards, navigation filters, service authorization adapters, and switchAccount handlers.
-- **Escalation Guards**: Admin is strictly blocked from escalating to Super Admin, switching to Super Admin accounts, creating branches with Super Admin role, or assigning Super Admin/Admin roles to staff.
-- **Multi-Branch Dynamic Recalculation**: Role-per-branch recalculated dynamically upon branch switch with zero cross-branch leakage.
-- **Verification**: 19/19 dedicated tests in `Client/src/routes/fiveRoleMatrix.test.jsx` PASS; full test suite (83 test files, 683 tests) PASS; ESLint 0 errors / 0 warnings; Vite production build PASS (5.14s).
-
-## Owner, Receptionist & Teacher Dashboard Redesign & Cashflow Alignment (2026-10-22)
-
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- **Owner Dashboard Cashflow Alignment**:
-  - Replaced the basic static bar chart with the Super Admin interactive Cashflow Chart architecture (`CashflowChart.jsx`).
-  - Added full multi-period analysis switcher (All, Daily, Weekly, Monthly, Yearly, Custom) with start/end custom date range picker.
-  - Displays real-time Inflow, Burn, Net Margin summary cards and dual-bar Recharts visualization (TSA Maroon `#940016` Revenue vs. `#bfdbfe` Expenses).
-  - Added perspective toggle between "Cashflow Flow" and "Enrollment Volume".
-  - Upgraded Recent Activity with styled transaction badges (Payments, Admissions, Expenses).
-  - Upgraded Financial Overview into 4 executive metric cards: Total Revenue, Pending Dues, Expenses, and Operating Margin.
-  - Upgraded Quick Operations with live interactive navigation cards to `/admissions`, `/fees`, `/reports`, and `/assets`.
-- **Receptionist Dashboard Redesign**:
-  - Upgraded Front Desk overview with active status pill, live counter indicators, and modern layout.
-  - Enhanced KPI cards: Today's Admissions, Pending Inquiries, Demo Follow-ups, and Active Students.
-  - Redesigned Recent Inquiries with candidate avatars, course chips, and status pills.
-  - Redesigned Today's Schedule with timetable badges, room indicators, and orientation tracking.
-  - Enabled active Front Desk Actions (New Walk-in, Log Inquiry, Schedule Demo, Quick Admission) linking directly to authorized workflows.
-- **Teacher Dashboard Redesign**:
-  - Transformed Instructor Hub into an executive faculty workspace.
-  - Preserved all required test headings: "Instructor Hub", "Today's Schedule", "Upcoming Sessions", "Recent Teaching Activity", "Instructor Actions".
-  - Preserved exact KPI titles: "Today's Classes", "Pending Assignments", "Average Attendance", "Assigned Batches".
-  - Enhanced Upcoming Sessions with time slot badges, room tags, and enrolled batch pills.
-  - Added Recent Teaching Activity faculty roster cards with weekly schedule tags and salary summary balance indicator.
-  - Enabled active Instructor Actions navigating to `/faculty`, `/courses`, and `/students`.
-- **Architecture & Shared Utilities**:
-  - Extracted shared period analysis logic into `Client/src/utils/dashboardCashflow.js` (`PERIODS`, `isInPeriod`, `localDateKey`).
-  - Isolated React component into `Client/src/components/Dashboard/CashflowChart.jsx` maintaining Fast Refresh compliance.
-- **Verification**:
-  - `Client/src/pages/Dashboard/DashboardPage.test.jsx`: 14/14 PASS.
-  - Full Vitest suite: 83 test files, 684 tests PASS.
-  - ESLint: 0 errors, 0 warnings.
-  - Vite production build: PASS in 11.52s.
-
-
-**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
-- Add an isolated Three.js login-logo presentation with GSAP idle float and pointer tilt.
-- Preserve the white logo background, academy-configured logo and fallback behavior. Keep a static image for WebGL failure and reduced-motion preference.
-- Approved dependencies: `three` and `gsap`. No other UI or shared animation system is in scope.
-- Verification: focused login-logo and branding tests 12/12 PASS; targeted ESLint PASS; production build PASS; browser WebGL and reduced-motion fallback PASS; dependency audit reports 0 vulnerabilities. Three.js and GSAP are dynamically loaded; Three.js is 736.44 kB raw/186.85 kB gzip, triggering Vite's chunk-size warning.
-
-## UI Theme — Global Main Content Background Color Consistency (#F7F8FC) (2026-10-18)
-
-**Status:** IMPLEMENTED; ready for user review.
-- Applied centralized soft off-white/light grey background (`#F7F8FC`) across all ERP modules, branches, and roles by updating `--workspace-background` and `--background` in `theme.css` and `ThemeContext.jsx`.
-- Verified `.workspace-shell` and `.workspace-body` in `globals.css` render `#F7F8FC`.
-- All cards, tables, forms, modals, dialogs, and top KPI stat cards remain crisp white (`#ffffff` / `--workspace-surface` / `--card`). Sidebar and topbar themes, TSA Maroon branding, and all functionalities remain strictly preserved.
-- Tests: 43/43 targeted unit/integration tests PASS; production build PASS (1.19s, 0 errors).
-
-## Document Branding & Layout — Premium TSA Institutional PDF & Print System (2026-10-18)
-
-**Status:** IMPLEMENTED; ready for user review.
-- Embedded official TSA Academy Logo synchronously across all PDF and print generators via `tsaLogoBase64.js`.
-- Implemented unified, prominent institutional header with bold maroon `THE SCHOLAR COACHING ACADEMY`, subtitle `Official Management & Academic Information System`, campus/branch indicator, and formal document type / date badges.
-- Standardized Template A (Table Reports), Template B (Fee Challans / Invoices), and Template C (Payment Receipts) with professional borders, typography, signatures, and footers.
-- Enhanced browser print CSS in `globals.css` and dialog print layout in `FeesPage.jsx`.
-- Tests: `pdfHelpers.test.js` (4/4 PASS); node PDF binary verification PASS (%PDF-1.3 valid for all 3 templates); targeted frontend integration tests PASS (16/16); production build PASS (1.15s, 0 errors).
-
-## F10 Reports & Ledgers — Institutional Branding & Dual-Panel Analytics Center (2026-10-19)
-
-**Status:** IN_REVIEW; ready for owner review.
-- **Institutional Branding for Export & Print**: Embedded official TSA logo (`tsaLogo`), academy title `THE SCHOLAR COACHING ACADEMY`, subtitle `Official Management & Academic Information System`, branch campus indicator, and printable sign-off/stamp footer into browser print views (`hidden print:flex`). Enhanced Word/Google Doc table generator (`serializeWordTable`) with institutional header styling, academy colors, and shaded maroon table headers.
-- **Refined & Compact Global Filter Bar**: Replaced washed-out background with clean white card (`bg-white border-slate-200/90`), tightened labels and spacing, reduced vertical height by ~30%, and made action buttons compact (`h-7`).
-- **Dual-Panel Executive Visual Analytics**: Replaced stretched single-row chart with responsive 12-column dual-panel layout:
-  - Left (7 cols): Backlit.ui-styled Target Velocity & Progress Meter with ambient glow progress bar (`0% Base -> 50% Mid-Target -> 100% Full Yield`) and 3 micro-metric cards.
-  - Right (5 cols): Cohort Composition & Doughnut Breakdown with compact legend pills and summary indicator.
-- **Quality Verification**:
-  - ESLint: 0 errors, 0 warnings across all touched files.
-  - Vitest: 11/11 tests PASS (`ReportsPage.test.jsx` [5/5], `wordExport.test.js` [1/1], `assetReportService.test.js` [5/5]).
-  - Production Vite build: PASS in 2.41s with 0 errors.
-
-## F08 Demo Classes UI & Flow — Academy Maroon Buttons & Real-Time Live Stats (2026-10-18)
-
-**Status:** IMPLEMENTED; ready for user review.
-- Converted all button styles and active indicators in Demo Classes (`/demo-classes`) from green to signature Academy Maroon (`#940016`, hover `#72000E`). This includes `Convert ->`, `Convert to Admission` (desktop & mobile card views), active tab pills (`All`, `Upcoming`, `Attended`, `Converted`, `No-Show`), dialog action buttons (`Open Full Admission Form ↗`, `Create Pending Admission`, `Save Attendance`), and focus rings.
-- Removed all static fallback numbers (`|| 48`, `|| 36`, `|| 24`, `|| 8`) from `DemoStats.jsx`. Top KPI metric cards now compute live counts directly from active branch demo records (Total Registered with dynamic 7-day registration count & current month, Attended Trial with dynamic turnout rate %, Converted with dynamic conversion rate %, and Pending Trial Slots with dynamic active session halls).
-- Preserved direct conversion workflow: Clicking `Convert ->` or `Convert to Admission` seamlessly transfers candidate to Admissions tab (`/admissions`), prefilling candidate name, guardian, contact, stream, course, preferred batch, and demo remarks for one-click payment, approval, and enrollment.
-- Tests: 5/5 Vitest tests in `DemoClassesPage.test.jsx` PASS; production Vite build PASS (1.40s, 0 errors).
-
-## F09 Assets/Inventory + F10 Reports (2026-10-14)
-
-**Status:** IN_REVIEW; owner browser acceptance pending. Dedicated `feature/f09-f10-assets-reports` worktree implements branch-scoped asset registration/editing, condition inspection, assignment, maintenance history, stored-value KPIs/export and authoritative Admissions, Enrollment, Fee Collection and Super Admin branch-comparison reports with filters, pagination, CSV and browser print. Automatic depreciation, disposal/deletion, attendance, recovery-rate and defaulter-deadline rules remain blocked because no approved policy or authoritative records exist. Super Admin is the only F09/F10 demo role; other roles fail closed pending an approved matrix. Focused tests 52/52, targeted ESLint and one production build PASS; browser QA NOT_RUN.
-
-## F04-001 through F04-007 Courses & Batches (2026-10-12)
-
-**Status:** IN_REVIEW; owner acceptance pending. Isolated implementation on `feature/f04-courses-batches`: branch-scoped responsive course/batch directories, Super Admin Create/Edit, Receptionist/Owner View, Teacher deny-by-default, search/filter/sort/details, actual enrollment counts, and explicit unconfigured capacity/timetable/teacher-assignment states. Owner-confirmed Add/Edit Stream and Subject dialogs save branch-scoped records; their form-submit buttons are fixed and covered by persistence/reload regression tests (8/8 focused tests PASS, scoped lint PASS; browser NOT_RUN). Focused tests, targeted lint and production build evidence are recorded in PROGRESS.md. No F05 work started.
-
-## F05-001 through F05-007 Faculty & Classes (2026-10-12)
-
-**Status:** IN_REVIEW; owner acceptance pending. Branch-scoped responsive Faculty directory/profile and read-only subject, batch, schedule and enrollment-based class student views are implemented. Teacher assignment writes, timetable writes and Teacher own-class authorization remain deferred pending approved data contracts and policies.
-
-## F02-007 Admissions Module Final Integration Check (2026-10-12)
-
-**Status:** IN_REVIEW; owner acceptance pending. Focused integration verification of F02-001 through F02-006 is complete. Targeted UI/data tests: 129/129 PASS in 13 files. One production build PASS; existing >500 kB chunk warning remains.
-
-**Workflow results:** PASS for admission creation/linking, course/batch selection, row/name/actions View, Edit and authorized Pending Delete, Super Admin Approve and Approved → Pending with Reject removed, enrollment activation, explicit/automatic valid batch selection and Confirm feedback, enrolled-record protection, role-denial/branch checks, refresh persistence and gapless serial behavior. Enrollment UI test verifies Confirm works after valid selection; clicking without selection reports the needed action and focuses Batch.
-
-**Not run:** manual real-browser/viewport session, full test suite, CI, deployment, backend and formal accessibility checks. The recorded PASS results are automated focused test evidence, not a claim of manual browser QA or production authorization.
-
-**Files changed during this verification:** `Client/src/mock/mockDatabase.js`, `Client/src/mock/admissionTransaction.test.js`, `Client/src/mock/programSelection.test.js`, `Client/src/mock/enrollment.test.js`, `Client/src/pages/Admissions/AdmissionEnrollment.test.jsx`, plus this ticket's documentation. No new libraries or installs. Owner acceptance is still required; no F03 ticket started.
-
-## F02-006 Admission-to-Enrollment Mock Integration (2026-10-12)
-
-**Status:** IN_REVIEW; owner acceptance pending.
-
-- Approved admissions expose **Enroll Student** only to the active-branch Super Admin through existing `admissions.decide` policy.
-- Confirmation shows the linked student, course, branch and selected matching batch. If no preferred batch is saved, the user must select an available same-branch course batch; unresolved references fail safely.
-- One serialized mock database operation writes the minimum enrollment `{id, branchId, admissionId, studentId, courseId, batchId, status, enrolledAt}` and changes the linked Student from Provisional to Active atomically. Admission remains Approved.
-- Version-3 saved mock data migrates additively to version 4 with an empty `enrollments` collection; records, IDs, counters and the storage key are retained. Unsupported/corrupt data is not reset.
-- Re-enrollment, duplicate active student/course/batch pairs, enrolled Admission/Student edits, Admission deletion and Approved → Pending are blocked at the mock database boundary.
-- Only same-branch, reciprocal admission-flow Student, saved Course and matching Batch references are accepted. A missing/unresolved saved preferred-batch reference may be replaced only through explicit selection of a valid saved batch; no name-based guessing. No All Branches, backend, fee, cancellation or new permission behavior.
-
-**Changed source/tests:** `Client/src/mock/mockDatabase.js`, `Client/src/mock/mockApi.js`, `Client/src/mock/seedData.js`, `Client/src/services/admissionService.js`, `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/mock/enrollment.test.js`, `Client/src/pages/Admissions/AdmissionEnrollment.test.jsx`.
-
-**Verification:** targeted Vitest PASS, 56/56 tests across 5 files and targeted ESLint PASS at delivery; final F02-007 integration run also covered enrollment tests after preferred-batch fallback changes. Full suite and manual browser checks NOT_RUN. No new libraries or installs. Owner acceptance pending.
-
-## Admission & Student Row Click + 3-Dots Actions — UI correction (2026-10-12)
-
-**Status:** IN_REVIEW; owner-approved limited frontend implementation.
-
-- Admission row/name and three-dots → View open the same saved Admission details dialog; row Enter/Space supported and action-cell clicks do not bubble.
-- The Students row/name opens the separate read-only Student Profile; profile shows saved name/status/student number, selected branch and linked Admission display reference. Profile lookup is by ID and active branch, with missing/error/retry handling.
-- Three-dots remains available for every status. View stays enabled; for Approved/Rejected, Edit/Delete/Approve/Reject remain disabled when the user's existing policy would otherwise show them. Permissions and status workflow are unchanged.
-
-**Changed source/tests:** `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/pages/Admissions/AdmissionsPage.jsx`, `Client/src/components/Students/StudentsTable.jsx`, `Client/src/pages/Students/StudentProfilePage.jsx`, `Client/src/routes/AppRouter.jsx`, `Client/src/routes/routePaths.js`, and focused admission/status/student UI tests.
-
-**Verification:** targeted Vitest PASS, 38/38 tests in 3 files; targeted ESLint PASS with no diagnostics. Full suite/build/browser audit NOT_RUN. No new libraries, backend, permission, enrollment, fee or student-editing changes.
-
-## F02-005 decided-admission action policy clarification (2026-10-12)
-
-**SUPERSEDED** by the latest owner decision below. Its permission rule for Edit/Delete remains; its Rejected status and Approved ↔ Rejected reversal rule no longer apply.
-
-## F02-005 Remove Reject; allow Approved → Pending (2026-10-12)
-
-**CONFIRMED by owner; latest policy.** Remove Reject from the UI and supported new status requests. Replace it with a Pending action shown for Approved records; Super Admin may return an Approved admission to Pending. Pending admissions retain Approve. Existing role permissions and authorized Edit/Delete remain unchanged; same-status is idempotent. Existing saved Rejected admissions migrate to Pending and their statusHistory is cleared, as explicitly requested. No enrollment, fees, backend or dependencies.
-
-**Implementation/verification:** `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/pages/Admissions/AdmissionsPage.jsx`, `Client/src/mock/mockDatabase.js` and `Client/src/lib/admissionPolicy.js`; focused admission UI/storage tests updated. Targeted Vitest PASS: 61/61 across 4 files; targeted ESLint PASS. Full suite/build NOT_RUN.
-
-
-## F02-005 Pending Delete owner extension (2026-10-12)
-
-CONFIRMED: the owner's follow-up request enables Delete in the three-dots Admissions Actions menu for Super Admin in the active authorized branch, following the preceding Super Admin-only proposal. Receptionist/Owner/Teacher and unresolved multi-role assignments remain denied. Approve/Reject authority remains unresolved and denied. Only Pending admissions can be deleted; decided records remain read-only. Existing confirmation/Cancel/Escape, pending-submit lock, error/retry, atomic linked Provisional deletion, unrelated-record preservation and response-only gapless renumbering are reused. Permanent IDs and historical counters are retained. No storage reset, backend or dependency change.
-
-**Status: IN_REVIEW; owner acceptance pending.** Full tests PASS: 240/240 in 23 files. Lint PASS (0 errors, 1 existing DashboardPage warning); build PASS (existing large-chunk warning). Manual browser viewport inspection, CI, deployment and backend/security verification NOT_RUN. This entry supersedes historical Pending Delete denial only; previous evidence and explanatory comments are retained.
-
-
-## Active correction — Owner Role Matrix Reconciliation (2026-10-12)
-
-**IN_REVIEW; owner acceptance pending.** Confirmed Admissions role access has been reconciled: Super Admin and Receptionist View/Create/Edit, Owner View only, Teacher None. Students directory is visible to Super Admin/Receptionist/Owner; Teacher assigned-record access remains denied until its assignment rule exists. Approve/Reject and Pending Delete remain proposed Super Admin actions and are denied to all roles pending explicit owner confirmation. All Branches, multi-role combining and detailed record scopes remain deferred. No next ticket started.
+Acceptance evidence: login branding remains visible with and without WebGL; custom academy logo still renders/falls back; pointer tilt returns to rest on exit; GSAP/Three resources are cleaned up; reduced-motion displays a static logo without downloading animation assets. Focused tests pass 12/12 across the animation and branding suites; targeted ESLint and production build pass. Local browser confirms WebGL canvas rendering and static logo when reduced motion is enabled. Package audit reports zero vulnerabilities. Three.js and GSAP are dynamically loaded; the Three.js chunk is 736.44 kB raw/186.85 kB gzip and Vite reports the >500 kB chunk warning.
 
 ---
 
-## F02-003 latest gapless display correction (2026-10-10)
+## F02-003 approved gapless display numbering (2026-10-10)
 
-**IN_REVIEW; owner acceptance pending.** Gapless branch Student 1..N / Admission ADM-1..N now derive from stable persisted insertion order before filtering/sorting. Delete middle/last -> surviving 1..N; next create -> visible N+1. Display serials may change/reuse; internal IDs, foreign keys and historical permanent ADM references/counters stay unchanged. No storage reset, migration, dependency, backend or unrelated work.
+Owner now explicitly authorizes mutable branch-scoped display serials 1..N and ADM-1..ADM-N, closing gaps after deletion. This supersedes prior visible permanent-counter numbering, not stored immutable IDs/references. Existing ADM-* metadata and student admissionId foreign keys remain unchanged. Response-only serials derive from persisted insertion order before filtering/sorting; lookup/update/delete still use internal IDs. Existing CRUD/localStorage/auth/security boundaries remain unchanged; no dependency or backend work. Status IN_REVIEW, acceptance pending.
 
-**Evidence:** final 186/186 tests (18 files), lint/build PASS with existing warnings; local production-preview Edge middle/last deletion, create, linked Student serial, refresh, filtering and branch isolation PASS. CI/deployment/backend/formal accessibility NOT_RUN. [Exact files and evidence](PROGRESS.md#f02-003-gapless-branch-display-numbering-correction-2026-10-10). Stop after this scope.
+---
+
+## F02-003 latest approved simple legacy deletion rule (2026-10-10)
+
+Current owner instruction permits deleting an admission and its uniquely linked same-branch Provisional student, including legacy pairs lacking createdByAdmissionFlow metadata. The earlier marker-only ownership restriction is SUPERSEDED for this fictional DEMO scope. Validate reciprocal links, branch, uniqueness and Provisional status; reject ambiguous/broken/Active links without erasing data. Unrelated records and durable counters remain unchanged. Reuse existing popup/CRUD/services; no migration framework, dependency, backend or permissions change. Implementation IN_REVIEW; owner acceptance pending.
+
+---
+
+## F02-003 authorization snapshot (2026-10-10)
+
+**Authorization at the time:** F02-003 extension only; delivered IN_REVIEW, owner acceptance pending. Independent durable branch Student/Admission sequences, shared popup and browser-local View/Edit/confirmed safe Delete were explicitly approved. This dated authorization snapshot is superseded by the newer F00-011 authorization above; it remains historical evidence. [Delivery evidence](PROGRESS.md#f02-003-resumed-delivery---branch-wise-numbering--working-admissions-crud-2026-10-10).
 
 ---
 
 
-## F02-003 latest simple CRUD correction (2026-10-10)
+## F01-001 Delivery Review (2026-10-10)
 
-**IN_REVIEW; owner acceptance pending.** Existing implementation reused; reported legacy ownership error fixed under latest owner rule. Delete a uniquely linked same-branch Provisional pair even without new markers; ambiguous/broken/Active links remain blocked. No unrelated data, counters, comments, backend or dependencies changed.
+F00-002A/F00-003/F00-004 through F00-010 owner-accepted DONE for implemented mock scope; F00-001 already accepted. Parent F00-002 covered by child work; later module routing deferred. Historical pending records below are superseded, not erased. CI/deployment/backend security/formal accessibility remain unverified.
 
-**Evidence:** final 176/176 tests (16 files), lint and production build PASS with existing warnings. Local Edge legacy deletion plus Add/View/Edit, cancel, refresh, branch numbering/isolation and keyboard/responsive checks PASS. CI/deployment/backend/formal accessibility NOT_RUN. [Exact files, scope and limitations](PROGRESS.md#f02-003-simple-crud-completion---legacy-deletion-correction-2026-10-10). Stop after F02-003.
+F01-001 through F01-007 DONE: Explicitly accepted by owner for their delivered DEMO dashboard presentation scope only. This does not imply real finance, real teacher assignments, or production security are approved. Dashboard uses existing workspace.view guard; no new permissions/statistics/actions/dependencies outside of UI libraries (recharts, motion).
 
----
-
-
-## F02-003 resumed delivery - Branch-wise Numbering & Working Admissions CRUD (2026-10-10)
-
-**Status: IN_REVIEW; owner acceptance pending.** Latest owner-approved DEMO scope supersedes prior academy-wide allocation/disabled actions: independent durable branch Student/Admission counters; existing shared popup/standalone form; saved View; atomic linked Edit; confirmed owned-pair Delete. Preserve legacy IDs/high-water and unrelated records. Legacy linked ownership is not inferred; unsafe cascades are denied. No new dependencies, permissions, backend, fees or enrollment.
-
-**Evidence:** baseline 151/151 tests PASS; final 174/174 tests (16 files) PASS, 23 new cases. Lint PASS with one existing warning; build PASS with existing size warning. Local production-preview Edge CRUD, cancel, refresh, branch isolation and keyboard/responsive checks at 360/768/1024/1440px PASS. Repository-wide diff whitespace check FAIL on incoming defects; no new trailing whitespace. CI/deployment/backend/formal accessibility NOT_RUN.
-
-[Exact files, library versions, screenshots, migration and limitations](PROGRESS.md#f02-003-resumed-delivery---branch-wise-numbering--working-admissions-crud-2026-10-10).
-
-**Next:** stop. Owner review F02-003; F02-004 Program and Batch Selection requires separate approval.
+[Exact files, screenshots, libraries and evidence](PROGRESS.md#f01-007--dashboard-visual-polish--acceptance-2026-10-10). Next planned F02 Admissions needs detailed scope.
 
 ---
 
-## F02-003 - Admission Popup, Linked Student & Sequential Admission IDs (2026-10-10)
+## Foundation Owner Acceptance and F01-001 Authorization (2026-10-09)
+
+**Owner decision: CONFIRMED.** Owner explicitly accepted F00-002A/F00-003 and F00-004 through F00-010 for their implemented, reported-and-tested mock scopes. F00-001 remains accepted. These scoped deliveries are DONE. Parent F00-002 is covered by accepted child routing/layout/auth/permission work; temporary module routing remains deferred. No duplicate implementation is required. Earlier acceptance-pending snapshots are preserved as history.
+
+This acceptance does not verify actual CI, production deployment/SPA fallback, backend security/runtime, real authentication or formal accessibility certification. It does not approve broad business permissions, multi-role policies, All Branches or ERP modules.
+
+**Current authorization:** F01-001 only - shared Dashboard Page Skeleton with heading, active branch, responsive placeholders and existing shell. Dashboard uses existing workspace.view guard; no new permissions/statistics/actions/dependencies. No following ticket authorized.
+
+---
+
+## F00-010 Current Foundation Review (2026-10-09)
+
+**Status:** IN_REVIEW - owner-authorized verification delivered; foundation acceptance/F01 authorization pending. F00-001 explicitly accepted DONE. Historical DONE delivery labels for F00-002A/F00-003 are retained without fabricating separate acceptance evidence; F00-004 through F00-009 remain IN_REVIEW. [Every ticket's implementation, dependencies and acceptance](PROGRESS.md#f00-010--foundation-verification-delivery-2026-10-09).
+
+Parent F00-002 routing is covered by F00-002A basic routes, F00-003 shell, F00-005 auth/select-branch/workspace/unauthorized routes/guard and F00-007 permission handling. No duplicate ticket implementation; temporary module routes are deferred until their own approved scope. Current baseline does not approve the historical broad permission matrix.
+
+Current PASS: 113 tests/9 files, lint, build, scoped local Edge four-width responsive/routing/refresh/logout/keyboard/AX/reduced-motion/storage-recovery checks. One reproduced batched-branding defect fixed with a regression. Actual CI/deployment/backend/production fallback and full accessibility audits NOT_RUN. No new dependencies, ERP modules or permissions. F01-001 is the first planned Dashboard skeleton; separate route/access scope approval and applicable multi-role/data policies are required before coding.
+
+---
+
+## F00-009 Approved Delivery Snapshot (2026-10-09)
+
+**F00-009:** IN_REVIEW - scoped owner authorization implemented; acceptance pending. F00-004/F00-008 code and recorded verification confirmed before implementation; pending acceptance is not upgraded to DONE. Earlier authorization/backlog snapshots are retained as history.
+
+Approved scope: Academy Management System default name, graduation-cap fallback, existing teal, shared Academy/Theme contexts, isolated minimal persistence, validated name/safe local raster logo/accessible HEX primary, safe invalid/corrupt storage and shell integration. No Settings editor, ERP screen, new dependency or new permission. Existing root/routes/auth/branch behavior and explanatory comments preserved.
+
+PASS: 112 tests in 9 files including all 83 prior regressions; lint/build; local Edge responsive checks at 360/768/1024/1440px, custom branding reload/fallback, branch keyboard/focus and logout/routes. Actual CI, backend runtime, production fallback and screen-reader testing NOT_RUN. [Delivery details and limitations](PROGRESS.md#f00-009--academy-branding-delivery-2026-10-09). Stop; next planned F00-010 remains separately approval-gated.
+
+---
+
+## F00-001 Acceptance / F00-008 Approved Delivery (2026-10-09)
+
+Owner explicitly accepted F00-001: DONE, recovered evidence/current checks verified; backend runtime and actual CI remain NOT_RUN. Dependency satisfied; prior pending-acceptance records are dated history.
+
+F00-008 IN_REVIEW: only native versioned storage, two fictional student/course seeds each, provisional id/branchId/name schema, async list/getById/create/update, branch query validation, explicit non-destructive errors and test-only deterministic failures. No full ERP schemas/UI, reset, delete operation, new permissions/dependencies or backend. [Delivery evidence](PROGRESS.md#f00-008--mock-data-service-delivery-2026-10-09).
+
+---
+
+## F00-001 — Recovered Audit Evidence (2026-10-09)
+
+**Status:** IN_REVIEW — audit execution verified; owner acceptance pending.
+
+Recovered original report and tool outputs from the local Codex session; fresh repository inspection and existing checks confirm the current state. [Evidence and limitations](PROGRESS.md#f00-001--recovered-audit-and-current-reconciliation-2026-10-09). Prior BACKLOG snapshots are history, not current audit execution status.
+
+F00-008 still depends on F00-001. Missing evidence is now resolved; formal owner acceptance remains pending. The latest owner proposal limits F00-008 to separate versioned mock storage, minimal fictional students/courses, async list/getById/create/update, validation/branch queries, explicit errors and test-only failures. Broader historical service/seed inventory is not blanket implementation approval. No F00-008 implementation started during this reconciliation.
+
+---
+
+## F00-007 — Approved Minimal Foundation Boundary (2026-10-09)
+
+**Status:** IN_REVIEW — approved limited implementation/checks delivered; owner acceptance pending.
+
+Owner authorizes central definitions, reusable hooks/helpers, branch role awareness, deny-by-default and accessible unauthorized UI. Current baseline stays only `workspace.view`; no new matrix/role-combination policy is required or inferred. Latest scope supersedes the historical ticket's matrix blocker only for these independent foundations. Broader catalog, ERP navigation filtering, RoleRoute, multi-role grant evaluation, sensitive capabilities and Super Admin bypass remain deferred pending explicit security-policy approval.
+
+Delivered: informational getBranchRoles/hasRole, malformed/duplicate assignment rejection, loading-aware can(), PermissionGate and PermissionNotice. Reuses auth, switching, guards and persistence. [Verification evidence](PROGRESS.md#f00-007--roles-and-permissions-foundation-evidence-2026-10-09).
+
+---
+
+## F00-006 — Approved Delivery Boundary (2026-10-09)
+
+**Status:** IN_REVIEW — implementation and scoped verification; owner acceptance pending.
+
+Latest owner instruction supersedes historical All Branches scope below: only concrete authorized branch switching is delivered. Reuses F00-005 AuthContext/BranchContext, canonical fixtures, centralized versioned persistence, role arrays and protected scopeKey. Adds accessible topbar switching and failed-selection session revalidation. Single-branch/initial-selection functionality is reused, not duplicated. No new permission grants, dependencies, backend or ERP modules.
+
+Acceptance evidence: [F00-006 progress](PROGRESS.md#f00-006--branch-switcher-evidence-2026-10-09). All Branches, future query-cache integrations and F00-007 policy/navigation work remain separately approved future work. Historical BACKLOG/planning snapshots below are retained as history.
+
+---
+
+## F00-005 — Approved Minimal Access Delivery (2026-10-09)
+
+**Approved title:** Mock Auth & Minimal Access Foundation.
+**Status:** IN_REVIEW — implemented; scoped checks passed; owner acceptance pending.
+**Foundation dependencies:** Delivered F00-002A basic routes and F00-003/F00-004 responsive shell/design system.
+
+The owner explicitly approved mock login/logout/restoration, minimum AuthContext/BranchContext/branch-role data, initial single/multi-branch selection, four foundation URLs and only `workspace.view`. Earlier combined-scope proposals are superseded; full branch switching and general role/permission features remain F00-006/F00-007.
+
+Approved test tooling is configured: Vitest/RTL/DOM/user-event/jest-dom/jsdom. Final suite 34 tests/3 files PASS on Node 24.16.0 and exact CI Node 22.22.2; lint/build/browser responsive/routing checks PASS. [Evidence, files and limitations](PROGRESS.md#f00-005--completed-implementation-evidence-2026-10-09). No next ticket authorized.
+
+---
+
+## F00-005 — Requested Combined Scope Review (2026-10-09)
+
+**Requested title:** Mock Authentication & Branch Context.
+**Status:** BLOCKED — reconciliation approval pending before affected coding.
+
+Owner instruction: if the documented F00-005 scope/dependencies differ, report the conflict and obtain approval before affected coding. The auth-only F00-005 below differs from the request's branch and role scope, allocated to F00-006/F00-007. Its dependency on broader F00-002 also needs reconciliation with delivered F00-002A. SECURITY's permission matrix and multi-role combining remain unapproved.
+
+[Concrete proposed scope, demo baseline, routes and dependency approval](TASKS.md#f00-005--scope-reconciliation-2026-10-09). [Actual compatibility findings and proposed tests](PROGRESS.md#f00-005--pre-implementation-findings-2026-10-09).
+
+No auth/branch code implemented, no test tools installed and no F00-006/F00-007 completion claimed. The original draft ticket specifications below remain unchanged until the proposed reconciliation is approved. Existing draft-only statements are historical; the explicit request authorizes inspection and reconciliation but requires this approval gate for conflicting implementation.
+
+---
+
+## F00-004 — Approved Delivery Snapshot (2026-10-09)
+
+**Approved title:** Premium Responsive Design System.
+**Status:** IN_REVIEW — implemented and scoped checks passed; owner acceptance pending.
+
+The explicit F00-004 approval supersedes the earlier proposed-only token boundary. Scope includes verified reference theme, Plus Jakarta Sans, 256px sidebar, 64px topbar, 12px cards and only Button/Card/Input/Badge/Dialog. Existing routing/Lucide/sidebar behavior is preserved; responsive defects from the reference are not reproduced.
+
+[Dependency versions, changed files and executed checks](PROGRESS.md#f00-004--verification-evidence-2026-10-09); [approved token record](../04-FRONTEND/DESIGN.md#f00-004--approved-design-system-2026-10-09). Lint/build, four viewports, keyboard/ARIA, scoped contrast, reduced-motion and routing checks PASS. Maintained suites NOT_CONFIGURED; screen-reader audit and production-host fallback NOT_RUN. No next coding ticket authorized. Older snapshots below remain history.
+
+---
+
+## DOC-SYNC-001 — Approved Delivery Snapshot (2026-10-09)
+
+**Documentation task:** DONE. Explicit owner instructions authorized F00-002A and F00-003 despite the older blanket draft-only gate. No next coding ticket is authorized.
+
+| Ticket | Current delivery status | Boundary |
+|---|---|---|
+| F00-002A | DONE — Basic Routing | Root Hi, central paths, accessible 404, history navigation; no auth/guards/modules |
+| F00-003 | DONE — approved Premium Application Layout scope | Presentational shell, placeholder labels, provisional neutral theme; no ERP features |
+| F00-002 | BACKLOG — remaining broader scope | Basic subset delivered as F00-002A; authentication/guards/Unauthorized/module routes excluded |
+| F00-004 and later tickets | BACKLOG | Neutral shell tokens do not complete full design-token/branding work |
+
+Libraries installed in prior tickets: react-router-dom 7.18.4 (AppRouter, NotFoundPage), lucide-react 1.54.0 (Sidebar, Header). Reported lint/build and scoped Edge routing/layout/keyboard/reduced-motion checks PASS; maintained suites NOT_CONFIGURED; production fallback NOT_RUN. [Full evidence and files](PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09).
+
+Older draft goals/criteria are retained for history. Narrower owner-approved scopes govern the two completed deliveries. [Reference differences are proposed only](../04-FRONTEND/DESIGN.md#doc-sync-001--lovable-reference-review-2026-10-09); exact design alignment and permission-aware navigation are not claimed delivered.
+
+---
+
+## 1. Purpose
+
+This document defines the development ticket register for the Academy Management ERP.
+
+Its objective is to divide the complete application into small, focused, testable development tasks suitable for Codex, Antigravity and human software developers.
+
+Each ticket must have a clear scope, expected behavior, dependencies, quality criteria and verification process.
+
+The ticket system must improve:
+
+- Maintainability
+- Reliability
+- Scalability
+- Stability
+- Security
+- Testability
+- Code consistency
+- Development traceability
+- Change control
+- Team collaboration
+
+This document is a development plan, not authorization to implement every listed feature.
+
+## 2. Project Context
+
+### CONFIRMED
+
+The application is initially developed for one academy organization with multiple branches.
+
+Technology:
+
+- React + Vite frontend in `Client/`.
+- Node.js + Express backend in `Server/`.
+- MongoDB + Mongoose for future real persistence.
+- Private GitHub repository.
+- Codex and Antigravity as AI-assisted development tools.
+
+Roles:
+
+- Super Admin
+- Owner
+- Receptionist
+- Teacher
+
+A user may have multiple branch assignments and one or multiple roles in each branch.
+
+Development is frontend-first.
+
+Mock services and browser storage will initially simulate application behavior.
+
+The backend will later implement real authentication, authorization and persistence.
+
+### DEFERRED
+
+- Multi-client SaaS management.
+- Subscription and license infrastructure.
+- Electron desktop software.
+- Native mobile applications.
+
+### Important
+
+Client approval of the general system proposal does not automatically confirm every permission, fee rule, database field or detailed business workflow.
+
+Unresolved specifications must remain TBD.
+
+---
+
+## 3. Ticket Status Definitions
+
+| Status | Meaning |
+|---|---|
+| BACKLOG | Identified but not yet approved |
+| READY | Requirements clarified, dependencies satisfied and ticket approved |
+| IN_PROGRESS | Currently under development |
+| BLOCKED | Cannot proceed because of a known dependency or decision |
+| IN_REVIEW | Implementation complete, awaiting review |
+| DONE | Acceptance criteria and required checks verified |
+| DEFERRED | Intentionally moved outside current scope |
+
+A ticket must never be marked DONE merely because source files were generated.
+
+### Decision Labels
+
+- CONFIRMED — Explicitly approved or provided.
+- PROPOSED — Engineering recommendation awaiting approval.
+- TBD — Missing or unresolved decision.
+- DEFERRED — Outside current phase.
+
+---
+
+## 4. Priority Definitions
+
+| Priority | Meaning |
+|---|---|
+| P0 | Required foundation or essential user workflow |
+| P1 | Important planned functionality |
+| P2 | Enhancement or lower-priority functionality |
+
+Priority does not grant permission to begin implementation.
+
+A P0 ticket may still be BLOCKED.
+
+### Ticket Size
+
+- XS — Small, isolated task.
+- S — Focused implementation.
+- M — Moderate feature with several related changes.
+- L — Large feature requiring decomposition.
+
+Prefer XS, S and M tickets.
+
+Split L tickets before implementation.
+
+---
+
+## 5. Mandatory Ticket Template
+
+Every executable ticket must contain:
+
+### Ticket Identification
+
+- Ticket ID
+- Feature title
+- Phase
+- Module
+- Priority
+- Estimated size
+- Status
+- Approved by
+
+### Functional Scope
+
+- Goal
+- Description
+- In-scope behavior
+- Out-of-scope behavior
+- Dependencies
+- Relevant approved documents
+- Expected files/modules to modify
+
+### Technical Expectations
+
+- UI requirements
+- Data/service behavior
+- Role and branch behavior
+- Validation requirements
+- Loading state
+- Empty state
+- Success state
+- Error state
+- Permission-denied state
+- Relevant edge cases
+
+### Verification
+
+- Observable acceptance criteria
+- Tests required
+- Definition of Done
+- Remaining known risks
+
+Tickets must reference approved specifications instead of independently inventing conflicting business rules.
+
+---
+
+## 6. Global Development Rules
+
+All ticket implementations must follow these rules:
+
+1. Read root `AGENTS.md` before coding.
+2. Read relevant approved documentation.
+3. Inspect existing project files.
+4. Work on one approved ticket at a time.
+5. List expected file modifications before coding.
+6. Preserve existing working features.
+7. Never silently invent missing requirements.
+8. Reuse approved shared components.
+9. Do not introduce unnecessary dependencies.
+10. Do not modify unrelated modules.
+11. Keep presentation logic separate from data access.
+12. Use approved mock service contracts during frontend development.
+13. Follow role and branch UI behavior.
+14. Never claim frontend-only permissions provide real security.
+15. Implement validation and meaningful feedback.
+16. Run applicable tests, lint and build checks.
+17. Document actual test results.
+18. Update `TASKS.md` and `PROGRESS.md` after verified work.
+19. Stop before starting an unapproved ticket.
+20. Request clarification when specifications conflict.
+
+### Development Isolation
+
+Codex and Antigravity must not simultaneously modify the same files.
+
+Use separate Git branches or sequential editing when appropriate.
+
+Review changes before merging.
+
+---
+
+# 7. Frontend Phase Register
+
+| Phase | Module | Status | Priority |
+|---|---|---|---|
+| F00 | Foundation | IN_PROGRESS | P0 |
+| F01 | Dashboard | BACKLOG | P0 |
+| F02 | Admissions | BACKLOG | P0 |
+| F03 | Students | BACKLOG | P0 |
+| F04 | Courses & Batches | BACKLOG | P0 |
+| F05 | Faculty & Classes | BACKLOG | P1 |
+| F06 | Fees | BACKLOG | P0 |
+| F07 | Finance & Payroll | IN_REVIEW | P0 |
+| F08 | Demo Classes | BACKLOG | P1 |
+| F09 | Assets | BACKLOG | P1 |
+| F10 | Reports | BACKLOG | P1 |
+| F11 | Branch Management | BACKLOG | P0 |
+| F12 | User Management | BACKLOG | P0 |
+| F13 | Settings & Integrated QA | BACKLOG | P0 |
+
+The priority classifications are PROPOSED.
+
+Although F11 and F12 occur later in the screen-building sequence, basic mock branch and role infrastructure is required during F00.
+
+---
+
+# 8. Phase F00 — Frontend Foundation
+
+## F00-001 — Existing Project Audit
+
+**Priority:** P0
+**Size:** S
+**Status:** DONE — explicitly owner-accepted after evidence recovery/current verification; runtime/CI limitations retained
+
+### Goal
+
+Understand and safely preserve the existing React frontend before modifying its architecture.
+
+### Scope
+
+- Inspect `Client/` directory.
+- Inspect existing routes and entry points.
+- Inspect package dependencies.
+- Identify current CSS/UI framework.
+- Review existing folder structure.
+- Identify working functionality.
+- Record potential conflicts with approved architecture.
+
+### Expected Files
+
+- Existing frontend files: read-only unless explicitly approved.
+- `docs/00-CORE/PROGRESS.md`: record verified findings.
+- `docs/00-CORE/TASKS.md`: update the current work status.
+
+### Acceptance Criteria
+
+- Existing frontend structure is documented.
+- Existing dependencies are identified.
+- No working code is deleted or overwritten.
+- Any structural conflicts are reported.
+- Baseline build and lint results are recorded.
+
+### Tests
+
+- Run existing build command.
+- Run existing lint command if configured.
+- Record pre-existing errors.
+
+### Definition of Done
+
+The baseline project state is understood and documented.
+
+---
+
+## F00-002A — Basic Routing (Approved Sub-ticket)
+
+**Status:** DONE — approved basic scope delivered.
+**Authorization:** Explicit owner F00-002A instructions; limited subset of F00-002.
+
+Scope: install React Router with package/lock synchronization; preserve `/` displaying Hi; centralize root/wildcard paths; accessible Not Found/Return home; client navigation and Back/Forward; nested refresh where configured; preserve all explanatory comments. Excludes authentication, layouts, role guards, branch logic and module routes.
+
+Acceptance evidence: prior lint/build, root/deep-404/Return-home/history, local preview refresh and Not Found keyboard checks PASS. Maintained suites NOT_CONFIGURED; deployed fallback NOT_RUN. react-router-dom 7.18.4 is consumed by AppRouter and NotFoundPage. [Affected files and detailed results](PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09).
+
+---
+
+## F00-002 — Routing Foundation
+
+**Scope reconciliation:** Delivered basic subset F00-002A; existing shell F00-003; auth/select-branch/workspace/unauthorized routes and ProtectedRoute F00-005; permission boundary F00-007. These existing implementations satisfy current approved routing coverage and must not be duplicated. Temporary module routes in the original draft remain deferred to approved module tickets. No new routes or permissions are authorized here.
+
+**Priority:** P0
+**Size:** S
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-001
+
+### Goal
+
+Establish consistent frontend routing using the approved router.
+
+### Scope
+
+- Central route configuration.
+- Route path constants.
+- Main authenticated layout routing.
+- Authentication screen routing.
+- Not Found page.
+- Unauthorized page.
+- Temporary module routes where needed.
+
+### Expected Files
+
+- `Client/src/routes/AppRouter.jsx`
+- `Client/src/routes/routePaths.js`
+- `Client/src/routes/ProtectedRoute.jsx`
+- `Client/src/pages/Errors/`
+- Existing App entry points as required.
+
+### Acceptance Criteria
+
+- Application starts without routing errors.
+- Known routes load the correct page.
+- Unknown routes show Not Found.
+- Demo route guards work as designed.
+- Navigation does not unintentionally reload the application.
+
+### Edge Cases
+
+- Invalid URLs.
+- Refreshing a nested route.
+- Missing mock session.
+- Unauthorized route entry.
+
+### Tests
+
+- Route rendering.
+- Refresh behavior.
+- Invalid-route behavior.
+- Production build.
+
+### Definition of Done
+
+Routing behaves consistently and existing working behavior is preserved.
+
+---
+
+## F00-003 — Shared Dashboard Layout
+
+**Priority:** P0
+**Size:** M
+**Status:** DONE — approved Premium Application Layout scope
+**Dependencies:** F00-002A (delivered basic routing)
+
+### Approved Delivered Scope
+
+Owner-approved presentational Sidebar, Header, PageHeader and DashboardLayout; existing Tailwind; centralized neutral CSS tokens; lucide-react 1.54.0; desktop collapse/mobile drawer; keyboard access and reduced motion. Root Hi and standalone Not Found preserved. Disabled placeholder module labels only; no auth, permissions, branch logic or dashboard implementation.
+
+Lucide is imported by Sidebar and Header. [Files and prior verification](PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09): lint/build, sidebar interaction, responsive viewports, keyboard/focus, reduced motion and root/404/history regressions PASS. Maintained suites NOT_CONFIGURED; deployed fallback NOT_RUN.
+
+Neutral styling was explicitly provisional when reference access failed during implementation. DOC-SYNC-001 accessed it later; [differences remain proposed](../04-FRONTEND/DESIGN.md#doc-sync-001--lovable-reference-review-2026-10-09). Exact reference alignment and working permission-aware module navigation are not claimed complete.
+
+### Historical Draft Specification
+
+Previous status: BACKLOG; previous dependency: broader F00-002. The original goals/criteria below are preserved as future context. The narrower approved scope above supersedes their navigation/reference-alignment requirements for this delivery.
+
+### Goal
+
+Implement a reusable ERP application shell.
+
+### Scope
+
+- Sidebar.
+- Main header.
+- Page content container.
+- Navigation active states.
+- Responsive sidebar behavior.
+- Shared page heading area.
+
+### Expected Files
+
+- `Client/src/layouts/DashboardLayout.jsx`
+- `Client/src/components/Layout/Sidebar.jsx`
+- `Client/src/components/Layout/Header.jsx`
+- `Client/src/components/Layout/PageHeader.jsx`
+- Related layout components as needed.
+
+### Acceptance Criteria
+
+- Layout follows the approved design reference.
+- Sidebar navigation works.
+- Active navigation is visually distinguishable.
+- Main content remains readable.
+- Layout works at approved viewport sizes.
+- Keyboard navigation works.
+- No unrelated module is modified.
+
+### Tests
+
+- Layout rendering.
+- Navigation interaction.
+- Responsive viewport checks.
+- Accessibility-focused checks.
+- Production build.
+
+### Definition of Done
+
+All future ERP pages can use the same shared layout.
+
+---
+
+## F00-004 — Premium Responsive Design System
+
+**Priority:** P0
+**Size:** S
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** Existing F00-002A routing, F00-003 shell and verified Lovable review
+
+The owner approved the extended scope described in the latest snapshot above. Original Central Design Tokens planning below is retained as history; previous status BACKLOG, dependency F00-001. Prototype values needed by this ticket have now been verified. Whole F00 and future module work remain incomplete.
+
+### Goal
+
+Establish the shared visual design foundation.
+
+### Scope
+
+- Central color tokens.
+- Typography system.
+- Spacing rules.
+- Border radius.
+- Surface styles.
+- Button and input visual standards.
+- Theme customization foundation.
+
+### Expected Files
+
+- `Client/src/styles/globals.css`
+- `Client/src/styles/theme.css`
+- Existing theme configuration files, if present.
+
+### Acceptance Criteria
+
+- Shared tokens are defined centrally.
+- Styling follows verified reference details.
+- No new arbitrary visual theme is introduced.
+- Basic text/background combinations remain readable.
+- Existing styles are not broken.
+
+### Tests
+
+- Visual inspection.
+- Light-theme contrast checks.
+- Build verification.
+
+### Blockers
+
+Exact prototype-derived design values remain TBD until verified.
+
+### Definition of Done
+
+Subsequent modules can reuse shared styling without independently choosing design values.
+
+---
+
+## F00-005 — Mock Auth & Minimal Access Foundation
+
+**Priority:** P0
+**Size:** S
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-002A, F00-003, F00-004
+
+Approved current scope and evidence appear in the latest delivery snapshot above. Original auth-only draft below is preserved as history; its former dependency was broader F00-002 and status BACKLOG. Minimum branch/role data and test tooling are now included; full F00-006/F00-007 features are excluded.
+
+### Goal
+
+Simulate logged-in user behavior for frontend-only development.
+
+### Scope
+
+- Demo user identity.
+- Mock login/logout state.
+- Role information.
+- Account selection during development.
+- Redirect behavior.
+
+### Expected Files
+
+- `Client/src/contexts/AuthContext.jsx`
+- `Client/src/hooks/useAuth.js`
+- `Client/src/mock/mockAuth.js`
+- `Client/src/services/authService.js`
+
+### Acceptance Criteria
+
+- Demo user can be selected or logged in through the approved mock flow.
+- Mock session state is exposed consistently.
+- Logout clears mock session state.
+- Invalid mock state is handled.
+- No real credentials are stored.
+
+### Tests
+
+- Mock login.
+- Mock logout.
+- Session state changes.
+- Protected-route UX behavior.
+
+### Security Note
+
+Mock authentication is not production authentication.
+
+### Definition of Done
+
+Frontend components can consistently obtain the current demo user.
+
+---
+
+## F00-006 — Branch Context and Switcher
+
+**Priority:** P0
+**Size:** M
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-005
+
+### Goal
+
+Support active branch selection in the frontend.
+
+### Remaining Approved-Planning Boundary
+
+- Reuse F00-005 AuthContext/BranchContext, validated assignments, initial selection and scopeKey; do not reimplement them.
+- Delivered under current F00-006 approval: accessible in-session concrete-branch switcher in the existing topbar; see latest evidence above.
+- Extend invalidation into future branch-scoped data/query consumers; retain regression checks for already delivered single/multi-branch selection.
+- All Branches requires an explicit capability/demo policy before implementation; no grant inferred from Super Admin.
+
+### Historical Original Scope
+
+The original draft below included foundations now delivered by F00-005. Those items are reuse/regression requirements rather than duplicate implementation tasks.
+
+### Scope
+
+- Active branch context.
+- Branch list from approved demo records.
+- Branch switcher component.
+- Automatic selection for single-branch users.
+- Multiple assigned branch selection.
+- Authorized All Branches mode where applicable.
+
+### Expected Files
+
+- `Client/src/contexts/BranchContext.jsx`
+- `Client/src/hooks/useBranch.js`
+- `Client/src/components/Layout/BranchSwitcher.jsx`
+- Relevant mock services.
+
+### Acceptance Criteria
+
+- Single-branch users enter their assigned branch automatically.
+- Multi-branch users can select permitted branches.
+- Switching branches updates active branch context.
+- An unassigned branch cannot be selected through normal UI controls.
+- Invalid stored branch selections fall back safely.
+- All Branches is available only to explicitly authorized demo users.
+
+### Tests
+
+- One branch.
+- Multiple branches.
+- No valid branches.
+- Invalid branch ID.
+- User account switch.
+- Active branch persistence.
+
+### Definition of Done
+
+Frontend modules can read a consistent, validated demo branch context.
+
+---
+
+## F00-007 — Role and Permission UI Foundation
+
+**Priority:** P0
+**Size:** M
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-005 (minimal foundation); F00-006 for full switching; explicit SECURITY policy approval
+
+### Goal
+
+Create consistent frontend role and permission handling.
+
+### Remaining Approved-Planning Boundary
+
+- Reuse the four role constants, canonical branch-role arrays and common workspace allowlist from F00-005.
+- Add reusable role/navigation/action filtering and broader permission catalogs only after their explicit policy approval.
+- Define general multi-role combining/record scope through approved SECURITY decisions; current workspace baseline grants no ERP access.
+- RoleRoute and full module navigation remain deferred; do not rebuild minimum ProtectedRoute or initial branch selection.
+
+### Historical Original Scope
+
+The original draft below includes foundations now delivered by F00-005. Treat them as reuse/regression requirements; the broader matrix remains unapproved.
+
+### Scope
+
+- Role constants.
+- Permission identifiers.
+- Branch-aware role assignments.
+- Reusable permission helpers.
+- Navigation filtering.
+- Unauthorized UI state.
+
+### Expected Files
+
+- `Client/src/constants/roles.js`
+- `Client/src/constants/permissions.js`
+- `Client/src/hooks/usePermissions.js`
+- `Client/src/routes/RoleRoute.jsx`
+- Navigation configuration.
+
+### Acceptance Criteria
+
+- Four primary roles are represented consistently.
+- A user can hold different roles across branches.
+- Multiple roles within one branch are supported.
+- UI actions reflect approved demo permissions.
+- A change of active branch updates relevant UI permissions.
+- Unknown permissions do not become automatically allowed.
+
+### Tests
+
+- Each primary role.
+- Multiple roles per branch.
+- Different roles in different branches.
+- Unauthorized navigation.
+- Invalid assignments.
+
+### Blockers
+
+The exact role-permission matrix must be approved in SECURITY.md before broader grants/navigation are implemented. The latest minimal foundation uses the already approved workspace baseline and is not blocked by that deferred matrix.
+
+### Definition of Done
+
+The role and branch-aware UI foundation is functional in mock mode.
+
+---
+
+## F00-008 — Mock Data Service Layer
+
+**Priority:** P0
+**Size:** M
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-001
+
+### Goal
+
+Separate frontend components from temporary data storage.
+
+### Scope
+
+- Mock database interface.
+- Centralized browser storage.
+- Seed data initialization.
+- Stable service method contracts.
+- Create/read/update operations.
+- Basic simulated failures where appropriate.
+- Storage versioning or safe reset mechanism.
+
+### Expected Files
+
+- `Client/src/mock/seedData.js`
+- `Client/src/mock/mockDatabase.js`
+- `Client/src/mock/mockApi.js`
+- `Client/src/services/`
+- `Client/src/constants/storageKeys.js`
+
+### Acceptance Criteria
+
+- Pages do not directly modify localStorage.
+- Services expose consistent asynchronous interfaces.
+- Demo records persist after refresh where required.
+- Duplicate seed initialization is prevented.
+- Invalid or corrupted storage is handled safely.
+- Services can later be replaced by HTTP implementations.
+
+### Tests
+
+- Create/read/update mock records.
+- Refresh persistence.
+- Empty data.
+- Invalid records.
+- Corrupted storage.
+- Storage unavailable.
+
+### Definition of Done
+
+Mock data operations are centralized and independently testable.
+
+---
+
+## F00-009 — Academy Branding and Theme Context
+
+**Priority:** P1
+**Size:** S
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-004, F00-008
+
+**Approved delivery evidence:** [F00-009 verification](PROGRESS.md#f00-009--academy-branding-delivery-2026-10-09). F00-004/F00-008 implementation dependencies verified; their acceptance remains pending. Broader customization/editor features are excluded.
+
+### Goal
+
+Prepare centralized academy branding for the frontend.
+
+### Scope
+
+- Academy display name.
+- Academy logo reference.
+- Primary theme color.
+- Shared academy context.
+- Theme context.
+- Demo persistence.
+
+### Acceptance Criteria
+
+- Shared layout reads academy identity from one source.
+- Branding is not duplicated across components.
+- Theme changes apply consistently.
+- Invalid theme values are rejected or safely handled.
+- Branding remains available after a demo page refresh.
+
+### Tests
+
+- Default branding.
+- Updated branding.
+- Invalid color.
+- Missing logo.
+- Browser refresh.
+
+### Definition of Done
+
+Approved branding fields can be managed centrally.
+
+---
+
+## F00-010 — Foundation Verification and Documentation
+
+**Priority:** P0
+**Size:** S
+**Status:** DONE - owner-accepted implemented mock scope; deferred scope excluded
+**Dependencies:** F00-002A and F00-003 through F00-009 implemented foundations; F00-002 parent coverage reconciled above. Phase acceptance remains an owner gate.
+
+**Delivery evidence:** [Current checks and acceptance audit](PROGRESS.md#f00-010--foundation-verification-delivery-2026-10-09). No F01 authorization follows automatically.
+
+### Goal
+
+Validate the shared frontend foundation before Dashboard development.
+
+### Scope
+
+- Run lint and build checks.
+- Verify routes and shared layouts.
+- Verify mock role changes.
+- Verify branch switching.
+- Verify mock service persistence.
+- Check basic accessibility and responsiveness.
+- Update documentation.
+
+### Acceptance Criteria
+
+- Required F00 functionality is working.
+- No unresolved build errors were introduced.
+- Relevant automated checks pass.
+- Manual checks are documented.
+- Known limitations are recorded.
+- Project progress reflects verified results.
+
+### Tests
+
+- Lint.
+- Build.
+- Component tests.
+- Mock services.
+- Routing.
+- Role/branch interactions.
+- Basic accessibility checks.
+
+### Definition of Done
+
+Foundation is reviewed and approved for the next phase.
+
+---
+
+# 9. Phase F01 — Dashboard
+
+F00 accepted for its implemented mock scope. Owner separately authorized F01-001 shared skeleton using workspace.view; this does not approve role-specific dashboards, metric policies or subsequent F01 tickets.
+
+## F01-001 — Dashboard Page Skeleton
+
+**Priority:** P0
+**Size:** S
+**Status:** IN_REVIEW - approved shared skeleton delivered; owner acceptance pending
+**Dependencies:** F00-003, F00-006
+
+**Approved scope:** Shared /dashboard skeleton guarded by existing workspace.view; authorized Sidebar navigation, active branch and labeled placeholders only. No role-specific policy, metrics, ERP actions or new dependency. [Actual delivery evidence](PROGRESS.md#f01-001--dashboard-skeleton-delivery-2026-10-10).
+
+### Goal
+
+Create the shared route-level Dashboard page.
+
+### Scope
+
+- Dashboard heading.
+- Active branch context.
+- Main content sections.
+- Shared layout integration.
+- Initial responsive structure.
+
+### Expected Files
+
+- `Client/src/pages/Dashboard/DashboardPage.jsx`
+- Relevant Dashboard shared components.
+
+### Acceptance Criteria
+
+- Dashboard route loads correctly.
+- Shared application layout is used.
+- Active branch is displayed correctly.
+- No hardcoded production statistics are shown.
+- Page handles missing or invalid demo context.
+
+### Tests
+
+- Route rendering.
+- Branch changes.
+- Responsive layout.
+- Build.
+
+---
+
+## F01-002 — Dashboard Statistics Cards
+
+**Priority:** P0
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** F01-001, F00-008
+
+### Goal
+
+Display consistent dashboard summary cards.
+
+### Scope
+
+- Reusable statistic cards.
+- Appropriate titles and icons.
+- Branch-filtered mock values.
+- Formatting.
+- Loading and empty states.
+
+### Acceptance Criteria
+
+- Cards use shared design tokens.
+- Values come from centralized mock services.
+- Branch changes update relevant values.
+- Empty records show appropriate zero/empty states.
+- Demo data is not misrepresented as production data.
+
+### Tests
+
+- Mock dataset variations.
+- Branch filtering.
+- Empty data.
+- Numeric formatting.
+
+---
+
+## F01-003 — Super Admin Dashboard
+
+**Priority:** P0
+**Size:** M
+**Status:** BACKLOG
+**Dependencies:** F01-002, F00-007
+
+### Goal
+
+Create the approved Super Admin dashboard experience.
+
+### Proposed Areas
+
+- Academy overview.
+- Branch comparison.
+- Admissions summary.
+- Fee collection summary.
+- Staff overview.
+
+### Acceptance Criteria
+
+- Super Admin sees permitted academy information.
+- Authorized branch and All Branches filters work.
+- Statistics reflect the selected scope.
+- Components use shared design patterns.
+- Missing values are handled.
+
+### Blockers
+
+Exact dashboard widgets and metrics require approved PRD and DESIGN.md definitions.
+
+### Tests
+
+- Individual branch.
+- All Branches.
+- Empty data.
+- Multiple branches.
+- Incorrect role context.
+
+---
+
+## F01-004 — Owner Dashboard
+
+**Priority:** P1
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** F01-002, F00-007
+
+### Goal
+
+Create the Owner dashboard according to approved permissions.
+
+### Proposed Areas
+
+- Authorized academy performance.
+- Authorized financial summaries.
+- Student/enrollment trends.
+
+### Acceptance Criteria
+
+- Only permitted information is displayed.
+- Branch restrictions are respected.
+- Unauthorized controls are absent from normal UI.
+- Empty and loading states are available.
+
+### Blockers
+
+Owner access scope must be finalized in SECURITY.md.
+
+---
+
+## F01-005 — Receptionist Dashboard
+
+**Priority:** P0
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** F01-002, F00-007
+
+### Goal
+
+Create the Receptionist dashboard.
+
+### Proposed Areas
+
+- Today's admissions.
+- Pending inquiries.
+- Demo follow-ups.
+- Assigned front-desk tasks.
+
+### Acceptance Criteria
+
+- Receptionist sees only authorized branch-related information.
+- Quick-action navigation opens permitted pages.
+- Counts reflect demo records.
+- Empty and error states work.
+
+---
+
+## F01-006 — Teacher Dashboard
+
+**Priority:** P0
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** F01-002, F00-007
+
+### Goal
+
+Create the Teacher dashboard.
+
+### Proposed Areas
+
+- My classes.
+- My assigned batches.
+- My students.
+- My earnings, where authorized.
+
+### Acceptance Criteria
+
+- Teacher sees only their authorized assignments.
+- Branch selection updates the assigned workload.
+- Unrelated students and financial records are not shown.
+- Empty and missing assignments are handled correctly.
+
+### Blockers
+
+Teacher compensation visibility and assignment rules must be confirmed.
+
+---
+
+## F01-007 — Dashboard Charts and Trends
+
+**Priority:** P1
+**Size:** M
+**Status:** BACKLOG
+**Dependencies:** F01-002
+
+### Goal
+
+Provide reusable charts for approved dashboard metrics.
+
+### Scope
+
+- Chart components.
+- Date-range filtering where required.
+- Branch filtering.
+- Consistent labels.
+- Empty and error states.
+
+### Acceptance Criteria
+
+- Chart values agree with source records.
+- Chart units and periods are clearly labeled.
+- Branch filters are consistently applied.
+- Charts follow the approved visual design.
+- No fabricated financial totals are displayed.
+
+### Tests
+
+- Dataset changes.
+- Different date ranges.
+- Different branch scopes.
+- No data.
+- Invalid data handling.
+
+---
+
+## F01-008 — Dashboard Responsive and Accessibility Review
+
+**Priority:** P1
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** F01-003 through F01-007, as applicable
+
+### Goal
+
+Check dashboard usability on supported viewports.
+
+### Acceptance Criteria
+
+- Dashboard adapts to approved screen sizes.
+- Navigation remains usable.
+- Tables and charts do not overflow destructively.
+- Keyboard navigation works.
+- Focus indication is visible.
+- Important values are not conveyed by color alone.
+
+### Tests
+
+- Desktop.
+- Tablet.
+- Supported mobile viewport, if required.
+- Keyboard navigation.
+- Basic automated accessibility checks.
+
+---
+
+## F01-009 — Dashboard Integration and Regression QA
+
+**Priority:** P0
+**Size:** S
+**Status:** BACKLOG
+**Dependencies:** Relevant prior F01 tickets
+
+### Goal
+
+Validate the Dashboard phase before beginning Admissions.
+
+### Acceptance Criteria
+
+- All four approved dashboard experiences work.
+- Branch switching updates data and permissions appropriately.
+- Dashboard navigation works.
+- Statistics derive from shared mock records.
+- Existing F00 functionality has not regressed.
+- Relevant automated tests pass.
+- Remaining gaps are documented.
+
+### Definition of Done
+
+Dashboard phase is reviewed and approved for progression.
+
+---
+
+# 10. Remaining Frontend Feature Backlog
+
+The following are candidate tickets for subsequent phases.
+
+They are planning entries, not fully specified executable tickets.
+
+Their detailed acceptance criteria must be added after the associated business rules and screen specifications are approved.
+
+## F02 — Admissions
+
+### F02-001 — Admission Listing and Filters
+**Status:** DONE (Approved for DEMO scope)
+**Goal:** Create a secure, branch-aware list view for Admissions with basic mock data integration.
+**Proposed Scope:**
+- `AdmissionsPage.jsx` routing to `/admissions` for Receptionist, Super Admin, and authorized Owners.
+- Table view displaying: Application ID (e.g. ADM-0001), Student Name, Guardian Contact, Course/Program, Branch, and Status (Pending, Approved, Rejected).
+- Search and filtering capabilities (e.g., search by name/ID, filter by Status).
+- Empty and error state components.
+**Dependencies:**
+- Needs a new `admissionService.js` mock adapter (with async list/getById/create/update).
+- Needs `admissions.read` permission defined in `SECURITY.md` and enforced via `PermissionGate`.
+**Acceptance Criteria:**
+- Admissions list renders only mock records for the currently selected branch.
+- Unauthorized roles (e.g., Teachers) are redirected or shown an unauthorized message.
+- Search and filtering accurately refines the mock list.
+- Appropriate loading/empty states are visible.
+**TBD Decisions Required Before Implementation:**
+- Exact data schema for admissions (fields, types, required info).
+- Admission approval authority (who can approve/reject).
+- Admission status transitions.
+
+### F02-002 — New Admission Form
+**Status:** IN_REVIEW (Mock Persistence Implemented)
+**Goal:** Build a premium responsive form to create a new admission with centralized mock persistence.
+**Scope:**
+- `NewAdmissionPage.jsx` at `/admissions/new`.
+- Validations for required fields (Student Name, DOB, Guardian Name, Contact, Course).
+- Integration with F00-008 `createCollectionService` mock architecture.
+- Redirects to list on success.
+- F02-003 — Student and Guardian Details
+- F02-004 — Program and Batch Selection
+- F02-005 — Admission Status Workflow
+- F02-006 — Admission-to-Enrollment Mock Integration
+- F02-007 — Admission Module Testing
+
+Dependencies: Branch context, students, courses/batches mock contracts, approved admission rules, new admission mock service.
+
+### F02-003 resumed delivery - Branch-wise Numbering & Working Admissions CRUD (2026-10-10)
+
+**Status: IN_REVIEW; owner acceptance pending.** Dependencies: existing F02-002 shared form, F00 mock auth/branch/data foundation and preceding F02-003 implementation. Owner explicitly approves this extension; subsequent F02 tickets remain unauthorized.
+
+**Current scope:** branch-specific durable Student 1/2/3 and Admission ADM-1/2/3 sequences, separate immutable globally unique new internal IDs; popup/shared standalone form; saved View; validated atomic admission/Provisional student Edit; confirmed safe atomic Delete and immediate list/filter refresh. Old academy-wide proposal/disabled Review is SUPERSEDED for new work; existing IDs/data/history remain intact.
+
+**Migration/deletion acceptance:** initialize each branch from highest existing number and retained global high-water, never array length; preserve saved IDs and never reuse deleted numbers. New pairs carry explicit ownership markers. Only verified reciprocal same-branch Provisional admission-flow students may cascade-delete. Legacy unknown ownership is denied without erasure; unlinked admissions remove no student. Corrupt/version/conflict/storage failure preserves original bytes and consumes no number. All service reads/writes revalidate active mock identity/branch. No production permission grants, backend, fees/enrollment or installs.
+
+**Evidence:** baseline 151/151; final 174/174 tests (16 files) PASS, including 17 new data/service and 6 UI cases. Lint/build PASS with existing warnings. Local Edge CRUD/refresh/branch isolation and 360/768/1024/1440px keyboard checks PASS, including post-save focus recovery. CI/deployment/backend/formal accessibility NOT_RUN; incoming repository whitespace check FAIL without new whitespace additions. [Detailed evidence/files/libraries/screenshots](PROGRESS.md#f02-003-resumed-delivery---branch-wise-numbering--working-admissions-crud-2026-10-10).
+
+**Remaining:** legacy ownership determinations; single-context-only fallback without Web Locks; future production policies. Stop F02-003. F02-004 Program and Batch Selection needs separate owner approval.
+
+---
+
+### F02-003 - Admission Popup, Linked Student & Sequential Admission IDs (2026-10-10)
 
 **Status:** IN_REVIEW - owner-authorized browser-local DEMO scope implemented; owner acceptance pending. No backend, production authorization, fees or enrollment changes.
 
@@ -255,7 +1333,7 @@ CONFIRMED: the owner's follow-up request enables Delete in the three-dots Admiss
 
 **Executed evidence:** baseline 127/127 tests (12 files) PASS before edits; final 151/151 tests (14 files) PASS, including 24 new transaction/workflow cases. Lint PASS (0 errors; one pre-existing DashboardPage unused-disable warning). Production build PASS (existing >500 kB bundle warning remains).
 
-**Local production-preview browser checks PASS:** 360/768/1024/1440px popup bounds/no page overflow; Tab containment; Escape/focus restoration; first-error focus/description; formatted success/list IDs; atomic linked storage; actual nested URL reload; North/Central isolation and sequential IDs; standalone shared form; dashboard route and logout denial; no runtime exceptions. Screenshots: [mobile popup](../artifacts/f02-003/admission-popup-360.png), [desktop popup](../artifacts/f02-003/admission-popup-1440.png), [saved list](../artifacts/f02-003/admissions-saved-1440.png).
+**Local production-preview browser checks PASS:** 360/768/1024/1440px popup bounds/no page overflow; Tab containment; Escape/focus restoration; first-error focus/description; formatted success/list IDs; atomic linked storage; actual nested URL reload; North/Central isolation and sequential IDs; standalone shared form; dashboard route and logout denial; no runtime exceptions. Screenshots: [mobile popup](../../artifacts/f02-003/admission-popup-360.png), [desktop popup](../../artifacts/f02-003/admission-popup-1440.png), [saved list](../../artifacts/f02-003/admissions-saved-1440.png).
 
 **Limitations / NOT_RUN:** CI, production deployment, backend/database checks and formal accessibility certification were not run. Native Web Locks serialize cooperating browser tabs where supported (verified in local Edge); the fallback guarantees one JavaScript context only, not concurrent tabs without Web Locks. Browser-local storage can be manually cleared/tampered with; this is not a server sequence or authorization boundary. Duplicate-person matching, real program/batch references, admission approval rules and enrollment remain unapproved/deferred.
 
@@ -265,746 +1343,433 @@ CONFIRMED: the owner's follow-up request enables Delete in the three-dots Admiss
 
 ---
 
-## F02-002 New Admission Form (2026-10-10)
+**Scope reconciliation:** Earlier Student and Guardian Details roadmap label is historical. Current owner instruction authorizes completing the existing popup, linked student and sequential IDs. Reuses F02-002 and F00-005/006/008; no F02-004/005/006 work authorized. Tests add 19 transaction cases and 5 UI cases; see [PROGRESS.md](PROGRESS.md).
 
-**Status:** IN_REVIEW - Mock form created with centralized versioned mock storage integration. Created `NewAdmissionPage.jsx` with input validations, navigation and loading states. Refactored `admissionService.js` to rely on `createCollectionService`.
-Automated tests updated and passed. Lint and Build PASS.
+## F03 — Students
 
-Next ticket: Stop. Awaiting owner approval for F02-002.
+- F03-001 — Students Directory — IN_REVIEW
+- F03-002 — Student Search and Filtering — IN_REVIEW
+- F03-003 — Student Profile — IN_REVIEW
+- F03-004 — Student Editing and Validation — IN_REVIEW
+- F03-005 — Student Enrollment History — IN_REVIEW
+- F03-006 — Student Fee/Attendance Views — IN_REVIEW
+- F03-007 — Students Module Testing — IN_REVIEW
+
+Dependencies: Approved student data model, enrollments and branch scoping.
+
+## F04 — Courses & Batches
+
+- F04-001 — Course Catalog
+- F04-002 — Course Creation and Editing
+- F04-003 — Batch Listing
+- F04-004 — Batch Creation and Editing
+- F04-005 — Batch Timetable
+- F04-006 — Capacity and Assignment Views
+- F04-007 — Course/Batch Module Testing
+
+Dependencies: Course, subject, batch and schedule requirements.
+
+**Implementation status (2026-10-12, updated 2026-10-13): F04-001 through F04-007 IN_REVIEW; owner acceptance pending.** Course Catalog, Course Create/Edit, Batch Directory and Batch Create/Edit are functional within confirmed branch/role boundaries. Owner-confirmed branch-scoped Academic Stream and Subject Add/Edit records persist through the academic service; a form button-type defect preventing Add Stream/Add Subject submission was fixed and covered with UI persistence/reload regression tests (8/8 focused tests PASS; scoped lint PASS; browser NOT_RUN). Timetable is intentionally read-only with an explicit empty state because scheduling write rules are unresolved. Capacity shows actual saved active Enrollment counts while maximum/remaining capacity stays unconfigured. Teacher assignments show an honest empty state because assignment records/policy are unresolved. Focused verification and exact limitations are recorded in PROGRESS.md. No F05 work started.
+
+## F05 — Faculty & Classes
+
+- F05-001 — Faculty Directory — IN_REVIEW
+- F05-002 — Faculty Profiles — IN_REVIEW
+- F05-003 — Teacher Subject Assignments — IN_REVIEW (read-only; assignment writes blocked by TBD subject model/policy)
+- F05-004 — Teacher Batch Assignments — IN_REVIEW (read-only; no approved teacher-batch relationship)
+- F05-005 — Class Scheduling — IN_REVIEW (owner-approved single-date DEMO CRUD, overlap validation and Dashboard integration implemented; acceptance pending)
+- F05-006 — Class Student Views — IN_REVIEW
+- F05-007 — Faculty/Class Module Testing — IN_REVIEW
+
+Dependencies: Teacher permissions, batch model and scheduling rules.
+
+## F05-001 through F05-007 Faculty & Classes — IN_REVIEW (2026-10-12)
+
+Implemented branch-scoped faculty directory and identity-only profiles from explicit demo teacher role memberships. Subject and teacher-batch assignment views are honest read-only states because the subject collection, assignment relationships and write policies remain TBD. Class schedule is read-only with no sessions fabricated; it awaits the shared F04 Batch Timetable contract. Class student view uses only same-branch Active Enrollment → Student → Batch references and links to existing Student profiles. Teacher access remains denied until assignment relationships and enforcement are approved. Focused tests and lint pass; one production build passes. Owner acceptance pending.
+
+F05-005 update (2026-10-13): Owner approved branch-scoped single-date class scheduling. Super Admin can create/view/edit/delete; Receptionist and Owner remain view-only; Teacher remains denied until reliable assignment authorization exists. Required subject text, batch, enabled branch Teacher, date, start/end time and location persist in additive mock database version 5. Same-date overlaps for teacher, batch or location are rejected. Dashboard shows saved today/upcoming classes with actual Active Enrollment counts and live minute-based timing labels. Focused 30 tests, targeted ESLint and one production build pass. IN_REVIEW; owner acceptance pending.
+
+## F06 — Fees
+
+**F06 connected DEMO workflow — IN_REVIEW (2026-10-13):** Owner-approved branch-scoped challans, partial/full verified payments, durable CH/RCPT references, printable views, fee ledger, Finance revenue/expense ledger and Dashboard Recent Payments are implemented with additive mock database version 6. Final QA added safe branch-scoped Fees and Finance CSV downloads; only Verified payments and Posted expenses enter corresponding projections. Refunds, reversals, discounts, waivers, installment schedules and backend/payment-gateway integration remain deferred. Owner acceptance pending.
+
+- F06-001 — Fee Dashboard and Listing
+- F06-002 — Fee Plans and Structures
+- F06-003 — Invoice Generation UI
+- F06-004 — Installment Scheduling UI
+- F06-005 — Fee Collection Form
+- F06-006 — Student Fee Ledger
+- F06-007 — Discounts and Adjustments UI
+- F06-008 — Receipt Preview and Printing
+- F06-009 — Fees Module Testing
+
+Dependencies: Approved finance rules, enrollment/invoice model and payment contracts.
+
+Do not implement final financial logic until its rules are approved.
+
+## F07 — Finance
+
+- F07-001 — Finance Overview
+- F07-002 — Transactions Listing
+- F07-003 — Expense Entry
+- F07-004 — Expense Categories
+- F07-005 — Income and Expense Charts
+- F07-006 — Cash Closing and Summary Views
+- F07-007 — Finance Module Testing
+
+Dependencies: Fee/payment records, approved expense rules and financial permissions.
+
+## F08 — Demo Classes
+
+- F08-001 — Demo Registration
+- F08-002 — Demo Listing and Filters
+- F08-003 — Demo Scheduling
+- F08-004 — Demo Attendance
+- F08-005 — Demo Status Tracking
+- F08-006 — Demo-to-Admission Conversion
+- F08-007 — Demo Module Testing
+
+Dependencies: Admission, course, batch and teacher reference data.
+
+## F09 — Assets
+
+- F09-001 — Asset Directory
+- F09-002 — Asset Registration
+- F09-003 — Asset Editing and Details
+- F09-004 — Asset Condition and Status
+- F09-005 — Asset Assignment and Maintenance
+- F09-006 — Assets Module Testing
+
+Dependencies: Branch assignment and approved asset data requirements.
+
+## F10 — Reports
+
+- F10-001 — Report Catalog
+- F10-002 — Report Filters
+- F10-003 — Admissions Reports
+- F10-004 — Student/Enrollment Reports
+- F10-005 — Fee Collection Reports
+- F10-006 — Branch Comparison Reports
+- F10-007 — Print and Export
+- F10-008 — Reports Module Testing
+
+Dependencies: Authoritative mock record sets and approved reporting definitions.
+
+## F11 — Branch Management
+
+- F11-001 — Branch Listing
+- F11-002 — Create Branch
+- F11-003 — Edit Branch
+- F11-004 — Activate/Deactivate Branch
+- F11-005 — Branch Staff Summary
+- F11-006 — Branch Management Testing
+
+Dependencies: F00 branch context, approved branch rules and authorization definitions.
+
+## F12 — User Management
+
+- F12-001 — Staff Account Listing
+- F12-002 — Create Staff Account
+- F12-003 — Edit Staff Account
+- F12-004 — Assign Multiple Branches
+- F12-005 — Assign Multiple Roles per Branch
+- F12-006 — Role Permission Matrix UI
+- F12-007 — Account Activation and Deactivation
+- F12-008 — User Management Testing
+
+Dependencies: F00 mock identity model, branch assignments and SECURITY.md.
+
+## F13 — Settings & Integrated Frontend QA
+
+- F13-001 — Academy Profile Settings
+- F13-002 — Academy Logo Settings
+- F13-003 — Theme Customization
+- F13-004 — Academic Settings
+- F13-005 — Approved Operational Settings
+- F13-006 — Cross-Module Workflow Testing
+- F13-007 — Responsive and Accessibility Review
+- F13-008 — Error/Empty State Review
+- F13-009 — Mock Data Consistency Review
+- F13-010 — Frontend Regression Testing
+- F13-011 — Frontend Readiness Report
+
+Dependencies: All applicable module features and approved settings.
 
 ---
 
-## F02-001 Admission Listing and Filters (2026-10-10)
+# 11. Backend Integration Ticket Planning
 
-**Status:** DONE - Approved for DEMO scope. Admission listings page with search and status filtering built. Screen mockups submitted.
+Backend implementation will be a separate approved development stage.
 
----
+Candidate future work areas:
 
-## F01-007 Dashboard Visual Polish & Acceptance (2026-10-10)
-
-**Status:** DONE - Explicitly approved UI milestone delivered and accepted by owner for DEMO dashboard presentation scope only. Replaced CSS charts with interactive Recharts components. Added framer-motion staggered animations with reduced motion support. Fixed Teacher Dashboard Assigned Batches demo data defect. Polished KpiCard spacing and entrance animations.
-Automated tests passed. Lint and Build PASS.
-
-Next ticket: Stop. Owner acceptance granted.
-
----
-
-## F01-006 Premium Teacher Dashboard UI (2026-10-10)
-
-**Status:** IN_REVIEW - Teacher dashboard implemented with premium demo components. Added Instructor Hub layout with Today's Schedule KPIs, Upcoming Sessions list, Recent Teaching Activity, and disabled Instructor Actions. Replaced the "COMING SOON" preview.
-Automated tests updated and passed. Lint and Build PASS.
-
-Next ticket: Stop. Awaiting owner approval for F01-002 through F01-006.
-
----
-
-## F01-005 Premium Receptionist Dashboard UI (2026-10-10)
-
-**Status:** IN_REVIEW - Receptionist dashboard implemented with premium demo components. Added front-desk KPI cards, mock inquiry/activity feed, and disabled quick actions.
-Automated tests updated and passed. Lint and Build PASS.
-
-Next ticket: Stop. Awaiting owner approval.
-
-## F01-004 Premium Owner Dashboard UI (2026-10-10)
-
-**Status:** IN_REVIEW - Owner dashboard implemented with premium demo components. Reused KPI cards and added mock chart/activity widgets and disabled quick actions.
-Automated tests updated and passed. Lint and Build PASS.
-
-Next ticket: Stop. Awaiting owner approval.
-
----
-
-## F01-003 Super Admin Dashboard UI (2026-10-10)
-
-**Status:** IN_REVIEW - owner acceptance pending. Super Admin dashboard implemented with premium demo components. Reused KPI cards and added mock chart/activity widgets and disabled quick actions. Multi-role assignment explicitly shows a pending decision fallback.
-Automated tests updated. Lint and Build PASS.
-
-Next ticket: Awaiting owner approval for the next F01 ticket or phase.
-
----
-
-## F01-002 Dashboard Statistics Cards (2026-10-10)
-
-**Status:** IN_REVIEW - owner acceptance pending.
-F01-002 IN_REVIEW: Turned the four empty KPI placeholders into responsive, beautiful statistic cards matching the existing design system. Created reusable `KpiCard` component with loading/error states. Integrated real mock data for `Total Students` and `Active Courses` by calling `studentService.list()` and `courseService.list()`, respectively, filtering by active branch. Also added two fictional static cards (`Demo Admissions` and `Demo Revenue`), clearly marked as DEMO, to avoid inventing actual calculations.
-
-Preserved all F01-001 boundaries: no backend edits, no new permissions (`workspace.view` remains), and all routes/auth work correctly. Automated tests, lint, and build PASS.
-Next ticket: Pending owner approval for further dashboard features (Charts/Activity). No next coding ticket started.
-
----
-
-## F01-001 Delivery Review (2026-10-10)
-
-## Foundation Owner Acceptance and F01-001 Authorization (2026-10-09)
-
-**Owner decision: CONFIRMED.** Owner explicitly accepted F00-002A/F00-003 and F00-004 through F00-010 for their implemented, reported-and-tested mock scopes. F00-001 remains accepted. These scoped deliveries are DONE. Parent F00-002 is covered by accepted child routing/layout/auth/permission work; temporary module routing remains deferred. No duplicate implementation is required. Earlier acceptance-pending snapshots are preserved as history.
-
-This acceptance does not verify actual CI, production deployment/SPA fallback, backend security/runtime, real authentication or formal accessibility certification. It does not approve broad business permissions, multi-role policies, All Branches or ERP modules.
-
-**Current authorization:** F01-001 only - shared Dashboard Page Skeleton with heading, active branch, responsive placeholders and existing shell. Dashboard uses existing workspace.view guard; no new permissions/statistics/actions/dependencies. No following ticket authorized.
-
----
-
-## F00-010 Foundation Review Delivery (2026-10-09)
-
-**Status:** IN_REVIEW - approved verification complete, owner acceptance pending. Whole F00 remains IN_PROGRESS. F00-001 is explicitly accepted DONE; F00-002A/F00-003 retain historical DONE delivery labels without inventing separate formal acceptance. F00-004 through F00-009 remain IN_REVIEW. Parent F00-002 delivered routing coverage is reconciled to F00-002A/003/005/007; no duplicate auth/guards or unapproved module routes added.
-
-One verified defect fixed: batched academy name/theme updates no longer discard the earlier successful change. Initial regression FAIL reproduced; final 113 tests/9 files, lint and build PASS. Local Edge routing, four responsive widths, refresh/logout/invalid-session recovery, keyboard/focus/AX names and reduced motion PASS within documented limits. Remote CI/deployment/backend/production fallback and full screen-reader/WCAG/cross-browser audits NOT_RUN.
-
-[Full ticket/acceptance matrix, files, libraries, evidence and F01 requirements](PROGRESS.md#f00-010--foundation-verification-delivery-2026-10-09). No new dependency or permission; original comments/user edits preserved. Technical mock foundation is locally verified for owner review, not production-ready or formally phase-accepted.
-
-**Next gate:** Owner review/acceptance of outstanding F00 deliveries and separate approval of F01-001 Dashboard Page Skeleton. Role-dashboard selection/permissions, metric scope and All Branches require applicable owner decisions before affected F01 work. Stop; no active next coding authorization.
-
----
-
-## F00-009 Approved Branding Delivery (2026-10-09)
-
-**Status:** IN_REVIEW â€” owner explicitly approved this scoped implementation; delivery/checks complete, acceptance pending. F00-004 and F00-008 implementation evidence confirmed; their owner acceptance remains pending and they are not DONE. Historical earlier-task statements below remain dated snapshots.
-
-Shared Academy/Theme contexts, isolated versioned branding storage, validated name/local raster logo/accessible HEX color, and sidebar/topbar integration delivered. Defaults: Academy Management System, graduation-cap fallback, existing teal. No Settings editor, new dependency, ERP feature or permission. Existing root/routes/auth/branch behavior preserved.
-
-**Checks:** PASS â€” 112 tests/9 files (83 existing +29 new), lint, build, local Edge responsive checks at 360/768/1024/1440px, branding persistence/fallback and keyboard/auth/route regressions. Initial lint and long-name overflow failures corrected and rerun. Actual CI/backend/production host/screen-reader checks NOT_RUN. [Exact files, contracts and evidence](PROGRESS.md#f00-009--academy-branding-delivery-2026-10-09).
-
-Stop after F00-009. Next planned F00-010 requires separate owner approval; acceptance of F00-009 and earlier unaccepted deliveries remains pending.
-
----
-
-## F00-001 Accepted / F00-008 Delivery (2026-10-09)
-
-**Owner decision:** F00-001 DONE â€” owner explicitly accepted recovered audit and current verification. Backend runtime/database and actual CI remain NOT_RUN; evidence limitations retained below. This supersedes prior IN_REVIEW/acceptance-pending snapshots.
-
-**F00-008:** IN_REVIEW â€” approved minimal mock service layer delivered; owner acceptance pending. F00-001 dependency satisfied. Separate versioned database, two fictional students/two courses, provisional id/branchId/name, async list/getById/create/update, validation, branch filtering and explicit data-preserving failures. No ERP pages/actions, backend, dependencies or new permissions.
-
-[Contracts, files and actual results](PROGRESS.md#f00-008--mock-data-service-delivery-2026-10-09). Current work ends after F00-008; next proposed F00-009 requires separate owner approval. Auth/session services remain separate and unchanged.
-
----
-
-## F00-001 â€” Audit Evidence Recovery and Reconciliation (2026-10-09)
-
-**Status:** IN_REVIEW â€” original audit evidence recovered and current repository checks recorded; owner acceptance pending.
-
-Original read-only F00-001 report and supporting command outputs were recovered from the local Codex session log, not from Git-tracked documentation. Current inspection/checks distinguish today's implemented frontend foundation from the original 256-placeholder baseline. [Sources, limitations and actual results](PROGRESS.md#f00-001--recovered-audit-and-current-reconciliation-2026-10-09).
-
-F00-008's missing-audit-evidence blocker is resolved. F00-001 is not marked DONE or owner-accepted; formal dependency acceptance remains pending owner review. The owner already supplied a narrowed F00-008 scope, but this reconciliation explicitly stops before its implementation. Owner acceptance/resume is the next gate; no F00-008 code was written.
-
-Historical BACKLOG/unauthorized statements below are superseded by this evidence record for F00-001 only; retained unchanged as history.
-
----
-
-## F00-007 â€” Approved Foundation Delivery (2026-10-09)
-
-**Status:** IN_REVIEW â€” approved minimal foundation implemented/verified; owner acceptance pending.
-
-Latest owner scope approves reusable role/permission helpers and accessible denied UI only. SECURITY section 6 matrix remains proposed; section 7.2 multi-role combination remains TBD. Neither is needed for the existing approved common `workspace.view` baseline. No ERP/sensitive grants, role union policy, Super Admin bypass, RoleRoute or module navigation implemented.
-
-Reuses F00-005/F00-006 constants, contexts, mock service/storage and branch controls. Adds shared PermissionGate/PermissionNotice and validated informational branch roles. [Files, libraries and actual checks](PROGRESS.md#f00-007--roles-and-permissions-foundation-evidence-2026-10-09).
-
-Current coding work: stopped after F00-007. Next proposed ticket F00-008 needs its own scoped approval; broader matrix/role-combination work requires explicit policy approval first. Earlier dated statuses below remain historical snapshots.
-
----
-
-## F00-006 â€” Branch Switcher Delivery (2026-10-09)
-
-**Status:** IN_REVIEW â€” approved frontend mock implementation; owner acceptance pending.
-
-Owner approved in-session topbar switching, centralized persistence/assignment validation, branch role refresh and stale UI invalidation. Reuses F00-005 providers, services, storage and guards; no duplicate branch store or new dependencies. Single authorized branch auto-selects; multiple branches can switch; zero/removed/invalid assignments fail safely. All Branches stays deferred and only `workspace.view` is granted.
-
-Existing user edits were preserved, including current public root text `Academy Managemnt System`; older Hi expectations were reconciled in routing tests without changing App.jsx. [Actual checks and exact files](PROGRESS.md#f00-006--branch-switcher-evidence-2026-10-09).
-
-Current coding work ends after this ticket. Next proposed ticket: F00-007, subject to separate approval of its scope/policies. No ERP/back-end implementation or production-security claim.
-
----
-
-## F00-005 â€” Approved Delivery (2026-10-09)
-
-**Title:** Mock Auth & Minimal Access Foundation.
-**Status:** IN_REVIEW â€” approved implementation and scoped checks complete; owner acceptance pending.
-**Current coding work:** None; stopped after F00-005.
-
-The owner's latest explicit approval supersedes the earlier blocked reconciliation proposal below. The approved scope is narrower than that proposal: only initial branch selection/minimum context and the common workspace permission were delivered. No full switcher, All Branches, generic role-combination policy or ERP features.
-
-Delivered: fictional account login/logout, validated restoration, AuthContext/minimum BranchContext, per-branch role arrays, automatic single-branch selection, explicit initial multi-branch selection, `/login`, `/select-branch`, protected `/workspace`, `/unauthorized`; public `/` Hi and existing 404 preserved. `workspace.view` is the only demo grant; all other permissions denied for every role.
-
-Six approved test dev dependencies installed. Final maintained suite: 34 tests in 3 files PASS on local Node 24.16.0 and pinned frontend CI runtime Node 22.22.2. Lint/build and four-width browser/navigation checks PASS. [Detailed evidence](PROGRESS.md#f00-005--completed-implementation-evidence-2026-10-09).
-
-F00-006/F00-007 remain separate backlog tickets; their remaining scope now reuses this foundation. Next coding requires separate approval. No backend or production auth implemented; hosted fallback and actual GitHub Actions execution remain NOT_RUN.
-
----
-
-## F00-005 â€” Scope Reconciliation (2026-10-09)
-
-**Requested task:** Mock Authentication & Branch Context.
-**Status:** BLOCKED â€” affected coding awaits owner approval of the reconciled scope.
-**Current work:** Read-only repository/document inspection and this approval proposal; no implementation or dependency installation.
-
-The owner expressly required reporting scope/dependency differences before affected coding. FEATURE_TICKETS currently assigns authentication to F00-005, branches to F00-006 and role/permissions to F00-007. The requested combined task overlaps all three. F00-005's listed dependency is broader F00-002, whose remaining auth/guard scope is still backlog; delivered F00-002A basic routing is available. SECURITY's role matrix and multi-role permission combination are proposals/TBD, not approved grants.
-
-### Concrete Proposed Approval Boundary
-
-- Extend F00-005 only with the requested minimal BranchContext/switcher and role/permission helpers; retain remaining F00-006/F00-007 work as backlog. Use delivered F00-002A/F00-003/F00-004 as the foundation; no declaration that their wider parent scope is complete.
-- Fictional demo account selection without passwords; four roles, per-branch role arrays, single-branch auto-selection, explicit multi-branch choice, validated session restoration, logout and user/branch invalidation.
-- Provisional demo grant: only `workspace.view` for valid signed-in users with an authorized active branch and at least one recognized assigned role. Unknown and all ERP/sensitive permissions remain denied, including for Super Admin. Do not infer a general multi-role union policy or academy-wide access. All Branches remains excluded pending an explicit demo policy.
-- Preserve public `/` showing Hi and standalone 404. Proposed foundation URLs: `/login`, `/select-branch`, `/workspace` (protected shell showing Hi), `/unauthorized`; add mock session/branch controls in the existing design. No ERP module routes.
-- Approve six necessary dev dependencies for maintained regression checks: Vitest, React Testing Library, its DOM peer, user-event, jest-dom and jsdom. No framework upgrades, production authentication or backend changes.
-
-[Compatibility evidence and planned verification](PROGRESS.md#f00-005--pre-implementation-findings-2026-10-09). Scope/permissions/route behavior and test-tool installation approval remain pending. No coding started; stop here until the requested approval arrives.
-
----
-
-## F00-004 â€” Latest Delivery State (2026-10-09)
-
-**Approved task:** Premium Responsive Design System.
-**Status:** IN_REVIEW â€” implementation and scoped verification complete; owner acceptance pending.
-**Current coding work:** None; stopped after F00-004. No next ticket authorized.
-
-The owner's explicit F00-004 request supersedes earlier draft/no-coding statements and DOC-SYNC-001's proposed-only visual alignment boundary. Previous records below remain historical snapshots.
-
-Delivered: reference-aligned teal/cool surfaces, self-hosted Plus Jakarta Sans, 256px desktop sidebar, 64px topbar, 12px cards, five shadcn-derived UI components, accessible Radix mobile drawer, reduced motion and preserved root/404/history behavior. No auth, dashboard logic, branch/session workflow or module routes added.
-
-[Actual checks and dependencies](PROGRESS.md#f00-004--verification-evidence-2026-10-09); [approved theme details](DESIGN.md#f00-004--approved-design-system-2026-10-09). Remaining work: owner review, maintained test infrastructure and deployed-host SPA fallback verification. Future implementation needs separate approval.
-
----
-
-## DOC-SYNC-001 â€” Latest Task State (2026-10-09)
-
-**Status:** DONE â€” documentation sync and reference review delivered.
-**Authorization:** Documentation only; no active coding ticket, package changes or commits.
-**Milestone:** F00 partially implemented; full foundation acceptance remains pending.
-
-This dated record supersedes earlier current-state and authorization statements retained below as historical planning. The owner's explicit F00-002A and F00-003 instructions authorized their limited scopes despite the older draft documentation gate. DOC-002's wider review is not claimed complete.
-
-| Ticket | Reported delivery | Remaining boundary |
-|---|---|---|
-| F00-002A | DONE â€” basic React Router routing; `/` displays Hi; centralized paths and accessible wildcard Not Found | Production host SPA fallback unconfigured/unverified; parent F00-002 auth/guard/Unauthorized/module-route scope remains deferred |
-| F00-003 | DONE â€” approved premium shell scope; reusable sidebar/topbar/page header, CSS tokens, responsive drawer and reduced motion | Neutral styling remains provisional; no auth, permissions, branch logic or dashboard/module implementation |
-
-Installed in those implementation tickets: `react-router-dom` 7.18.4 for AppRouter and NotFoundPage; `lucide-react` 1.54.0 for Sidebar and Header. No libraries installed during DOC-SYNC-001.
-
-Prior execution reports recorded lint, build and scoped routing/layout/browser checks as PASS. Automated project test suites are NOT_CONFIGURED; deployment fallback verification is NOT_RUN. Those implementation checks were not rerun during this documentation task. See [the detailed progress evidence](PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09).
-
-The Lovable reference was accessible in Edge. Verified observations and proposed differences are in [the design review](DESIGN.md#doc-sync-001--lovable-reference-review-2026-10-09). Current authorization ends with this report; proposed visual changes require a separately approved ticket. No next coding ticket has started.
-
----
-
-## 1. Purpose
-
-This document manages the currently authorized work and the near-term task backlog for the Academy Management ERP.
-
-It identifies:
-
-- The current active task.
-- Task ownership and scope.
-- Authorized actions.
-- Files permitted to change.
-- Dependencies.
-- Blockers.
-- Acceptance criteria.
-- Required verification.
-- Next planned work.
-
-This document is the operational task register for Codex, Antigravity and authorized developers.
-
-It does not replace FEATURE_TICKETS.md, which owns detailed implementation tickets.
-
-## 2. Mandatory Task Rules
-
-1. Work only on an explicitly authorized task.
-2. Read AGENTS.md and the relevant approved documentation before modifying code.
-3. Inspect current repository status before changes.
-4. Do not start multiple major implementation tickets simultaneously.
-5. Do not perform unrelated changes.
-6. Preserve existing working files.
-7. Do not invent missing business requirements.
-8. Do not implement unresolved security-sensitive functionality.
-9. Run applicable checks.
-10. Record the actual outcomes.
-11. Update PROGRESS.md after verification.
-12. Stop before the next unapproved task.
-
-A planned task is not automatically an authorized task.
-
-## 3. Task Status Definitions
-
-| Status | Meaning |
-|---|---|
-| BACKLOG | Planned, not approved |
-| READY | Approved and dependencies satisfied |
-| IN_PROGRESS | Authorized work in progress |
-| BLOCKED | Cannot continue until a dependency is resolved |
-| IN_REVIEW | Work awaiting verification or acceptance |
-| DONE | Work verified and accepted |
-| DEFERRED | Intentionally postponed |
-| CANCELLED | Task cancelled by authorized decision |
-
-Task statuses must reflect actual evidence.
-
----
-
-# 4. Historical Active Task â€” DOC-002
-
-**Task ID:** DOC-002
-**Title:** Review and Reconcile ERP Documentation
-**Type:** Documentation
-**Status:** IN_PROGRESS â€” Project Owner Review
-**Priority:** P0
-**Milestone:** M0
-**Implementation Authorization:** Documentation only
-**Application Coding Authorization:** None
-
-### 4.1 Goal
-
-Review, improve and reconcile the project documentation before approving frontend implementation tickets.
-
-The purpose is to establish a consistent, professional specification for:
-
-- Product requirements.
-- System behavior.
-- Technical architecture.
-- Visual design.
-- Database modeling.
-- Security.
-- Frontend integration.
-- Engineering quality.
-- Feature planning.
-- Project decisions.
-- Verified progress.
-
-### 4.2 Current Scope
-
-- Review the existing documentation drafts.
-- Preserve confirmed project decisions.
-- Expand incomplete documentation where requested.
-- Identify contradictions between documents.
-- Maintain unresolved items as TBD.
-- Ensure AI-agent instructions reference authoritative specifications.
-- Prepare the project for controlled F00 frontend development.
-
-### 4.3 Allowed Files
-
-Documentation files under:
-
-`docs/`
-
-And, when specifically authorized:
-
-`AGENTS.md`
-
-`README.md`
-
-### 4.4 Prohibited Changes
-
-During DOC-002:
-
-- Do not modify React application functionality.
-- Do not modify Express application functionality.
-- Do not create MongoDB collections.
-- Do not implement authentication.
-- Do not add dependencies.
-- Do not perform destructive refactoring.
-- Do not deploy the application.
-- Do not begin F00/F01 feature implementation.
-- Do not modify Git history or discard user changes.
-
-### 4.5 Completion Criteria
-
-DOC-002 may be marked DONE when:
-
-1. Required documentation exists.
-2. Relevant documents contain substantive requirements.
-3. Confirmed, proposed, TBD and deferred decisions are distinguishable.
-4. Cross-document contradictions have been reviewed.
-5. Markdown links have been checked.
-6. The master AI-agent instructions reference the correct documents.
-7. Major blockers are recorded.
-8. The project owner accepts the documentation baseline.
-9. Actual repository changes are verified.
-10. PROGRESS.md is updated.
-
----
-
-# 5. Documentation Review Tracker
-
-The following tracker records draft preparation and review needs.
-
-**Important:** "Expanded draft provided" does not establish that the updated content has been saved, committed or formally approved.
-
-| Document | Review State |
-|---|---|
-| PRD.md | Expanded draft provided |
-| SYSTEM_DESIGN.md | Detailed review pending |
-| ARCHITECTURE.md | Expanded draft provided |
-| ERD.md | Expanded draft provided |
-| DESIGN.md | Expanded draft provided |
-| SECURITY.md | Expanded draft provided |
-| FRONTEND_INTEGRATION.md | Expanded draft provided |
-| RULES.md | Expanded draft provided |
-| FEATURE_TICKETS.md | Expanded draft provided |
-| MEMORY.md | Expanded draft provided |
-| PROGRESS.md | Expanded draft provided |
-| TASKS.md | Current revised draft |
-| docs/README.md | Review pending |
-| AGENTS.md | Review pending |
-| Root README.md | Review if required |
-
-### Review Notes
-
-- Documents must be checked for consistency.
-- Proposed technical decisions must not be mislabeled as confirmed.
-- Existing approved requirements must not be silently overwritten.
-- No implementation-ready status should be assigned without proper approval.
-
----
-
-# 6. Historical Task â€” DOC-001
-
-**Title:** Initial Documentation Scaffolding
-**Status:** Previously Reported Complete â€” Historical
-**Date:** 2026-10-09
-
-### Previously Reported Work
-
-- Inspected the initial repository structure.
-- Preserved existing introductory comments.
-- Prepared initial PRD and System Design drafts.
-- Created documentation scaffolds.
-- Established documentation index and agent guidance.
-- Checked required sections and local Markdown links.
-- Reported preservation of application and workflow files.
-
-### Verification Boundary
-
-These are previously reported results from the initial documentation task.
-
-This TASKS.md revision does not independently rerun the repository checks.
-
-Do not reinterpret historical documentation work as implementation of ERP features.
-
----
-
-# 7. Historical Blockers and Dependencies â€” Before F00 Delivery
-
-## BLOCK-001 â€” System Design Review
-
-**Status:** OPEN
-
-SYSTEM_DESIGN.md requires detailed review against the PRD and proposed data relationships.
-
-## BLOCK-002 â€” Agent Instructions Review
-
-**Status:** OPEN
-
-AGENTS.md must be reviewed to ensure Codex and Antigravity follow the documentation, ticket boundaries and mandatory quality gates.
-
-## BLOCK-003 â€” Cross-Document Consistency
-
-**Status:** OPEN
-
-Compare:
-
-- PRD.md
-- SYSTEM_DESIGN.md
-- ARCHITECTURE.md
-- ERD.md
-- DESIGN.md
-- SECURITY.md
-- FRONTEND_INTEGRATION.md
-- RULES.md
-- FEATURE_TICKETS.md
-
-Identify conflicting terminology, responsibilities, IDs, permissions, statuses and data contracts.
-
-## BLOCK-004 â€” Role Permission Decisions
-
-**Status:** OPEN
-
-Detailed role permissions are not yet approved.
-
-Before dependent frontend tickets:
-
-- Confirm necessary navigation visibility.
-- Confirm approved role-specific dashboard content.
-- Define an explicitly approved mock permission baseline.
-
-Production permission approval will be required before protected backend operations.
-
-## BLOCK-005 â€” Visual Design Verification
-
-**Status:** OPEN
-
-Exact values from the Lovable visual reference require inspection or approved screenshots.
-
-## BLOCK-006 â€” Repository Audit
-
-**Status:** REQUIRES FRESH VERIFICATION
-
-Before implementation, inspect:
-
-- Existing Client structure.
-- Installed frontend dependencies.
-- Existing working components.
-- Existing routing and styling.
-- Available test scripts.
-- Git status.
-- Current build/lint results.
-
-Do not assume historical repository observations remain current.
-
----
-
-# 8. Near-Term Documentation Backlog
-
-| Task ID | Description | Status |
-|---|---|---|
-| DOC-003 | Review SYSTEM_DESIGN.md | BACKLOG |
-| DOC-004 | Review AGENTS.md | BACKLOG |
-| DOC-005 | Review docs/README.md and root README.md | BACKLOG |
-| DOC-006 | Perform cross-document consistency audit | BACKLOG |
-| DOC-007 | Resolve essential F00/F01 blockers | BACKLOG |
-| DOC-008 | Approve documentation baseline | BACKLOG |
-| DOC-009 | Prepare and approve first executable F00 ticket | BACKLOG |
-
-These tasks are planning entries.
-
-The project owner must authorize work before an agent performs tasks outside its current scope.
-
----
-
-# 9. Frontend Development Backlog
-
-The frontend will follow the agreed phase sequence.
-
-| Phase | Module | Task Status |
-|---|---|---|
-| F00 | Foundation | IN_PROGRESS â€” limited routing/layout delivered |
-| F01 | Dashboard | BACKLOG |
-| F02 | Admissions | BACKLOG |
-| F03 | Students | BACKLOG |
-| F04 | Courses & Batches | BACKLOG |
-| F05 | Faculty & Classes | BACKLOG |
-| F06 | Fees | BACKLOG |
-| F07 | Finance & Payroll | IN_REVIEW |
-| F08 | Demo Classes | BACKLOG |
-| F09 | Assets | BACKLOG |
-| F10 | Reports | BACKLOG |
-| F11 | Branch Management | BACKLOG |
-| F12 | User Management | BACKLOG |
-| F13 | Settings & Integrated Frontend QA | BACKLOG |
-
-### Development Rules
-
-- F00 establishes the shared application foundation.
-- F01 implements the role-aware Dashboard.
-- Subsequent phases implement individual modules.
-- Each phase is divided into smaller feature tickets.
-- A module must not begin merely because it appears in the roadmap.
-- All implementation must follow FEATURE_TICKETS.md.
-- Relevant tests must pass before phase acceptance.
-
-Basic role and branch infrastructure belongs in F00 even though full administrative screens are scheduled later.
-
----
-
-# 10. Historical Proposed First Frontend Task
-
-**Ticket:** F00-001
-**Title:** Existing Frontend Project Audit
-**Status:** BACKLOG â€” Not Yet Authorized
-**Priority:** P0
-**Code Modification:** Not required for initial audit
-
-### Intended Scope
-
-After approval:
-
-1. Inspect existing React project.
-2. Identify routing and styling approaches.
-3. Identify dependencies.
-4. Inspect mock data or existing services.
-5. Record project structure.
-6. Check Git status.
-7. Run available baseline build and lint checks.
-8. Identify changes needed for F00 foundation.
-9. Report findings.
-10. Stop before implementing F00-002.
-
-### Acceptance Criteria
-
-- Existing project behavior is understood.
-- Existing source files are preserved.
-- Baseline test/build results are recorded.
-- Potential conflicts are reported.
-- No unrelated feature is implemented.
-
-F00-001 is a proposed next development task, not current permission to modify the application.
-
----
-
-# 11. Task Execution Protocol
-
-Every authorized task must follow this sequence.
-
-### Step 1 â€” Identify the Task
-
-Read the exact task ID, scope and approval.
-
-### Step 2 â€” Read Documentation
-
-Read AGENTS.md, RULES.md and the relevant authoritative specifications.
-
-### Step 3 â€” Inspect Existing Work
-
-Check affected files, project state, dependencies and existing functionality.
-
-### Step 4 â€” Plan
-
-Identify expected file changes, risks and required tests.
-
-### Step 5 â€” Execute
-
-Perform only the authorized scope.
-
-### Step 6 â€” Verify
-
-Run relevant checks and document results.
-
-### Step 7 â€” Update Tracking
-
-Update TASKS.md, PROGRESS.md and applicable ticket status.
-
-### Step 8 â€” Stop
-
-Do not automatically proceed to an unapproved ticket.
-
----
-
-# 12. Task Completion Report
-
-At the end of each task, the assigned agent must report:
-
-**Task ID:** Identifier
-
-**Task Title:** Name
-
-**Status:** Actual status
-
-**Implemented/Reviewed:** What was completed
-
-**Changed Files:** Exact affected paths
-
-**Tests or Checks:** Actual commands and results
-
-**Known Issues:** Remaining defects or blockers
-
-**Documentation Updated:** Relevant files
-
-**Next Dependency:** What must happen next
-
-**Approval Required:** Yes or No
-
-The report must contain verified facts rather than invented progress.
-
----
-
-# 13. Client Change Requests
-
-The academy client may request small adjustments during development.
-
-When a change is received:
-
-1. Record the request.
-2. Determine the affected requirements.
-3. Assess affected pages, services, models and APIs.
-4. Obtain necessary approval.
-5. Update the relevant authoritative documentation.
-6. Create or revise a ticket.
-7. Implement the approved change.
-8. Run relevant regression tests.
-9. Record the result.
-
-Do not interpret a small change as permission to redesign unrelated modules.
-
----
-
-# 14. Historical Approval Boundary â€” Before Explicit F00 Authorizations
-
-### Authorized
-
-Documentation review and revision under DOC-002, subject to the project owner's instructions.
-
-### Not Yet Authorized
-
-- Implementation of F00 tickets.
-- Dashboard coding.
-- Other frontend feature implementation.
-- Backend business API development.
+- Backend module foundations.
 - MongoDB schema implementation.
-- Production deployment.
+- Real authentication and session management.
+- Role-based and branch-level authorization.
+- User and branch APIs.
+- Academic APIs.
+- Admissions/enrollment transaction workflows.
+- Fee/invoice/payment APIs.
+- Finance APIs.
+- Reporting APIs.
+- Audit logging.
+- Integration and security tests.
+- Deployment configuration.
+- Monitoring and backups.
 
-### Client Approval
+Backend tickets must not be inferred as approved implementation instructions.
 
-The general Academy ERP proposal was accepted by the client according to the project owner's report.
-
-This does not automatically authorize every unconfirmed technical or business rule.
-
----
-
-# 15. Open Questions (TBD)
-
-1. Has the latest revised documentation been saved in the repository?
-2. Has SYSTEM_DESIGN.md been fully reviewed?
-3. Has AGENTS.md been approved?
-4. Have cross-document conflicts been resolved?
-5. What is the approved minimum F00 permission baseline?
-6. Which Lovable screenshots or styles are authoritative?
-7. Who approves individual tickets?
-8. What testing infrastructure is currently available?
-9. Which client business rules must be resolved for F01?
-10. When will the project owner authorize F00-001?
-
-Unresolved questions must remain visible.
+They will require approved ARCHITECTURE.md, ERD.md, SECURITY.md and FRONTEND_INTEGRATION.md specifications.
 
 ---
 
-# 16. Related Documents
+# 12. Cross-Module Integration Rules
+
+All ERP modules must interact through shared data contracts.
+
+Examples:
+
+### Admission → Enrollment
+
+An approved admission may result in an enrollment according to confirmed business rules.
+
+### Enrollment → Fees
+
+An enrollment may create or associate approved fee obligations.
+
+### Fees → Finance
+
+Recorded payments must be reflected consistently in financial summaries.
+
+### Teachers → Classes
+
+Teacher dashboards must derive their assignments from approved teaching relationships.
+
+### Branches → Reports
+
+Branch reporting must use consistent branch identifiers and applicable access restrictions.
+
+### Settings → UI
+
+Academy branding must be sourced from centralized settings.
+
+Avoid duplicating independent versions of authoritative records.
+
+---
+
+# 13. Testing and Quality Gates
+
+For each ticket, apply relevant checks:
+
+- Build succeeds.
+- Relevant lint checks succeed.
+- Required component behavior works.
+- Input validation works.
+- Empty states work.
+- Error handling works.
+- Branch-scoped views behave as specified.
+- Role-based UI behavior matches approved permissions.
+- Mock data follows agreed contracts.
+- No unrelated features regress.
+- Relevant accessibility checks are completed.
+- Documentation accurately reflects progress.
+
+If a test fails, record the failure.
+
+Do not mark a feature DONE until the defined acceptance criteria are satisfied or an explicitly approved exception is documented.
+
+---
+
+# 14. Change Request Management
+
+The client may request minor design or workflow changes after initial proposal approval.
+
+Changes must follow this process:
+
+1. Record the client request.
+2. Identify the affected requirement.
+3. Determine whether the request is a correction, enhancement or change of scope.
+4. Assess affected modules and data contracts.
+5. Update the authoritative documentation after approval.
+6. Create or revise affected tickets.
+7. Implement only the approved changes.
+8. Run relevant regression tests.
+9. Update PROGRESS.md and MEMORY.md.
+
+Do not redesign the complete application in response to a small approved change.
+
+---
+
+# 15. AI Agent Work Protocol
+
+Before implementing a ticket:
+
+1. Read AGENTS.md.
+2. Read applicable approved documents.
+3. Read the selected ticket.
+4. Inspect the existing code.
+5. Identify relevant files.
+6. Confirm dependencies and blockers.
+7. Explain the implementation plan.
+
+During implementation:
+
+1. Work only within the approved scope.
+2. Prefer small and readable changes.
+3. Follow existing architectural patterns.
+4. Avoid duplicate or unused code.
+5. Avoid unnecessary dependencies.
+6. Preserve previously completed functionality.
+7. Do not use unapproved placeholder rules as real business decisions.
+
+After implementation:
+
+1. Run relevant automated checks.
+2. Record actual results.
+3. Summarize changed files.
+4. Explain any unresolved defects.
+5. Update current task status.
+6. Stop and wait for the next approved ticket.
+
+---
+
+# 16. Definition of Done
+
+A ticket is DONE only when:
+
+- Approved requirements are satisfied.
+- Required functionality is verified.
+- Relevant tests pass.
+- No unauthorized scope changes were made.
+- No unresolved blocking defects remain.
+- Code follows project conventions.
+- Known limitations are documented.
+- Related docs are updated.
+- The implementation has been reviewed and accepted.
+
+Visual completion alone is insufficient.
+
+---
+
+# 17. Release and Milestone Planning
+
+### Milestone M0 — Documentation Readiness
+
+Approved requirements, architecture, design and relevant permission specifications.
+
+### Milestone M1 — Frontend Foundation
+
+F00 foundation completed and tested.
+
+### Milestone M2 — Dashboard
+
+F01 role-specific dashboards completed and tested.
+
+### Milestone M3 — Core Academic Frontend
+
+Admissions, Students, Courses/Batches and Faculty/Classes implemented according to approved tickets.
+
+### Milestone M4 — Financial Frontend
+
+Fees and Finance mock workflows completed and tested.
+
+### Milestone M5 — Operational Frontend
+
+Demo Classes, Assets, Reports, Branch Management, User Management and Settings.
+
+### Milestone M6 — Integrated Frontend Review
+
+Cross-module mock-data consistency, navigation, forms and regressions verified.
+
+### Milestone M7 — Backend Integration
+
+Real secure APIs, persistence and authorization.
+
+### Milestone M8 — Client Acceptance and Deployment
+
+Integrated testing, controlled client review and approved production preparation.
+
+Milestone completion and dates must be based on verified work, not assumed progress.
+
+---
+
+# 18. Open Questions (TBD)
+
+1. Who approves each completed development phase?
+2. Which precise F00 design values are approved?
+3. Which role permissions are finalized?
+4. What frontend testing framework is already installed or approved?
+5. What is the minimum supported viewport size?
+6. Which modules must be prioritized if delivery time becomes constrained?
+7. Which admission status transitions are final?
+8. What are the fee and discount calculation rules?
+9. Which reports and export formats are required?
+10. What is the approved backend development start condition?
+11. What are the expected data volumes?
+12. What are the final acceptance and release criteria?
+
+These questions must remain unresolved until approved.
+
+---
+
+# 19. Related Documents
 
 - [Documentation Index](README.md)
 - [Product Requirements](PRD.md)
 - [System Design](SYSTEM_DESIGN.md)
-- [Technical Architecture](ARCHITECTURE.md)
-- [Database Design](ERD.md)
-- [Visual Design](DESIGN.md)
-- [Security](SECURITY.md)
-- [Frontend Integration](FRONTEND_INTEGRATION.md)
+- [Technical Architecture](../01-ARCHITECTURE/ARCHITECTURE.md)
+- [ERD](../01-ARCHITECTURE/ERD.md)
+- [Visual Design](../04-FRONTEND/DESIGN.md)
+- [Security](../SECURITY.md)
+- [Frontend Integration](../04-FRONTEND/FRONTEND_INTEGRATION.md)
 - [Engineering Rules](RULES.md)
-- [Feature Tickets](FEATURE_TICKETS.md)
-- [Project Memory](MEMORY.md)
-- [Verified Progress](PROGRESS.md)
+- [Current Tasks](TASKS.md)
+- [Project Decisions](MEMORY.md)
+- [Progress](PROGRESS.md)
 
 ---
 
-## 17. Historical Task Summary â€” Before F00 Delivery
+**Document Status:** DRAFT — Pending Review
+**Approved Implementation Tickets:** Implemented mock F00 scopes owner-accepted DONE, parent routing reconciled with deferred module routes. F01-001 explicitly authorized and delivered IN_REVIEW; no following ticket authorized. Previous footer snapshot: F00-002A/F00-003 delivered, F00-004 IN_REVIEW; historical original draft baseline: none yet.
 
-**Active Task:** DOC-002 â€” Documentation Review and Reconciliation
+The presence of a ticket in this register does not authorize AI coding agents to begin work. Only a specifically approved READY ticket may be implemented.
 
-**Current Stage:** Documentation Preparation
+## F02-003 owner-approved extension - branch sequences and DEMO CRUD (2026-10-10)
 
-**First Planned Development Ticket:** F00-001 â€” Existing Frontend Project Audit
+Active authorized scope: complete existing popup/shared form; independent durable Student and Admission counters per branch; accessible View/Edit/Delete actions; atomic linked update and confirmed deletion. Previous provisional academy-wide numbering is SUPERSEDED for new allocations, without renumbering existing IDs. Preserve original data and counters during migration. Delete only a same-branch reciprocal Provisional student with explicit admission-flow ownership; legacy ownership cannot be inferred from status alone and is denied with an explicit error. No permissions, backend, fees, enrollment or dependency changes. Implementation in progress; owner acceptance pending.
 
-**Next Major Development Phase:** F00 â€” Frontend Foundation
+**F02-003 extension delivery status:** IN_REVIEW. Above in-progress scope entry is now implemented with final 174/174 regression evidence; owner acceptance is pending.
 
-**Current Application Implementation Authorization:** None
+### F02-003 legacy correction delivery evidence (2026-10-10)
 
-**Required Next Action:** Finish documentation review and approve the first executable frontend ticket.
+IN_REVIEW, not owner-accepted DONE. Latest unique same-branch Provisional-link deletion rule implemented without requiring newer ownership markers. Final 176/176 tests, lint/build and isolated local browser legacy CRUD/refresh/branch/keyboard checks PASS. Existing warnings remain; CI/deployment/backend/formal accessibility NOT_RUN. No dependency, backend or next-ticket work. [Current verified evidence](PROGRESS.md#f02-003-simple-crud-completion---legacy-deletion-correction-2026-10-10).
 
----
+### F02-003 gapless display correction delivery (2026-10-10)
 
-**Document Status:** ACTIVE â€” Task Register
+IN_REVIEW, owner acceptance pending. Latest mutable gapless display serial requirement implemented through response-only projection; prior visible never-reuse rule is SUPERSEDED, while permanent IDs/references/counters remain intact. Full 186/186 tests, lint/build and local Edge examples/filtering/refresh/branch checks PASS. No dependencies or next-ticket work. [Detailed evidence](PROGRESS.md#f02-003-gapless-branch-display-numbering-correction-2026-10-10).
 
-**Governing Principle:** One clearly authorized task, focused execution, verifiable results and controlled progression.
+## F03-001 limited DEMO Students Directory (2026-10-11)
 
-## F03-001 limited directory order exception (2026-10-11)
+**Status: IN_REVIEW; owner acceptance pending.** Explicit owner-approved order exception implements this read-only directory before F02-004. Full enrollment dependency is deferred only for this listing scope. F02-002/F02-003 acceptance remains pending; no following ticket is authorized.
 
-CONFIRMED owner authorization: read-only DEMO Students Directory before F02-004; defer enrollment dependency only for listing. /students and sidebar now display saved branch students, gapless serials and linked Admission references. Missing legacy status is Active presentation only; stored records unchanged by directory reads. Existing workspace.view only; no production permissions. IN_REVIEW, acceptance pending. F02-002/F02-003 acceptance remains pending. Final 198/198 tests (19 files), lint/build and local Edge four-viewport/keyboard/admission-link/refresh/branch/logout checks PASS; actual CI/deployment/backend/formal accessibility NOT_RUN. No dependencies installed. [Full evidence](PROGRESS.md#f03-001-limited-demo-students-directory-2026-10-11). Next F02-004 requires separate approval; all remaining tickets preserved.
+**Implemented:** /students under existing workspace.view ProtectedRoute; working Students sidebar navigation; responsive teal directory using existing layout/Card/Badge/Button. Active branch records come from studentService -> mockApi -> existing version-2 mock database/localStorage. Display serial, name, available status and current linked Admission reference use existing response projections; no duplicate dataset. Legacy missing status appears Active only in presentation. No student actions, search/filter/profile/enrollment, backend or permissions added.
+
+**Data safety:** student list/getById validate canonical active mock user/branch before and after asynchronous reads; wrong branch, logout or changed identity rejects INVALID_SCOPE. Scope-keyed protected content, result scope tagging and effect cleanup prevent stale UI. Read-specific preserveSavedRecords skips persistence of legacy normalization while validating/projection runs in memory; missing storage still seeds once. Existing writes, IDs, reciprocal links, historical references/counters and auth storage are preserved. Frontend checks are DEMO UX safeguards, not production security.
+
+**MODIFIED source/test files:** Client/src/pages/Students/StudentsPage.jsx (loading/empty/error/retry and scoped directory); Client/src/components/Students/StudentsTable.jsx (semantic responsive table, mobile status, saved references); Client/src/services/studentService.js (guarded read contracts; existing create/update retained); Client/src/mock/mockDatabase.js (optional read-only normalization persistence control); Client/src/routes/routePaths.js (STUDENTS); Client/src/routes/AppRouter.jsx (protected route); Client/src/components/Layout/Sidebar.jsx (Students link); Client/src/mock/mockDatabase.test.js (existing storage contracts exercise adapter without newly required UI sessions). Original explanatory comments retained.
+
+**CREATED:** Client/src/pages/Students/StudentsPage.test.jsx (12 regression cases); artifacts/f03-001/students-360.png, students-768.png, students-1024.png, students-1440.png (isolated browser screenshots). Documentation modified: TASKS.md, PROGRESS.md, FEATURE_TICKETS.md, MEMORY.md, SECURITY.md, ERD.md, FRONTEND_INTEGRATION.md.
+
+**Actual checks:** Initial default-concurrency baseline 178 PASS / 8 FAIL (186 tests), failures in existing Admissions UI tests; an intermediate test edit had a duplicate import and legacy-normalization assertion failure, both corrected. Final complete suite with --maxWorkers=2: 198/198 tests, 19/19 files PASS, including all Admissions regressions; 12 new Students tests. Targeted Students/storage: 41/41 PASS. Final lint PASS, zero errors and one existing Dashboard unused-disable warning. Final production build PASS (Vite 8.3.3), existing >500 kB bundle warning. No baseline failure silently treated as PASS.
+
+**Browser PASS:** isolated headless Edge local production preview, actual Admissions popup create -> keyboard Students sidebar navigation -> linked Provisional row; legacy Active presentation; exact stored bytes unchanged on reload; active branch isolation/return; logout/anonymous redirect; keyboard skip-to-content; no overflow at 360/768/1024/1440px; no runtime exceptions. Initial browser harness needed desktop viewport and readiness checks; corrected before final run. Sandbox Edge launch failed with GPU process errors; isolated browser launch outside sandbox succeeded. Actual CI, production deployment, backend runtime/security, formal accessibility certification, screen-reader and cross-browser checks NOT_RUN.
+
+**Libraries verified installed; no installs/upgrades:** React 19.3.0 (StudentsPage/StudentsTable); Router 7.18.4 (AppRouter/Sidebar); Tailwind 4.3.3 and Plus Jakarta Sans 5.3.0 (existing theme/font); Lucide 1.54.0 (StudentsPage and existing sidebar); shared shadcn-derived Card/Badge/Button (directory), Radix Dialog 1.2.0 only reused indirectly in existing layout/Admissions. Tests: Vitest 5.0.3, React Testing Library 16.3.3, user-event 14.6.7, jest-dom 7.0.1 and jsdom 30.1.2.
+
+Screenshots: [360px](../../artifacts/f03-001/students-360.png), [768px](../../artifacts/f03-001/students-768.png), [1024px](../../artifacts/f03-001/students-1024.png), [1440px](../../artifacts/f03-001/students-1440.png).
+
+**Next:** owner review F03-001; normal next F02-004 Program and Batch Selection needs separate rules/scope approval. F02-005 Admission Status Workflow, F02-006 Admission-to-Enrollment Mock Integration and F02-007 Admission Module Testing remain separate. F03-002 Student Search and Filtering, F03-003 Student Profile, F03-004 Student Editing and Validation, F03-005 Student Enrollment History, F03-006 Student Fee/Attendance Views and F03-007 Students Module Testing remain planned/unimplemented. Stop after this task.
 ## F02-004 approved DEMO course/batch selection (2026-10-12)
 
 CONFIRMED scope: branch-specific mock courses retained; Course required, Batch optional; minimal batch {id, branchId, courseId, name}; same shared popup/standalone form; admission courseId and optional preferredBatchId with legacy course text retained. No automatic name-to-ID mapping. Safe additive version-3 envelope behind existing mock storage key adds minimum batches from saved courses, preserves valid records/links/counters and never reseeds existing valid batches. New/changed selections validate branch/course/batch relations atomically; unchanged legacy/unresolved references may survive unrelated edits and display explicit unresolved labels. Session/branch guards remain DEMO UX safeguards; workspace.view unchanged. No backend, permissions, fees/enrollment/schedules/capacity rules or dependencies added.
@@ -1016,79 +1781,139 @@ CONFIRMED owner approval: Pending -> Approved/Rejected only, explicit confirmati
 
 Implemented IN_REVIEW; acceptance pending, as are F02-002/F02-003/F02-004/F03-001. Existing version-3 storage accepts optional embedded statusHistory without reset/backfill; current identity/branch and policy validated at service/database boundaries, stale/conflicting operations fail without writes. Final 248/248 tests (23 files; 25 new), lint/build and local Edge status/keyboard/four-viewport/persistence checks PASS; existing warnings remain. Actual CI/deployment/backend/formal accessibility NOT_RUN. [Exact files/libraries/history contract/evidence](PROGRESS.md#f02-005-admission-status-workflow-delivery-2026-10-12). Next F02-006 Admission-to-Enrollment Mock Integration requires separate scope and owner approval. Stop after F02-005.
 
-## F02-005 final Super Admin action authority (2026-10-12)
+## F02-005 authority correction — owner matrix reconciliation (2026-10-12)
 
-Owner-confirmed implementation is IN_REVIEW: active-branch Super Admin has View/Create/Edit/Approve/Reject/Pending Delete; Receptionist has View/Create/Edit; Owner has View; Teacher has no Admissions access. Named permissions are enforced in the UI, service and mock database without a broad bypass. Decided records remain read-only/non-deletable; linked Students remain Provisional; status history and safe Pending linked-pair deletion remain atomic. Full regression 246/246 tests in 23 files PASS, lint PASS with one existing DashboardPage warning, and production build PASS with the existing bundle-size warning. Manual browser/responsive recheck for this final authority correction, CI, deployment, backend security and formal accessibility certification are NOT_RUN. No dependency or backend change. Owner acceptance remains pending; do not mark DONE.
 
-## F03-001 through F03-007 Students Module (2026-10-12)
+## F02-005 Pending Delete owner extension (2026-10-12)
 
-**Status:** IN_REVIEW for owner acceptance; no F04 work started.
+CONFIRMED: the owner's follow-up request enables Delete in the three-dots Admissions Actions menu for Super Admin in the active authorized branch, following the preceding Super Admin-only proposal. Receptionist/Owner/Teacher and unresolved multi-role assignments remain denied. Approve/Reject authority remains unresolved and denied. Only Pending admissions can be deleted; decided records remain read-only. Existing confirmation/Cancel/Escape, pending-submit lock, error/retry, atomic linked Provisional deletion, unrelated-record preservation and response-only gapless renumbering are reused. Permanent IDs and historical counters are retained. No storage reset, backend or dependency change.
 
-Students directory now shows saved selected-branch DEMO students with stable branch serials, linked admission references, search/status/course/batch filters, sorting, counts and clear-filters behavior. Student row/name/actions open the immutable-ID, branch-scoped profile. Profile shows student/guardian/academic/admission data, enrollment history and Active status, plus truthful no-fee/no-attendance-data states. Authorized Super Admin and Receptionist can edit saved name and linked admission details; IDs, status, branch, course, batch and enrollment references remain protected. Owner remains read-only and Teacher denied by the existing permission contract. Empty/loading/error/retry states and responsive mobile/table layouts are present.
+**Status: IN_REVIEW; owner acceptance pending.** Full tests PASS: 240/240 in 23 files. Lint PASS (0 errors, 1 existing DashboardPage warning); build PASS (existing large-chunk warning). Manual browser viewport inspection, CI, deployment and backend/security verification NOT_RUN. This entry supersedes historical Pending Delete denial only; previous evidence and explanatory comments are retained.
 
-Targeted validation: 72/72 tests across 5 files PASS; focused ESLint PASS; one production build PASS (3010 modules). Existing bundle-size warning (>500 kB) remains. Browser viewport/responsive manual QA NOT_RUN. No packages installed. Fee/attendance data views remain empty until approved data services exist. Owner acceptance pending.
+## F03-001 through F03-007 Students Module — IN_REVIEW (2026-10-12)
 
-## F05-001 through F05-007 Faculty & Classes (2026-10-12)
+Owner-approved F03 master scope implemented in the existing DEMO frontend. Directory search/filter/sort is branch-scoped and keeps stable serials. Profile uses immutable IDs and exposes saved student/admission/academic data, enrollment history, Active status, and honest empty fee/attendance sections. Student editing is limited to name and available linked admission identity/guardian details; immutable identifiers, status, branch, course, batch and enrollment membership cannot be edited. Existing permission rules remain: Super Admin and Receptionist edit, Owner view only, Teacher denied. Targeted tests 72/72 PASS, ESLint PASS and one production build PASS. Manual responsive browser QA, CI/backend/production checks and formal accessibility certification NOT_RUN. Owner acceptance pending; F04 is not started.
 
-**Status:** IN_REVIEW; owner acceptance pending. Implemented only in isolated branch `feature/f05-faculty-classes` from baseline `b26c888014c018678f23e2ef6e992bd804211f0b`.
 
-Branch-scoped directory lists explicit Teacher role accounts; profile exposes only saved account identity and honest empty professional/assignment/schedule sections. Subject and teacher-batch writes remain blocked: subject model, assignment granularity and write authority are unresolved. Class schedule awaits the shared F04 timetable contract. Class roster displays only same-branch Active Enrollment → Student → Batch links; Teacher class access remains deny-by-default until verified assignments and record policy exist.
+**Status: IN_REVIEW; owner acceptance pending.** The owner-provided module matrix supersedes the earlier Owner/Super Admin status-authority interpretation. Confirmed Admissions access is now Super Admin View/Create/Edit, Receptionist View/Create/Edit, Owner View only and Teacher None. Approve/Reject and Pending Delete are proposed for Super Admin only but remain unconfirmed and therefore denied to every role. Decided records remain read-only. Existing status history, linked Provisional students, branch isolation and saved localStorage data are preserved. No broad Super Admin bypass, All Branches policy or multi-role union was introduced.
 
-Targeted tests: 34/34 PASS across 5 files (F05 services/UI, permissions, F02 enrollment regression and auth routes). Focused ESLint PASS. One production build PASS (3014 modules); existing >500 kB bundle warning remains. No package manifest changes; locked dependencies restored in this separate worktree. Browser/responsive manual QA NOT_RUN. No commit, merge or push. F04 shared merge surfaces: `Client/src/routes/AppRouter.jsx`, `Client/src/routes/routePaths.js`, `Client/src/components/Layout/Sidebar.jsx`, `Client/src/constants/permissions.js`; `mockDatabase.js` and F04 timetable files were not changed.
-# F05-005 — Class Scheduling — IN_REVIEW
+Implementation evidence: centralized named permissions, route/sidebar/action guards and service-boundary checks; final 237/237 tests (23 files), lint and build PASS, with limitations recorded in PROGRESS.md. F02-005 remains IN_REVIEW and requires owner confirmation specifically for Super Admin Approve/Reject and Pending Delete.
 
-Owner-approved single-date DEMO Class CRUD, overlap checks, branch/role enforcement and Dashboard Upcoming Classes integration implemented on 2026-10-13. Focused tests 30/30, targeted ESLint and production build passed. Owner acceptance pending.
+## F02-005 final confirmed Super Admin actions (2026-10-12)
 
-# F06 Fees + Finance + Dashboard integration — IN_REVIEW
+The owner has now explicitly confirmed Super Admin View/Create/Edit/Approve/Reject and Pending Delete within the active assigned branch. Receptionist remains View/Create/Edit only, Owner View only, and Teacher has no Admissions access. This decision supersedes the unresolved authority note above. Named `admissions.decide` and `admissions.delete` permissions are enforced in the Actions UI, domain service and mock-database boundary; there is no broad Super Admin bypass or All Branches grant.
 
-Owner-approved connected browser-local DEMO workflow implemented; final QA added branch-scoped CSV exports, verified-payment-only projections, local-date boundaries, the Finance mobile containment and Dashboard role-selector wrapping. Isolated browser workflow PASS: enrollment, challan, partial/final payments, receipt projection, expense totals, branch isolation and refresh persistence. Receipt content rendered with print media; native preview and actual CSV download events NOT_RUN. Responsive checks at 360/768/1024/1440 NOT_RUN because the browser harness retained a 450px CSS viewport; Fees/Finance were checked at 450px. Focused tests 58/58 across 7 files, targeted lint and one production build PASS (existing large-chunk warning). Owner acceptance remains pending; no backend, gateway, refunds, reversals, discounts or installment policy implemented.
+Pending may transition once to Approved or Rejected; repeat same-status requests are idempotent and stale/opposite/reopen attempts are denied. Status and append-only actor/time history persist atomically, while the linked Student remains Provisional. Only Pending admissions may be deleted through the existing verified linked-pair transaction; decided records remain read-only and non-deletable. **Status: IN_REVIEW; owner acceptance pending.** Evidence: 246/246 tests in 23 files PASS, lint PASS with one existing warning, build PASS with the existing chunk warning; final manual browser recheck/CI/deployment/backend/formal accessibility are NOT_RUN.
 
-# Connected Academic Configuration + New Admission — IN_REVIEW
+## Admission & Student Row Click + 3-Dots Actions — UI correction (2026-10-12)
 
-Owner-approved implementation complete in the dev workspace: saved branch academic configuration feeds the locked New Admission two-column workflow and read-only challan preview. Focused tests, lint and build pass. Pending owner acceptance and manual responsive browser review; no commit/push.
+**Owner-approved limited frontend scope; IN_REVIEW.** Admission row/name and three-dots → View open the same record through the existing saved Admission details dialog. Student row/name opens a separate read-only Student Profile by internal ID, with active-branch validation, saved student fields/status, branch and linked Admission reference. Both rows support Enter/Space; action-cell clicks cannot trigger row actions. View is available for Pending/Approved/Rejected; decided-record Edit/Delete/Approve/Reject items are disabled when present under existing permissions. No permission or status-workflow changes, student editing, enrollment, fees, backend or dependencies.
 
-# Final Admissions completion review — IN_REVIEW (2026-10-14)
+**Files:** `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/pages/Admissions/AdmissionsPage.jsx`, `Client/src/components/Students/StudentsTable.jsx`, `Client/src/pages/Students/StudentProfilePage.jsx`, `Client/src/routes/AppRouter.jsx`, `Client/src/routes/routePaths.js`, and related focused tests.
 
-The selected Batch card now follows the approved light-blue/teal reference treatment, and the Faculty Mapping section reports overlaps only from matching saved single-date classes. Connected focused tests, targeted lint and one build pass; fresh browser capture was blocked by automated approval review. Discounts, installment policy and independent faculty-assignment writes remain policy/model blocked.
+**Verification:** targeted Vitest 38/38 in 3 files PASS; targeted ESLint PASS. Full suite/build/browser audit NOT_RUN.
 
-# F04 Course/Batch table actions — IN_REVIEW (2026-10-14)
+## F02-005 decided-admission actions policy correction (2026-10-12)
 
-Course and Batch table rows now use a three-dot View/Edit/Delete menu. Super Admin deletion is confirmation-gated and atomically refuses linked academic, admission, enrollment and class records; read-only roles retain View only. Focused tests 10/10 and targeted lint pass; owner acceptance pending.
+**SUPERSEDED** by the latest owner decision below. Existing permissions and Edit/Delete behavior remain.
 
-# F02/F03 enrolled student deletion correction — IN_REVIEW (2026-10-14)
+## F02-005 — Remove Reject; allow Approved → Pending (2026-10-12)
 
-Fixed enrolled Admission deletion with linked financial records and added Super Admin Delete Student in the Students action menu. The atomic transaction removes only the verified admission-owned student, enrollment, challan and receipts; unrelated records and counters remain. Focused tests 21/21 and targeted lint pass.
+**Latest owner-confirmed policy.** Reject is removed from UI/new status requests. Pending admissions offer Approve; Approved admissions offer Pending. Super Admin may return Approved to Pending. Existing role permissions and authorized Edit/Delete remain unchanged; same-status is idempotent. Existing saved Rejected admissions migrate to Pending and their statusHistory is cleared. No new permissions, backend, enrollment, fees or student editing.
 
-# F04 academic delete-flow correction — IN_REVIEW (2026-10-14)
+**Modified source:** `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/pages/Admissions/AdmissionsPage.jsx`, `Client/src/mock/mockDatabase.js`, `Client/src/lib/admissionPolicy.js`; focused tests cover UI and saved-data migration. Targeted Vitest PASS: 61/61 across 4 files; targeted ESLint PASS. Full suite/build NOT_RUN.
 
-Course/Batch action menus now close after selection, outside click and Escape, and every new dialog clears stale delete errors. Academic Stream and Subject cards now expose the same role-aware View/Edit/Delete menu. Unlinked streams, courses, batches and subjects delete through the existing branch-scoped service; linked records remain protected without cascade. Focused tests 12/12 and targeted ESLint pass; browser QA and owner acceptance remain pending.
+## F02-006 — Admission-to-Enrollment Mock Integration (2026-10-12)
 
-# F04 academic relationship visibility — IN_REVIEW (2026-10-14)
+**Status: IN_REVIEW; owner acceptance pending.** The owner authorized this limited frontend mock implementation.
 
-Courses & Batches now presents saved Stream → Course → Subject/Batch relationships through academic portfolio cards, linked course chips, portfolio counts, a subject directory with parent Course/Stream, and explicit Course table relationship columns. Existing CRUD, permissions and storage contracts are unchanged. Focused tests 13/13 and targeted ESLint pass; browser visual QA and owner acceptance remain pending.
+**Confirmed DEMO contract:** only an Approved Admission can be enrolled, using the existing active-branch Super Admin `admissions.decide` authorization. The confirmation displays the linked Student, Course, Branch and valid Batch; when no preferred batch is saved, a user must select a saved batch for that Course in the same Branch. An unresolved linked Student or Course fails closed. A missing/unresolved preferred-batch reference may be replaced only by explicit user selection of a valid saved same-branch Course Batch; no name-based guessing. The Admission remains Approved.
 
-Owner layout correction: desktop now places the Course Subjects table in the wider left column and Academic Portfolio cards in the right column; smaller screens stack the sections. Focused page tests 9/9 and targeted ESLint pass.
+An enrollment is exactly `{id, branchId, admissionId, studentId, courseId, batchId, status, enrolledAt}` with `status: Active`. The service and database boundary revalidate current identity/branch and Super Admin authority. The mock database serializes the operation, checks the reciprocal admission-flow Student and saved same-branch Course/Batch, blocks repeat admission and duplicate active student/course/batch enrollment, then persists the Enrollment plus Student `Provisional → Active` in one localStorage write. A failed write preserves the prior bytes. Version-3 storage is migrated additively to version 4 with `enrollments: []`; IDs, counters, saved records and storage key are preserved, and unsupported/corrupt data is not reset.
 
-Compact polish removes Course Subjects horizontal scrolling through fixed responsive columns and wrapped smaller text. Portfolio cards are denser; when more than four streams exist, only the portfolio card list scrolls vertically. Focused page tests 9/9 and targeted ESLint pass.
+After enrollment, Admission Edit/Delete, Student update and Approved → Pending are blocked to preserve linked records. Students Directory/Profile read the persisted Active status. No enrollment cancellation, fees, backend, new permission grant, All Branches behavior or dependencies are included.
 
-Final table correction places the Courses/Batches tabs and directory directly below Course Subjects in the left column. Both directories use compact fixed columns without horizontal scrolling, and three-dot menus are smaller and no longer clipped by the final table row. Focused page tests 9/9 and targeted ESLint pass.
+**Changed files:** `Client/src/mock/mockDatabase.js`, `Client/src/mock/mockApi.js`, `Client/src/mock/seedData.js`, `Client/src/services/admissionService.js`, `Client/src/components/Admissions/AdmissionActions.jsx`, `Client/src/mock/enrollment.test.js`, `Client/src/pages/Admissions/AdmissionEnrollment.test.jsx`; related TASKS, PROGRESS, MEMORY, ERD and SECURITY documentation.
 
-Both Course Subjects and Courses/Batches directories now include compact 5/10/25/50 rows-per-page controls, visible ranges, numbered pages and previous/next controls. The desktop table column is wider and the Academic Portfolios sidebar is reduced to 17rem. Focused page tests 10/10 and targeted ESLint pass.
+**Actual checks:** delivery focused Vitest PASS, 56/56 tests, and targeted ESLint PASS. The subsequent F02-007 focused run covered the added preferred-batch fallback test and UI guard: overall 129/129 tests PASS, and the production build PASS. Manual browser walkthrough, full suite, CI, backend and deployment remain NOT_RUN. No libraries installed. Owner acceptance pending; do not mark DONE.
 
-Pagination controls were reduced further, while the Courses/Batches table now uses explicit content-based column widths: wider identity/relationship columns and narrower enrolled/actions columns. Compact headers and single-line truncated cells prevent row wrapping and horizontal scrolling. Focused page tests 10/10 and targeted ESLint pass.
+## F02-007 — Admissions Module Final Integration Check (2026-10-12)
 
-# F01/F06 Dashboard daily cashflow correction — IN_REVIEW (2026-10-14)
+**Status: IN_REVIEW; owner acceptance pending.** Owner-authorized focused integration review for F02-001 through F02-006; no feature rebuild or F03 scope.
 
-The Super Admin cashflow chart now plots active-branch verified receipts and posted expenses instead of static empty monthly buckets. Daily uses four-hour buckets; weekly, monthly, custom and trailing-year views use matching period buckets and totals. The stale Dashboard quick-action assertion was aligned with the approved inline `/admissions` route. Focused tests 17/17 and targeted ESLint pass. Browser QA and owner acceptance remain pending.
-# F02/F04/F06 Connected Demo Workflow (2026-10-13)
+**Automated workflow verification:** PASS — create Pending Admission and linked Provisional Student; Course/Batch selection; Admission row/name/three-dots View; Edit and authorized Pending Delete; Super Admin Approve and Approved → Pending, with Reject absent; Approved → Enroll Student and Student Active; Confirm Enrollment works after selecting a valid Batch, and missing selection gives clear feedback/focus; enrolled admission/status/delete and linked Student mutation protections; role/branch authorization; refresh persistence and gapless display serials.
 
-**Status:** IN_REVIEW; configured academic fee selection now reaches enrollment and official F06 challan validation without creating financial records before approval/enrollment. Focused verification and isolated responsive browser layout evidence are recorded in PROGRESS.md. Owner acceptance pending.
+The enrollment UI chooses a valid saved preferred Batch when available, automatically selects when exactly one valid Batch is available, and otherwise leaves selection explicit. The focused UI test verifies that Confirm is enabled when selection is needed, clicking without a choice explains the requirement and focuses Batch, then selection and confirmation persist the enrollment/activation.
 
-# F11/F12/F13 Branches, Users, Settings and Frontend QA (2026-10-14)
+**Executed:** targeted Vitest PASS, 129/129 tests in 13 files. One production build PASS (3008 modules); Vite reports the existing >500 kB main-chunk warning. No new dependencies.
 
-**Status:** IN_REVIEW; owner acceptance pending. F11 branch directory/create/edit/lifecycle/license/staff summaries and F12 staff listing/create/edit/multi-branch roles/status/permission matrix are connected to mock authentication and active-branch selection. F13 exposes one responsive Settings surface backed by shared branding, F04 academic sources, real users/branches and explicit unavailable notification states. Backend authorization, file upload storage, SMS delivery and production authentication remain blocked.
-F11-F13 continuation verification (2026-10-15): focused F04/F02/F09-F13 regressions PASS 92/92 and targeted ESLint PASS after resolving three legacy contract assertions. Status remains IN_REVIEW.
-F09-F13 one-shot functional QA (2026-10-15): confirmed integration defects fixed; focused cross-module tests PASS 107/107, targeted ESLint PASS, production build PASS, HTTP smoke PASS. Interactive browser automation and owner acceptance remain pending; tickets stay IN_REVIEW.
+**Not run:** manual real-browser/viewport walkthrough, full suite, CI, deployment, backend authorization and formal accessibility checks. Automated UI integration results are not manual browser evidence or production-security proof. No additional feature ticket started. Owner acceptance is required; do not self-approve.
+
+# Connected Academic Configuration + New Admission Workflow — IN_REVIEW (2026-10-13)
+
+Final owner layout correction supersedes the separate-page entry: `/admissions` now contains the admissions table first and the complete `New Student Admission` workflow directly below it. The header button keeps `/admissions`, scrolls and focuses the inline section, and opens no dialog. The protected legacy `/admissions/new` URL redirects authorized creators to the same inline section; unauthorized access still fails closed. Isolated browser QA passed same-page placement, submission/table refresh, desktop two-column sticky summary, 768px/492px stacking and zero horizontal overflow. Focused tests 7/7 and targeted ESLint PASS.
+
+Urgent entry-point fix: Admissions → New Admission now navigates to the protected `/admissions/new` route and renders the connected wizard as a full page. Isolated browser click-through PASS; unauthorized Owner direct access redirects to `/unauthorized`. Focused tests 24/24 and targeted ESLint PASS. Owner acceptance remains pending.
+
+Owner-approved responsive New Admission layout places Student & Guardian, Academic Field/Course/Batch and Subject Selection in the main column, with a desktop sticky fee-preview summary at right and stacked mobile layout. Streams, courses, batches, subjects and configured fees come from branch-scoped versioned mock storage; Super Admin manages configuration and Receptionist remains read-only. Submitting creates only a Pending admission with linked Provisional student and does not create an official challan or verified payment. Isolated browser QA passed the connected workflow, desktop 1410px and tablet 768px layouts, plus stacked 492px mobile containment; exact 360px was not available in the Edge harness. Two confirmed display defects were fixed: entity-correct save feedback and configured batch capacity labels. Post-fix focused tests 16/16 and targeted ESLint PASS. Owner acceptance remains pending.
+# F02/F04/F06 Connected Academic and Financial Demo Workflow — IN_REVIEW (2026-10-13)
+
+Saved subject/course pricing is now recalculated at admission persistence, snapshotted into enrollment and enforced by F06 challan issuance. Duplicate enrollment challans and mismatched configured amounts are rejected. Admissions shows truthful saved single-date class metadata where a subject/batch match exists and otherwise reports unavailable faculty/schedule data. Concessions, installment rules and SMS remain unapproved. Owner acceptance pending.
+# F02/F04/F06 Owner-Visible QA Demo — IN_REVIEW (2026-10-13)
+
+Final 2026-10-14 review remains **IN_REVIEW**: selected Batch styling was aligned with the approved reference and saved single-date class overlaps are now reported without inventing recurring schedules or assignments. Focused tests 32/32, targeted lint and one build PASS. Fresh browser screenshot NOT_RUN after automated approval rejection; discounts/installment authority and separate faculty-assignment writes remain unapproved.
+
+## F04 Course/Batch action menu — IN_REVIEW (2026-10-14)
+
+Course and Batch tables provide a three-dot View/Edit/Delete menu. Delete is Super Admin-only, confirmation-gated, branch-scoped and blocked for linked records without cascading. Focused tests 10/10 and targeted ESLint PASS; owner acceptance pending.
+
+## F02/F03 enrolled student deletion correction — IN_REVIEW (2026-10-14)
+
+Admission and Students views now share a Super Admin-only confirmed deletion transaction for an admission-owned student. Linked enrollment, challan and receipts are removed atomically to prevent orphan references; unrelated records remain. Focused tests 21/21 and targeted ESLint PASS.
+
+## F04 academic delete-flow correction — IN_REVIEW (2026-10-14)
+
+Academic Stream, Course, Batch and Subject surfaces now use consistent role-aware three-dot View/Edit/Delete menus. Menus dismiss after an action, outside click or Escape; opening a new dialog clears prior delete errors. Unlinked records can be deleted, while verified dependencies refuse deletion without cascade. Focused tests 12/12 and targeted ESLint PASS; browser QA and owner acceptance remain pending.
+
+## F04 academic relationship visibility — IN_REVIEW (2026-10-14)
+
+The Courses & Batches screen now makes the saved hierarchy visible: Stream portfolio cards link to Courses and summarize their Subjects/Batches, the Subject directory names both parent Course and Academic Stream, and Course rows show their Stream plus Subject/Batch counts. Existing CRUD and branch/role behavior remain intact. Focused tests 13/13 and targeted ESLint PASS; browser visual QA and owner acceptance remain pending.
+
+Final owner placement sets Course Subjects as the wide left table and Academic Portfolios as the right card column on desktop, with responsive stacking below desktop. Focused page tests 9/9 and targeted ESLint PASS.
+
+Compact owner polish removes subject-table horizontal scrolling, reduces table/card typography and bounds portfolio lists over four cards with internal vertical scrolling. Focused page tests 9/9 and targeted ESLint PASS.
+
+Courses/Batches now sits below Course Subjects in the left column, uses a no-horizontal-scroll compact table, and shares a smaller unclipped three-dot menu. Focused page tests 9/9 and targeted ESLint PASS.
+
+Both academic directories now paginate with 5/10/25/50 page sizes, ranges and page navigation. The compact 17rem portfolio sidebar gives the left table stack more desktop width. Focused page tests 10/10 and targeted ESLint PASS.
+
+Pagination and Courses/Batches table density were tightened with 28px controls, content-sized fixed columns and single-line ellipsis. Focused page tests 10/10 and targeted ESLint PASS.
+
+## F01/F06 Dashboard daily cashflow correction — IN_REVIEW (2026-10-14)
+
+Super Admin Dashboard cashflow now derives selected-period bars and totals from active-branch verified receipts and posted expenses. Daily data is grouped into four-hour slots, with period-appropriate weekly/monthly/custom/year buckets and a truthful empty state. Focused tests PASS 17/17 and targeted ESLint PASS. Browser QA and owner acceptance remain pending.
+
+Added an explicit Super Admin-only, confirmation-gated and idempotent QA demo action through existing domain services. It creates clearly labeled fictional academic, admission, enrollment, challan and verified-payment examples in the active branch without deleting existing data. Isolated browser acceptance verified Paid and Partial examples, final collection, receipt, Finance, Dashboard and refresh persistence. Owner acceptance pending.
+
+## F09/F10 Owner-approved delivery update (2026-10-14)
+
+**F09-001 through F09-006: IN_REVIEW.** Implemented branch-scoped directory/KPIs/filters/pagination, registration, immutable-code editing/details, condition inspection, same-branch assignment/unassignment, maintenance history, persistence, permissions and focused tests. Stored book value is displayed; automatic depreciation, deletion/disposal and finance posting remain blocked pending approved rules.
+
+**F10-001 through F10-008: IN_REVIEW.** Implemented authoritative saved Admissions, Enrollment, Verified Fee Collection and authorized Super Admin Branch Comparison reports, including working filters, search, pagination, dynamic KPIs, safe CSV and browser print. Unsupported attendance, recovery-rate and deadline metrics are omitted. Browser owner acceptance remains pending.
+
+## F11-001 through F11-006 Branch Management — IN_REVIEW (2026-10-14)
+
+Implemented authorized tenant branch listing/search/status, real staff and saved-data summaries, create/edit, five-branch license/duplicate validation, safe lifecycle controls and branch-selector integration. Core seed branches remain read-only in the frontend demo; backend tenant authorization and lifecycle review for production remain required.
+
+## F12-001 through F12-008 User Management — IN_REVIEW (2026-10-14)
+
+Implemented searchable/filterable/paginated staff accounts, validated creation/editing, unique login identity, explicit multi-branch assignments, different approved roles per branch, permission-constant matrix, safe activation/deactivation and supported mock login. Self-deactivation, last-admin removal, disabled sessions and cross-branch access fail closed. Password delivery/reset is not fabricated.
+
+## F13-001 through F13-011 Settings and Integrated Frontend QA — IN_REVIEW (2026-10-14)
+
+Implemented a cohesive screenshot-aligned Settings page using shared branding/theme, authoritative F04 academic/price records, real staff/role and campus records, and honest disabled notification states. Logo configuration supports the existing local-raster mechanism; browser file uploads and SMS gateway delivery remain unavailable. Mock-demo readiness is not production readiness; backend authorization, audit, gateway, CI and owner acceptance remain pending.
+F11-F13 continuation evidence (2026-10-15): focused connected regression suite PASS 92/92 across seven files; targeted ESLint PASS. Remaining ticket state is IN_REVIEW pending interactive browser and owner acceptance.
+F09-F13 functional QA evidence (2026-10-15): Assets/Reports, organization access, branding, Demo/Admission, Fees/Finance/Dashboard and migration checks PASS 107/107. Settings fee/logo integration, branch refresh/deactivation safety, academic projections and UI encoding defects were corrected. Targeted lint/build pass; interactive browser acceptance remains pending. All tickets remain IN_REVIEW.
 
 ## Academic assignment data-flow correction (2026-10-17) ? IN_REVIEW
 
@@ -1225,24 +2050,34 @@ Browser: isolated Edge QA profile and separate disposable context only; module s
 Known limitation: Vite reports a noncritical >500kB main-chunk warning (about 2.72MB minified, 1.10MB gzip, including synchronous PDF/logo code). Build succeeds; no threshold changes, warning suppression or risky route/export restructuring performed. Existing production integration and owner acceptance remain outside this stabilization. Release checks complete; commit/push execution is recorded in the final owner report after remote safety verification.
 
 
-## MOBILE-20261018 - Owner-approved mobile-only responsive transformation
+## MOBILE-20261018 - Premium mobile-only ERP presentation
 
-Status: IN_REVIEW, awaiting owner mobile experience acceptance. Owner explicitly authorized presentation-only work directly on dev from c86724a. No commit/push authorized. All overrides are screen-only and below 768px; desktop/laptop and print styles remain intact. Scope covers the shared ERP shell and all authorized modules, with minimal presentation hooks for faculty detail reveal, inline admission, dashboard summary, demo filters, fees filters and pagination. No services, routes, data schemas, permission rules, validation or calculations changed. Verification completed: lint 0/0, 422/422 full tests, production build, 91 Super Admin module/viewport checks, 21 other-role dashboard checks, actual mobile academic/admission/demo/payment/expense/export interactions and desktop screenshot comparison. Evidence and limitations are in PROGRESS.md and artifacts/mobile-20261018 (untracked). Stop here pending owner acceptance; no staging/commit/push.
+Authorization: owner's PREMIUM MOBILE-ONLY RESPONSIVE TRANSFORMATION request, 2026-10-18. Status IN_REVIEW. Scope is up to 767px, preserving every 768px+ computed desktop result and existing business workflow.
+
+Acceptance evidence:
+- Shared compact safe-area-aware topbar/drawer; existing navigation, search, branch/account/profile/logout retained. Drawer identity/logo fitted, navigation scrolls internally and closes after selection.
+- Compact two-column KPI layouts where practical; narrow Finance cards remain one column. Existing card data and calculations unchanged.
+- Existing mobile record layouts retained; remaining tables scroll internally with all columns, sorting/filtering/selection/export functions retained. Table row action menus stay reachable; pagination uses larger tap targets.
+- Dialogs use viewport-relative heights, bounded grid tracks, internal scrolling, single-column form grids and readable inputs. Fixed challan-preview intrinsic grid overflow; unchanged PDF/print templates. Inline Admissions stays in-page with non-sticky summary below its form.
+- Faculty roster/detail design stacks on mobile; selecting a record reveals/focuses the existing detail panel only below 768px. Desktop selection stays unchanged.
+- Target browser matrix and actual workflow evidence in PROGRESS.md. Final full Vitest 422/422 PASS, targeted 29/29 PASS, ESLint PASS, build PASS. Existing large-chunk notice remains. No dependencies or backend/service changes. Owner acceptance pending; no commit/push.
 
 
-## DEMO-REGISTER-CLASSES-20261018 - Saved batch classes in prospective registration
+## DEMO-REGISTER-CLASSES-20261018 - Registration class timing flow (IN_REVIEW)
 
-Owner explicitly requested a polished registration form showing classes created for the selected Field/Course/Batch. Status IN_REVIEW, pending owner experience acceptance. Implemented scoped form redesign, real same-branch recurring/dated class previews, timing-to-request date/time prefill, loading/error/retry/empty states and draft-preserving live refresh. Existing registration/scheduling/admission status rules and payload remain unchanged. New Demo changes are uncommitted; prior mobile QA release 9e8fd33 was verified on local and actual origin/dev before starting this feature. No additional commit/push authorization inferred.
+Approved scope: selected academic Field -> Course -> Batch exposes only that batch's saved recurring assignments and dated class records in the active branch. Show actual subject, teacher, days, 12-hour timing and room; using a timing fills preferred request date/time. Keep a prospective inquiry Registered until the existing scheduling action confirms it; no automatic attendance, admission or enrollment. Form-only visual polish and sticky dialog footer authorized by the owner's subsequent request; prior mobile-only desktop-preservation scope continues outside this dialog.
+
+Acceptance: independent date-only weekday/rollover handling; strict course/batch/branch filtering; no fabricated slots; live focus/storage/minute refresh with cleanup and stale-response guard; no periodic form draft reset; manual date/time fallback when no saved classes exist; accessible buttons, loading, error and retry. Focused tests17/17 PASS and real Edge nine viewport/submit cases PASS. Final regression evidence in PROGRESS.md.
 
 
 ## DEMO-ACTIONS-DELETE-20261018
 
-Owner-authorized demo inquiry deletion and consolidated three-dot row actions. Status IN_REVIEW. Desktop/mobile menu includes details, valid scheduling/attendance/conversion actions, cancellation and confirmed deletion. Converted/linked inquiries are protected. No commit/push requested.
+Implemented compact accessible desktop/mobile row menu and explicit Cancel/Delete confirmation. Centralized service/database deletion checks active branch and manage permission, removes only selected inquiry and preserves other academy records. Linked admissions prevent deletion. Acceptance evidence: 48 targeted tests, lint, build and disposable browser checks at 320/390/430/1440px.
 
 
 ## DEMO-MULTI-CLASS-20261018
 
-Owner-authorized DEMO-MULTI-CLASS-20261018: implemented independent multiple class selection/deselection, count, persisted requested classes and detail display. IN_REVIEW pending owner acceptance; no commit/push.
+DEMO-MULTI-CLASS-20261018: multiple saved classes may be requested within one course/batch inquiry. Each selection toggles independently; field/course/batch/manual request changes clear selection. First selection fills preferred date/time. Registration validates each actual class reference against branch/course/batch and saves class snapshots. Inquiry remains Registered, separate scheduling unchanged. Acceptance: 50 targeted tests PASS, lint0/0, build PASS, disposable browser360/1440 PASS.
 
 
 ## DEMO-UI-POLISH-20261019
@@ -1580,7 +2415,7 @@ Owner requests another small increase: container144->160px, outer radius64->72px
 
 ## REPORTS-LEFT-TREND-20261019 - Left analytics card redesign
 
-IN_REVIEW: Owner-authorized left-card-only redesign implemented on dev. Saved-data area chart; Day/Week/Month/Year grouping and custom Date Range. PASS20 focused/regression tests, touched-file lint, build and desktop/mobile checks. Await owner visual acceptance; no next ticket started. Evidence/limitations: PROGRESS.md.
+Scope: only Reports left-card redesign. Evidence: all8 tabs; filtered ledger IDs and branch-scoped dated events; validated custom dates; zero/undated/sparse states; wrapped controls; preserved160px right donut and ledger workflows. PASS20 tests, lint0/0, build,32 tab/viewport checks and actual PDF/CSV/DOCX downloads/print/refresh. IN_REVIEW pending owner acceptance. No dependencies added. Current Session date boundaries remain unconfigured and disclosed.
 
 
 ## REPORTS-LEGEND-COLORS-20261019
@@ -1662,17 +2497,17 @@ PASS10 organization service tests covering Super Admin/new creation rejection, e
 
 ## BRANCH-EDIT-DELETE-20261019
 
-IN_REVIEW: Owner authorizes Branch Edit/Delete and confirms deletion only for empty inactive branches. Edit/confirmation UI, service and mock adapter checks implemented; Add Branch remains paused. PASS80 relevant organization/database/auth/access tests, touched-file lint, build, diff check and actual desktop/mobile browser workflows. Await owner acceptance.
+Owner-authorized scope: edit existing branch details (including core display details); confirmed deletion only for empty inactive branches after confirmation. Acceptance evidence: persisted edits preserve IDs and records; unique name/code validation; active branch/canonical current branch deletion denied; all14 operational collections and all enabled/disabled staff assignments checked; deleted branches remain gone after reload; organization-write failure restores database bytes. Creation pause remains enforced. PASS80 relevant tests, lint/build/browser. IN_REVIEW.
 
 
 ## BRANCH-STATUS-NAME-20261019
 
-IN_REVIEW: Owner requests working Active/Inactive controls and name-only Edit. Core and custom branch toggles now supported with existing current/last-usable/unfinished-operation guards. Edit UI/service persist only name. PASS53 organization/auth/access tests, touched-file lint, build, diff check and actual desktop/mobile workflow. Await owner acceptance.
+Authorized: remove core branch toggle disablement; provide actual activate/deactivate persistence, actionable failures and name-only edit. Existing Add Branch pause and empty-inactive deletion rule remain. Evidence: core toggles both directions/reload, saved name override survives status changes, other metadata cannot change through name edit, current branch/unfinished operations remain protected, busy state and branch-context refresh. PASS53 tests, lint/build/browser. IN_REVIEW.
 
 
 ## BRANCH-DELETE-ADMIN-EXCEPTION-20261019
 
-IN_REVIEW: Owner allows empty inactive branch deletion when only Super Admin assignments remain. Non-admin staff and all operational records still block deletion. Admin branch-access cleanup and dialog explanation implemented. PASS55 organization/auth/access tests, lint/build/diff check and disposable browser workflow. Actual owner branch was not deleted.
+Authorized exception: Super Admin-only assignments no longer block empty inactive branch deletion. Mixed Super Admin plus staff roles, disabled staff assignments and all14 linked-record collections remain blockers. Confirmation, inactive/current-branch protections, Add Branch pause and name-only editing preserved. Tests/browser verify access cleanup without account deletion or other-branch access changes. PASS55 tests, lint/build. IN_REVIEW.
 
 
 ## BRANCH-PLACEHOLDER-TEXT-20261019
@@ -1685,14 +2520,9 @@ Owner asks meaning/removal of pictured DEMO code and Demo campus location. Remov
 Owner reports generic linked-record error and asks why deletion is blocked. Deletion check now reports exact nonzero counts for every linked collection (courses, fields, subjects, batches, students, admissions, enrollments, scheduled classes, fee challans, payments, expenses, demo inquiries, assets, faculty assignments). No deletion policy/data mutations changed. Actual owner branch records were not accessed; exact cause will display on retry. PASS20 organization tests, targeted lint and git diff --check; build/browser NOT_RUN for error-message-only change. IN_REVIEW.
 
 
-## D-BRANCH-PURGE-20261019
-
-EXECUTED: Owner explicitly authorizes permanent one-time deletion of only branch d, superseding normal empty/inactive restrictions for this exact branch. Exact ID confirmed from local recovery metadata and matched against current browser saved organization before deletion. Tested isolated cleanup first, then ran in owner Chrome via a temporary localhost page. Private backup acknowledged before any write. Actual verified deletion removed branch d, its1 linked asset, target counters and branch-specific staff assignments; other operational collections had0 target records. Post-write equality checks confirm all other-branch records preserved. Staff accounts/other branch access preserved. Browser callback returned success. Backup/result/helper in git-ignored private-data/d-branch-purge; temporary public cleanup page removed after success and local helper stopped. No general force-delete functionality added and Add Branch pause remains unchanged. PASS isolated target-only/backup/preservation test and actual result verification; git diff --check. No build required (no persistent application code change). Owner may refresh Branch Management. No commit/push.
-
-
 ## BRANCH-CARD-CLEANUP-20261019
 
-IN_REVIEW: Owner requests deleting d backups, removing branch eye/View action and unique card colors. Removed dedicated purge backup/helper folder after absolute-path containment check; redacted only d entries/assignments/counters from5 historical recovery copies. Removed unused View dialog/state/import and added stable per-branch rose/sky/emerald/amber gradients with translucent count strip. PASS lint/build/diff and desktop/mobile action/color checks. Await visual acceptance.
+Authorized branch card cleanup: no eye/View action, distinct stable soft gradients and no retained d backup data. Dedicated purge folder removed and5 historical recovery snapshots selectively cleaned. PASS targeted lint, production build (existing chunk warning), git diff --check, no target ID in local recovery JSON/JSONL/BAK files, isolated Edge distinct gradients/no View action, name-only edit/status persistence and continued creation pause/mobile form fit. IN_REVIEW.
 
 
 ## REMOVE-WORKSPACE-FLOW-20261019
@@ -2119,135 +2949,137 @@ Owner-approved removal of maroon month input focus border; IN_REVIEW. TeacherPay
 Owner explicitly requests completely borderless payroll month control; IN_REVIEW. TeacherPayrollView.jsx removes outer container border and input focus ring/outline. Other controls unchanged. Targeted ESLint PASS; tests/build/browser NOT_RUN for styling-only change. Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
 ## LOGIN-LOGO-MOTION - 2026-10-21
 
-Owner-approved login logo motion refinement; IN_REVIEW. LoginLogoMotion.jsx clips the white logo surface with 2rem rounded corners and a soft shadow. On first login-page render the WebGL logo performs one smooth 360-degree Y-axis rotation (1.35s), then begins a faster and wider vertical float from -0.08 to +0.08 (1.55s each direction). Existing pointer tilt, configured-logo fallback, cleanup and reduced-motion static rendering remain intact. LoginLogoMotion.test.jsx covers the entry spin, float range/speed, rounded surface, tilt, cleanup, WebGL fallback and reduced-motion behavior. PASS: 14 focused logo/auth route tests, targeted ESLint and production build (existing large-chunk warnings only). Existing edits preserved; no commit/push. Next approval: owner visual acceptance.
+Owner-approved login logo motion refinement; IN_REVIEW. Rounded white logo surface, one-time 3D entry rotation and faster/wider vertical float implemented without changing login behavior. Reduced-motion users retain a static logo. PASS: 14 focused tests, targeted ESLint and production build; existing chunk warnings remain. No commit/push. Next approval: owner visual acceptance.
 
 ## REMOVE-DEMO-UI - 2026-10-21
 
-Owner-approved user-facing terminology cleanup; IN_REVIEW. Removed generic Demo wording from authentication/session copy, branch and staff seed labels, dashboard badges/metric labels, admissions, students, courses, fees, faculty and branch exports. Demo Classes navigation, records, reports and linked conversion wording remain because they describe the actual Demo Classes module. Internal mock IDs, storage contracts and permission error codes remain unchanged. PASS: 95 focused tests, targeted ESLint and production build; build retains existing large-chunk warnings. Browser QA NOT_RUN. Dirty working tree preserved; no commit/push. Next approval: owner visual acceptance.
+Owner-approved frontend copy cleanup; IN_REVIEW. Acceptance: normal ERP screens no longer present themselves as a demo, while all Demo Classes labels and related workflow/report terminology remain intact. Built-in visible branch/course/batch/staff names now use operational labels; internal IDs and local mock persistence interfaces are preserved. PASS: 95 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## UPDATE-DEFAULT-PASSWORDS - 2026-10-21
 
-Owner-approved local credential update; IN_REVIEW. Ignored Client/.env.local now uses `admin@123` for the Super Admin initial password and `staff@123` for staff initial passwords. Existing per-account passwords changed through My Profile remain preserved because saved password hashes continue to override initial credentials. PASS: 21 focused staff-login/auth-route tests. ESLint/build/browser NOT_RUN because no application source changed. No commit/push. Next approval: owner login acceptance.
+Owner-approved browser-local initial password replacement; IN_REVIEW. Super Admin initial password is `admin@123`; staff initial password is `staff@123`. Previously changed account passwords are not reset. PASS: 21 focused authentication tests. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-LOGO-MOTION-FIX - 2026-10-21
 
-Owner-approved login logo animation repair; IN_REVIEW. Continuous vertical float now starts independently during initialization, so early pointer movement cannot prevent it. Pointer tilt remains disabled until the one-time 3D spin completes. When WebGL is unavailable, the visible image now receives equivalent GSAP 3D spin and vertical float instead of becoming static. Reduced-motion behavior remains static. PASS: 14 focused logo/auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. Next approval: owner visual acceptance.
+Owner-approved animation lifecycle fix; IN_REVIEW. Login logo performs its one-time 3D spin and continuous vertical float reliably, protects the intro from early pointer cancellation, and uses a DOM animation fallback when WebGL cannot initialize. Reduced-motion accessibility is preserved. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-SECTION-HEIGHT - 2026-10-21
 
-Owner-approved compact login layout; IN_REVIEW. Reduced the main page padding, both panel paddings, vertical gaps, form spacing and animated logo footprint while retaining the same responsive two-column structure and all login/motion behavior. PASS: 14 focused logo/auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. Next approval: owner visual acceptance.
+Owner-approved login card height reduction; IN_REVIEW. The existing login composition is more compact through smaller padding, gaps and logo dimensions, with responsive layout and functionality preserved. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-100-PERCENT-SCALE - 2026-10-21
 
-Owner clarified that the desired reference is the complete login card as seen at 90% browser zoom. Supersedes the individual compact-spacing adjustment above. Restored the original card padding, gaps and logo dimensions, then applied a uniform 90% desktop card scale so 100% browser zoom retains the reference proportions. Mobile remains unscaled. PASS: 14 focused logo/auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. IN_REVIEW pending visual acceptance.
+Owner clarification supersedes LOGIN-SECTION-HEIGHT implementation details. Original internal proportions are restored and the complete desktop login card uses a uniform 90% visual scale at normal browser zoom; mobile is unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-BRANDING-LAYOUT - 2026-10-21
 
-Owner-approved login branding refinement; IN_REVIEW. Widened the desktop card and left-panel share so the academy name remains on one line, increased the animated logo from 224px to 256px at the desktop breakpoint, and locked desktop page overflow to remove the login scrollbar. Mobile retains wrapping and normal page flow. PASS: 14 focused logo/auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. Next approval: owner visual acceptance.
+Owner-approved desktop login branding adjustment; IN_REVIEW. Academy name stays on one line, animated logo is larger, and desktop page scrolling is removed without changing mobile flow or login behavior. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-WIDTH-CORRECTION - 2026-10-21
 
-Owner correction supersedes the widened login card from LOGIN-BRANDING-LAYOUT. Restored the normal 60rem card width and original panel ratio, retained the larger animated logo and desktop no-scroll behavior, and used a compact desktop heading size so the academy name remains on one line. PASS: 14 focused tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. IN_REVIEW pending visual acceptance.
+Owner-approved correction; IN_REVIEW. Login card uses its normal width again while preserving a single-line desktop academy name, larger logo and no desktop scrollbar. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-ACADEMY-NAME-SIZE - 2026-10-21
 
-Owner-approved typography-only refinement; IN_REVIEW. Increased only the desktop academy-name heading from 1.55rem to 1.7rem and tightened letter spacing so the configured name remains on one line. Normal 60rem card width, logo size, no-scroll behavior and all functionality remain unchanged. PASS: 10 focused auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. Next approval: owner visual acceptance.
+Owner-approved login heading adjustment; IN_REVIEW. Only the academy-name typography was enlarged while retaining a single line and the existing card width. PASS: 10 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-ACADEMY-NAME-SIZE-2 - 2026-10-21
 
-Owner-approved second typography adjustment; IN_REVIEW. Increased only the desktop academy-name heading from 1.7rem to 1.8rem with tighter tracking to retain a single line. Card width, logo, scrolling and behavior are unchanged. PASS: 10 focused auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push. Next approval: owner visual acceptance.
+Owner-approved follow-up; IN_REVIEW. Academy name is slightly larger again while remaining one line inside the unchanged login section width. PASS: 10 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. Next approval: owner acceptance.
 
 ## LOGIN-ACADEMY-NAME-SIZE-3 - 2026-10-21
 
-Owner-approved typography-only follow-up; IN_REVIEW. Enlarged the academy name to 2rem on desktop, added subtle spacing between words and retained responsive single-line sizing. Login section width and height remain unchanged. PASS: 10 focused auth tests, targeted ESLint and production build; existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push.
+Owner-approved typography-only follow-up; IN_REVIEW. Academy name is larger with subtle word spacing, remains responsive on one line, and does not change the login section dimensions. PASS: 10 focused auth tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## LOGIN-THREE-BACKGROUND - 2026-10-21
 
-Owner-approved login visual enhancement; IN_REVIEW. Added a low-power Three.js maroon galaxy atmosphere with particles, halo motion, CSS fallback layers and reduced-motion support behind the branding content. Login section width, height, layout and authentication behavior are unchanged. PASS: 14 focused tests, targeted ESLint and production build; jsdom canvas notices and existing large-chunk warnings remain. Browser QA NOT_RUN. No commit/push.
+Owner-approved visual-only ticket; IN_REVIEW. The login branding panel now renders a subtle Three.js galaxy atmosphere beneath its existing content, preserves panel dimensions, ignores pointer input and respects reduced-motion preferences. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## LOGIN-THREE-PAGE-BACKDROP - 2026-10-21
 
-Owner-approved login backdrop enhancement; IN_REVIEW. Reused the Three.js atmosphere in a softer page variant with low-opacity maroon, blush and warm-gold particles outside the login card. Card and branding-panel dimensions, mobile scrolling and authentication behavior remain unchanged. PASS: 14 focused tests, targeted ESLint, production build and diff check; jsdom canvas notices and existing chunk warnings remain. Browser QA NOT_RUN. No commit/push.
+Owner-approved visual-only follow-up; IN_REVIEW. The background outside the login card now uses a calm, low-opacity Three.js particle atmosphere with warm radial light. The login card dimensions and behavior are unchanged, pointer interaction passes through, and reduced-motion remains supported. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## BRANCH-SELECT-COMPACT-CARDS - 2026-10-21
 
-Owner-approved branch-selection UX adjustment; IN_REVIEW. Removed the duplicate branch dropdown, made authorized branch cards the sole selection control, and retained explicit `Open dashboard` submission into the selected branch. Reduced the main card width, padding, gaps, icon and primary action height without changing authorization or persistence. PASS: 10 focused auth tests, targeted ESLint, production build and diff check. Browser QA NOT_RUN. No commit/push.
+Owner-approved auth UX refinement; IN_REVIEW. Multi-branch users now choose an authorized branch directly from accessible selection cards and then use `Open dashboard`; the redundant dropdown is removed. The selection panel is narrower and more compact while branch scoping remains unchanged. PASS: 10 focused auth tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## LOGIN-THREE-STARFIELD - 2026-10-21
 
-Owner-approved outer-login backdrop refinement; IN_REVIEW. Reworked the page variant into 280 evenly distributed maroon, blush and warm-gold stars with slow drift and gentle opacity twinkle. Login card and branding-section dimensions remain unchanged, and reduced-motion behavior is preserved. PASS: 14 focused tests, targeted ESLint and production build; jsdom canvas notices and existing chunk warnings remain. Browser QA NOT_RUN. No commit/push.
+Owner-approved visual-only follow-up; IN_REVIEW. The light area outside the login card now has a visible but calm Three.js star field with slow drift and soft twinkling in academy-aligned colors. Login card and section layout are unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## LOGIN-THREE-FULL-PAGE-SCENE - 2026-10-21
 
-Owner-approved full outer-background refinement; IN_REVIEW. Added three faint animated elliptical orbital paths to the existing full-viewport star field, producing a clearer celestial scene across the complete area outside the login card. The login card, maroon panel and form section dimensions remain unchanged. PASS: 14 focused tests, targeted ESLint and production build; jsdom canvas notices and existing chunk warnings remain. Browser QA NOT_RUN. No commit/push.
+Owner-approved visual-only follow-up; IN_REVIEW. The full light page area outside the login card now combines the moving star field with three subtle orbital paths for a distinct celestial effect. The login card and both internal sections are unchanged. PASS: 14 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## LOGIN-THREE-VISIBILITY-FIX - 2026-10-21
 
-Owner-reported visibility defect resolved; IN_REVIEW. Real Edge screenshot confirmed the full-page Three.js scene rendered but its compounded opacity was too faint. Increased only the outer star and orbit visibility while preserving all card/section dimensions and the calm motion speed. PASS: Edge browser screenshot at 1918x898, 14 focused tests, targeted ESLint, production build and diff check. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-reported visual defect; IN_REVIEW. Browser inspection showed the outer Three.js canvas working but too faint on the light background. Outer star, twinkle and orbit opacity were raised to a clearly visible restrained level; the login card and internal sections remain unchanged. PASS: Edge screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## LOGIN-OUTER-THREE-REMOVE - 2026-10-21
 
-Owner-approved visual rollback; IN_REVIEW. Removed the page-level Three.js atmosphere from the outer login background while preserving the maroon branding panel's internal atmosphere and every card/section dimension. PASS: Edge browser screenshot at 1918x898, 14 focused tests, targeted ESLint and production build. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved visual rollback; IN_REVIEW. The login page's outer background is plain again. The internal maroon-panel Three.js atmosphere, login card dimensions and authentication behavior remain unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## LOGIN-MAROON-NETWORK-BACKDROP - 2026-10-21
 
-Owner-approved reference-based visual enhancement; IN_REVIEW. Added a dedicated Three.js + GSAP outer backdrop with 54 maroon nodes, proximity connections, slow drift and breathing opacity. The canvas is pointer-free, respects reduced motion and sits behind the unchanged login card and internal sections. PASS: Edge browser screenshot at 1918x898, 14 focused tests, targeted ESLint and production build. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved visual-only ticket; IN_REVIEW. The light background outside the login card now renders a maroon connected-node network using Three.js, with slow GSAP drift and opacity breathing. The login card and both internal sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## LOGIN-MAROON-PARTICLE-FLOW - 2026-10-21
 
-Owner-approved visual extension; IN_REVIEW. Added 680 small maroon flow particles and larger maroon accent particles across the full outer login viewport while retaining the connected-node network. GSAP applies slow drift and breathing opacity; the login card and internal sections remain unchanged. PASS: Edge browser screenshot at 1918x898, 14 focused tests, targeted ESLint and production build. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved visual-only follow-up; IN_REVIEW. Dense flowing particles in maroon shades now cover the complete outer light background and animate alongside the existing connected-node scene using Three.js and GSAP. The login card and internal sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## LOGIN-MAROON-CURVED-TRAILS - 2026-10-21
 
-Owner-approved reference-match refinement; IN_REVIEW. Replaced simple particle lanes with 16 multi-direction curved trails, added 360 distributed background particles and circular glow sprites, and softened the polygon network so the maroon trails dominate. Full outer viewport coverage and GSAP motion are preserved; the login card and sections remain unchanged. PASS: Edge browser screenshot at 1918x898, 14 focused tests, targeted ESLint and production build. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved visual-only refinement; IN_REVIEW. The full outer background now uses glowing maroon particle trails curved across multiple directions, plus distributed depth particles and a softened connected-node layer. Three.js renders the scene and GSAP supplies restrained motion. The login card and sections are unchanged. PASS: Edge browser screenshot, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## LOGIN-OUTER-THREE-REMOVE-MOBILE-NAME - 2026-10-21
 
-Owner-approved visual rollback and responsive fix; IN_REVIEW. Removed the outer Three.js/GSAP backdrop and deleted its dedicated component. Preserved the internal maroon-panel atmosphere. Adjusted only the academy-name mobile clamp and word spacing so the full configured name remains on one line. PASS: desktop and mobile Edge screenshots, 14 focused tests, targeted ESLint, production build and diff check. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved visual rollback and responsive typography correction; IN_REVIEW. The page background is plain after removing the outer Three.js/GSAP component. The academy name uses a smaller mobile-only responsive clamp and remains a complete single line; tablet/desktop size and all section dimensions are unchanged. PASS: desktop/mobile Edge screenshots, 14 focused tests, targeted ESLint and production build. No commit/push.
 
 ## SETTINGS-REMOVE-FEATURE-MODULES - 2026-10-21
 
-Owner-approved settings cleanup; IN_REVIEW. Removed the complete `Feature Modules & Extensions` card, its Teacher Payroll toggle handler and unused wallet icon from Settings. The persisted payroll setting, Finance Payroll tab, calculations, payment history and service layer are unchanged. PASS: 21 focused payroll regression tests, targeted ESLint, production build and diff check. Browser QA NOT_RUN. Existing chunk warnings remain non-blocking. No commit/push.
+Owner-approved Settings-only removal; IN_REVIEW. The `Feature Modules & Extensions` section and its toggle UI/code no longer render in Settings. Finance Payroll remains governed by the existing stored setting and its implementation was not changed. PASS: 21 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## PAYROLL-MONTH-SELECTION-STABILITY - 2026-10-21
 
-Owner-approved payroll state correction; IN_REVIEW. Preserve each branch's manually selected payroll month across payroll-view remounts so background page updates cannot return the selector to the current month. Changing branches restores that branch's last selection or initially uses the current month. PASS: 22 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. Existing chunk warnings remain non-blocking. No commit/push.
+Owner-approved payroll behavior fix; IN_REVIEW. Acceptance: a month selected by the user remains selected while viewing that branch, including after the payroll view remounts; the current month appears initially only when the branch has no prior selection. A focused remount regression test covers the reported failure. PASS: 22 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F12-BRANCH-ADMIN-ROLE - 2026-10-21
 
-Owner-approved role extension; IN_REVIEW. Added branch-scoped Admin with the full implemented module permission set, Super Admin dashboard presentation and assigned-branch-only visibility. Admin user creation is restricted to Owner, Receptionist and Teacher at both UI and service layers. PASS: 50 focused tests, full 625-test suite, targeted ESLint and production build. Browser QA NOT_RUN. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved frontend mock role ticket; IN_REVIEW. Acceptance: Super Admin can assign Admin; Admin receives every implemented module/tab permission inside its assigned branch, cannot select or access an unassigned branch, and the Users form/service allow Admin to create only Owner, Receptionist and Teacher. Permission and login/service regressions cover branch denial and privileged-role creation rejection. PASS: 50 focused tests, full 625-test suite, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F13-BRANCH-THEME-DARK-MODE - 2026-10-21
 
-Owner-approved theme correction; IN_REVIEW. Theme and independent sidebar colors are now branch-scoped and shared across roles. Primary accent propagates through semantic and legacy maroon controls. Dark mode normalizes the shared shell and hardcoded light surfaces for clear contrast. PASS: 57 focused tests, full 626-test suite, targeted ESLint, production build and diff check. Browser QA NOT_RUN. Existing jsdom canvas notices and chunk warnings remain non-blocking. No commit/push.
+Owner-approved frontend theme ticket; IN_REVIEW. Acceptance: settings saved in one branch are visible to every role in that branch, remain isolated from other branches, global theme color changes system accents, sidebar colors remain independently configurable, and dark mode presents readable dark topbar/surfaces/text across shared UI. Added branch-isolation regression coverage. PASS: 57 focused tests, full 626-test suite, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F13-BRANCH-NOTIFICATIONS - 2026-10-21
 
-Owner-approved frontend mock notification ticket; IN_REVIEW. Added a topbar inbox with unread count, read/mark-all-read and delete controls. Receptionist admission/challan activity routes to Admin and Super Admin in the same branch; Admin/Super Admin equivalents route to branch Receptionists; class assignments route only to the assigned Teacher. Owner is excluded. PASS: 14 focused tests, ESLint, production build and diff check. Full suite: 628 passed, 1 unrelated Demo Classes lazy-route timeout failed; isolated rerun remained timing-sensitive. Browser QA NOT_RUN. No commit/push.
+Owner-approved frontend mock ticket; IN_REVIEW. Acceptance: topbar notifications belong to one recipient and one branch; Receptionist student/admission and challan actions notify branch Admin/Super Admin; Admin/Super Admin equivalents notify branch Receptionists; a class assignment notifies its assigned Teacher; Owner receives none. Duplicate events are suppressed. PASS: 14 focused tests, ESLint, production build and diff check. Full suite: 628 passed, 1 Demo Classes lazy-route timeout failed. Browser QA NOT_RUN. No commit/push.
 
 ## F02-ADMISSION-PRICING-DISPLAY - 2026-10-21
 
-Owner-approved Admission display correction; IN_REVIEW. Subject cards show individual prices only when their parent course uses `Sum selected subject fees`. For `One course fee`, subject-level price and missing-fee labels are hidden while existing course totals and financial calculations remain unchanged. PASS: 23 focused/broader Admission tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+Owner-approved frontend ticket; IN_REVIEW. Acceptance: Admission subject cards display each configured subject fee for courses using `subjects` pricing and omit subject prices for courses using `course` pricing, including mixed multi-course selection. Existing configured total calculation remains authoritative. PASS: 23 Admission tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F03-F05-PROFILE-TAB-COLOR - 2026-10-21
 
-Owner-approved visual adjustment; IN_REVIEW. Student and Teacher profile active tabs now use the configured primary maroon background with contrasting white text/icon. Inactive tabs and navigation behavior are unchanged. PASS: targeted ESLint and production build. Automated UI tests NOT_CONFIGURED for these profile pages; browser QA NOT_RUN. No commit/push.
+Owner-approved visual ticket; IN_REVIEW. Acceptance: every active tab on Student and Teacher profiles uses the academy primary maroon surface and readable foreground while inactive tabs retain their existing presentation. PASS: targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F12-USERS-FILTER-ACTIONS - 2026-10-21
 
-Owner-approved Users cleanup; IN_REVIEW. Removed the redundant current-branch `All` filter, renamed the retained role filter to `All Roles` and replaced its native select with the shared polished CustomSelect menu. Removed the View row action and its unused details dialog/state; Edit, Delete and Activate/Deactivate remain. PASS: 37 focused regressions, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+Owner-approved frontend ticket; IN_REVIEW. Acceptance: Users toolbar contains search plus one styled role dropdown whose default label is `All Roles`; the duplicate branch-wide `All` dropdown is absent; table Actions has no View control while existing management actions continue to work. PASS: 37 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## F12-USERS-DATA-LOAD-FIX - 2026-10-21
 
-Owner-reported blank Users table hardened; IN_REVIEW. UsersPage now has explicit loading state, clears stale errors before refresh, replaces stale data on failure, exposes the real load error with a Retry action, and shows the empty state only after a successful load. Mounted route regression now verifies seeded Administrator data, All Roles and absence of View before account creation. PASS: 37 mounted/service tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+Owner-approved reliability fix; IN_REVIEW. Acceptance: current-branch staff rows appear after a successful Users load; loading is distinguishable from an empty result; load failures are visible and retryable instead of silently rendering an empty table. Existing branch authorization and account actions remain unchanged. PASS: 37 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
 
 ## DATA-LEGACY-FACULTY-LINK-REPAIR - 2026-10-21
 
-Owner-reported cross-module data-load failure repaired; IN_REVIEW. Legacy deleted-teacher records no longer invalidate retained faculty assignments and block the shared mock database. Built-in teacher identities are retained as access-revoked professional records; deleted created-teacher tombstones permit historical assignment reads while arbitrary unknown links still fail validation. Revoked identities remain excluded from Users and login. PASS: 70 focused service/database tests, targeted ESLint, production build and diff check. A broader concurrent UI run had 83 passes and 5 existing timing/navigation failures; browser QA NOT_RUN. No commit/push.
+Owner-approved compatibility repair; IN_REVIEW. Acceptance: retained faculty assignments linked to identities deleted by the earlier Users workflow load without blocking Dashboard or other tabs; deleted accounts cannot log in and do not reappear in Users; unrelated invalid teacher links still produce a validation error. No local data reset or history deletion is required. PASS: 70 focused service/database tests, targeted ESLint, production build and diff check. Browser QA NOT_RUN. No commit/push.
 
 ## DATA-LOAD-RECOVERY - 2026-10-21
 
 Owner-reported persistent data-load failure traced to the actual localhost Chrome ERP snapshot: a saved faculty assignment references an existing disabled teacher. The earlier deleted-identity repair did not cover disabled identities. Historical assignment reads now check identity existence independently of current login status/role; new assignment writes retain the enabled branch Teacher requirement. No saved records are erased or reset. Added disabled/role-change regressions covering student reads, dashboard reports, unchanged storage, ineligible new assignments and rejection of arbitrary unknown teacher IDs. PASS: 72 focused service/database tests, targeted ESLint and production build (existing chunk warnings). Actual saved-data replay in a disposable Edge browser resolves the previously failing store and renders dashboard cards. IN_REVIEW; no commit/push.
+
+Browser verification PASS: replayed the read-only localhost Chrome ERP snapshot in a disposable Edge context; Dashboard cards, Students, Admissions, Courses & Batches, Faculty, Fees and Finance loaded with no page errors. Source Chrome storage was never modified. Evidence script and dashboard screenshot: artifacts/data-load-recovery-20261021/. Scoped diff check PASS.
 
 ## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
 
@@ -2276,77 +3108,99 @@ Running balances use payrollVersion:3 in the SAME payrollLines datastore. Old so
 PASS: 62 focused/regression tests (49 payroll/component/faculty/academic/PDF/audit + 9 Finance Overview/financial + 4 mounted payroll); targeted ESLint; production build; diff check. Disposable Edge PASS: salary 15,000 -> payment 5,000 -> remaining 10,000; 130 seconds idle and focus cause zero extra reads/remounts/writes; later January payment settles the same balance with no period creation; PDF, mobile dialog and Finance once-per-payment verified with zero page errors. Existing large-chunk build warnings remain non-blocking. Full repository suite and backend integration NOT_RUN. IN_REVIEW pending owner acceptance; dev branch, unrelated dirty work preserved, no commit/push. Evidence: artifacts/payroll-running-balance-20261022/.
 
 Changed application files: mock/runningPayroll.js (new), mock/assignmentPayroll.js, mock/mockDatabase.js, services/payrollService.js and test, components/Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, DisbursePaymentModal.jsx, PayslipModal.jsx, pages/Finance/FinancePage.jsx, pages/Finance/TeacherPayrollPage.test.jsx, utils/pdfHelpers.js.
-## PAYROLL-TABLE-CLEANUP - 2026-10-22 (IN_REVIEW)
+## PAYROLL-TABLE-CLEANUP - Teacher Payroll table presentation
 
-Owner-authorized Finance Teacher Payroll presentation cleanup. Remove the redundant Combined Teacher Summary and the visible Eligible Students, Listed Fee and Agreed Rate detail columns from the on-screen table. Keep those calculation details in persisted records and report exports. Remove the forced 1080px table width and horizontal scrolling; use a compact eight-column desktop table and stacked mobile rows. Preserve salary setup, agreements, payments, balances, payslips, pagination and running-balance behavior. No Server, calculation or datastore changes. Verification: 10 focused tests PASS, targeted ESLint PASS, production build PASS and scoped git diff check PASS (line-ending warnings only). No commit/push. Awaiting owner review.
+**Status:** IN_REVIEW
+**Authorized:** 2026-10-22
 
-## FACULTY-SYNTHETIC-ASSIGNMENT-CLEANUP - 2026-10-22 (IN_REVIEW)
+Acceptance evidence:
 
-Owner-authorized cleanup of fabricated Faculty directory schedules in both built-in branches. Faculty cards and profiles now derive course, batch, timetable slot and student counts only from saved assignments, saved dated classes and saved active enrollments. Hardcoded fallback slots such as Dr. Irfan's two classes and 120-student labels are no longer projected. Unassigned faculty show no course, no batch, zero students and no assigned classes. Unassigned built-in faculty can be deleted from Faculty: demo-class references no longer block profile deletion, while real saved faculty assignments, dated classes and assigned assets remain protected. Deleted professional identity tombstones remain available for historical record resolution but are hidden from Faculty list/profile access. Verification: 27 focused tests PASS, targeted ESLint PASS, production build PASS, scoped diff check PASS. No commit/push. Awaiting owner review.
+- The on-screen payroll table shows only Teacher, Course/Batch/Subject, Method, Salary Amount, Already Paid, Remaining, Status and Actions.
+- Redundant calculation-detail columns and the duplicated Combined Teacher Summary are removed from the view; calculation metadata remains available to exports and payroll logic.
+- The table has no forced minimum width or horizontal overflow container.
+- Mobile payroll entries stack into readable two-column rows while preserving all actions.
+- Salary records, payment history, agreement configuration, payslips, filters and pagination are unchanged.
+- Focused tests (10), targeted ESLint, production build and scoped diff check pass.
+
+## FACULTY-SYNTHETIC-ASSIGNMENT-CLEANUP - Saved faculty data only
+
+**Status:** IN_REVIEW
+**Authorized:** 2026-10-22
+
+Acceptance evidence:
+
+- Central and North branch faculty views do not project hardcoded timetable slots or fictional 120-student counts.
+- Courses, batches, class slots and student reach display only from saved branch-scoped records.
+- An unassigned faculty member displays no course, no batch, zero students and no classes.
+- Unassigned built-in faculty profiles can be removed through the existing Delete Faculty flow.
+- Seeded demo-class registrations do not block faculty profile removal; real recurring assignments, dated classes and asset links still block unsafe deletion.
+- Removal hides the faculty profile while retaining a tombstoned identity for historical references.
+- 27 focused tests, targeted ESLint, production build and scoped diff check pass.
 ## PAYSLIP-LAYOUT-REF - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized faculty payslip layout cleanup: full-width current earnings, responsive toolbar/padding, compact deterministic display references in modal and PDF. Stored IDs, financial records and transaction references remain unchanged. See PROGRESS.md for verification.
+Current salary earnings use full available width; calculation appears once in assignment context. Payslip/class IDs and long payment tokens use compact display-only references consistently in modal/PDF. Short supplied payment references remain readable. Original identifiers remain authoritative in storage. No financial calculation changes.
 ## PAYROLL-PROGRESS-FILTER - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized compact salary progress section and method-specific progress. Percentage/Fixed Salary selections calculate paid versus payable for that method; All Methods restores combined progress. Search and payment-status filters do not redefine method totals. Seven focused component tests and targeted ESLint PASS. No commit/push.
+Acceptance: reduced progress-section height, removed redundant explanatory paragraph, method label and paid percentage on the same line, accessible progressbar. Progress uses selected calculation method with zero-payable guard; overall KPI totals remain branch-wide. Test verifies 25% fixed, 75% percentage and 63% combined after switching each option. Seven focused tests and targeted ESLint PASS.
 ## PAYROLL-COURSE-BATCH-FILTERS - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized Course and dependent Batch custom dropdowns beside payroll search. All Courses exposes all payroll batches; specific courses constrain batches and changing course clears batch selection. Table/export filtering uses immutable IDs. Paid and Partially Paid use distinct emerald/amber badges with dark-mode colors. Targeted ESLint PASS; verification in PROGRESS.md. No commit/push.
+Acceptance: shared accessible custom menus for All Courses/All Batches; batch choices depend on selected course; changing course resets batch/page; All Courses restores all assignment batches, labeled with their course. Table and exports honor selected IDs. Paid badges emerald, partial badges amber with textual labels and dark variants. Salary/payment persistence and progress calculation unchanged.
 ## PAYROLL-METHOD-MENU-WIDTH - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized local dropdown sizing: calculation-method menu reduced to 140–150px and aligned to the trigger's right edge to avoid right-side overflow. Other menus unchanged.
+Compact All Methods menu uses 140–150px width and right alignment. Existing options/filter behavior retained; no shared component changes.
 ## PAYROLL-ACTIONS-MENU - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized three-dot payroll row actions. Add Payment, Payslip and Salary Agreement move into a compact icon menu, retaining permission/disabled guards. Portal positioning avoids table clipping; Escape/outside/scroll dismiss, arrow keys navigate. Targeted ESLint PASS. No commit/push.
+Acceptance: each row presents an accessible three-dot menu trigger; existing eligible actions appear inside a styled icon menu. Existing payments, agreement and payslip callbacks preserved. Menu positions above/below within viewport, supports arrow navigation, Escape, outside dismissal and focus restoration on selection.
 ## PAYROLL-TABLE-SPACING - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized table spacing refinement: rebalance eight column widths, increase desktop cell/header spacing, right-align numeric headers/values and move compact Actions to the far right. Existing mobile row layout preserved. Targeted ESLint PASS. No commit/push.
+Acceptance: assignment/teacher columns receive additional space; three-dot Actions sits at the right edge; numeric columns align with matching headers; consistent header padding and tracking create separation. Assignment text wraps safely without forced table width.
 ## PAYROLL-TABLE-100-ZOOM - 2026-10-22 (IN_REVIEW)
 
-Owner requests the balanced 90%-zoom table appearance at normal browser zoom. Local responsive type/padding and column distribution adjusted without CSS zoom or forced width. Method/status labels stay unbroken; Status uses column padding rather than translation. Targeted ESLint PASS. No commit/push.
+Acceptance: compact normal-zoom desktop table, responsive text/padding, increased salary/status allocation, unbroken method labels, no forced horizontal width. Mobile stacked rows retained. Exact screenshot parity requires visual review at the owner's viewport.
 ## FINANCE-SHORT-REFERENCES - 2026-10-22 (IN_REVIEW)
 
-Owner-authorized short financial display references. Finance Overview hides embedded PAYROLL/ADVANCE storage tokens; overview and shared payroll/payslip display refs use three numeric digits with type prefixes. Internal IDs/references unchanged. Three-digit display aliases are not unique lookup keys. No commit/push.
+Acceptance: transaction descriptions exclude bracketed payroll/advance tokens; Finance table and exports use compact EXP/RC display refs. Shared payslip/class/payment display refs have three digits. Stored keys, transaction references and financial links remain unchanged; short aliases are presentation only and may repeat.
 ## ROLE-MATRIX-UPDATE - 2026-10-22 (IN_REVIEW)
 
-Owner-approved attachment 0068a230 applied within existing frontend mock architecture. Admin retains full active-branch module access and standard-role user creation restrictions; higher-role account editing/status/deletion is denied. Receptionist gains admission decisions/enrollment, existing-class editing, assets Add/Edit/View and operational reports. Owner gains readonly assets and branch reports. Administrative module guards remain Super Admin/Admin only. Report comparisons recheck each branch's effective role. Teacher self-service pages/payslips remain disabled where not implemented, as allowed by attachment section 5; no branch-wide Teacher financial or student grants were introduced. Existing payroll running balance, branch creation pause and license limits retained. See PROGRESS.md for checks and limitations. No commit/push; awaiting owner review.
-# ROLE-TAB-ACCESS-STRICT — 2026-10-22
+Authorization: owner-supplied final five-role matrix and attached instructions. Scope: existing Admin full module grants, Receptionist full supported admission workflow, restricted administration modules, operational reports/assets and safe existing-class editing. New classes.edit separates editing from create/delete. Admin may not modify, disable or delete Admin/Super Admin accounts or grant those roles through the existing standard staff flow. Receptionist reports exclude expenses and hide the Finance report tab. Owner assets readonly; branch reports allowed without cross-branch comparison. Teacher's unimplemented self-service modules stay denied; no new broad access is substituted for own-record scopes. Monthly approval/four salary methods in the illustration remain superseded by the explicit running-balance decisions. Final acceptance remains IN_REVIEW.
+# ROLE-TAB-ACCESS-STRICT — Strict role-based module discovery and access
 
-**Status:** IN_REVIEW
+**Status:** IN_REVIEW — owner acceptance required.
 
-Owner-approved strict role/branch navigation enforcement is implemented on `dev`. A single module-access registry now drives desktop/mobile sidebar and Ctrl+K discovery; denied modules and empty groups are absent from the DOM, direct routes remain permission guarded, payroll has a separate read permission, branch switching recomputes access, and logout clears the mock session plus transient page resources. No finance, admission, salary or payroll calculation changed. No commit/push.
+Centralize visible modules, hide denied sidebar/mobile/search entries, protect direct routes including Teacher Payroll, preserve service/action/export authorization, re-evaluate permissions after branch changes, and clear transient sensitive cache on logout. Existing UI and domain calculations remain unchanged. Teacher remains dashboard-only until separately approved own-record route/query implementations exist; broad branch records were not exposed to simulate missing self-service screens.
 
-## DASHBOARD-PREMIUM-THEME — 2026-10-22
+## DASHBOARD-PREMIUM-THEME — Shared premium role-dashboard styling
 
-**Status:** IN_REVIEW
+**Status:** IN_REVIEW. Reuse the existing Super Admin KPI card primitive across five roles; align Owner, Receptionist and Teacher headers, content panels, spacing, borders, radii and shadows without changing data, calculations, actions or permissions. Preserve Super Admin presentation and responsive behavior.
 
-Owner-approved styling-only alignment applies the Super Admin KPI and panel design language to Admin, Receptionist, Owner and Teacher dashboards. Role-specific content, data loading, actions, sidebar permissions and routes remain unchanged. No commit/push.
+## LOGIN-MOCK-CREDENTIAL-REPAIR - Local Super Admin sign-in
 
-## LOGIN-MOCK-CREDENTIAL-REPAIR - 2026-10-22
-
-Owner-authorized local login repair. Corrected the ignored `Client/.env.local` Super Admin email key and restarted the stale Vite process so the configured credentials are loaded. No academy records, stored credentials, auth rules or application source were changed. Focused auth tests, targeted ESLint and disposable Edge login pass. IN_REVIEW; no commit/push.
+**Status:** IN_REVIEW. Ensure the ignored local Vite environment exposes the configured Super Admin email/password to the existing mock credential adapter, reload the dev server environment, preserve browser data and verify the login form in a disposable browser.
 
 ## PAYROLL-REPORTS-CACHE-20261022
 
-**Status:** IN_REVIEW. Owner attachment 51d487e7 authorizes saved running-payroll reporting plus improvements to the existing canonical-version page cache. Adds permission-scoped Payroll report rows, real KPIs, current balance chart, teacher totals, period/teacher filters and branded exports. Payroll and Audit initialize from valid scoped snapshots; Reports derived reads reuse the same bounded cache. No new datastore, payroll formula, monthly approval or dependencies. Earlier responsive changes remain preserved with final acceptance pending. No commit/push.
-## ROLE-DATA-FLOW-20261022 — IN_REVIEW
+**Status:** IN_REVIEW. Teacher Payroll & Salary Ledger is accessible to current-branch Admin/Super Admin and readonly/export Owner; Receptionist receives no payroll records, Teacher remains denied organization reports. Salary values project existing saved obligations; verified payments include linked source lines exactly once. Setup-only assignments are excluded. Existing report filters, row selection and PDF/CSV template are reused. Tenant remains the single academy namespace; source/session/organization signatures scope and invalidate the shared transient cache. Full validation evidence is recorded in PROGRESS.md.
+## ROLE-DATA-FLOW-20261022 — Five-role authoritative dashboard data flow
 
-- Owner-approved frontend task: bind all role dashboards to the canonical saved mock database with branch, account, role and permission isolation.
-- Implemented permission-aware dashboard projection, mutation-safe cache keys, Teacher own-assignment/student/salary scoping, and saved Owner/Receptionist summaries.
-- Focused integration, role/security, browser, ESLint and production-build evidence is recorded in PROGRESS.md. No commit or push; owner acceptance remains required.
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
 
-## ALL-ROLE-PREMIUM-RESPONSIVE-20261022 — IN_REVIEW
+Acceptance evidence: role dashboards no longer use invented KPI/activity/session values; one branch-scoped projection reads canonical saved records. Teacher results are intersected with the logged-in teacher's assignments, batches, subjects and active enrollments. Verified fee receipts, payroll rows and posted expenses are projected only to approved roles. Transient cache entries include account, branch, effective role and permission signatures and are invalidated by database, organization or session byte changes.
 
-- Owner-approved presentation ticket completed across the shared shell and all five role dashboards while preserving role data, permissions and workflows.
-- Mobile KPI/action grids, navigation/search/dialog sizing, table containment and tablet quick-action layout now remain inside the viewport; verified dimensions and checks are recorded in PROGRESS.md.
-- No dependency, backend, calculation, route or permission change. No commit/push; owner visual acceptance remains required.
+## ALL-ROLE-PREMIUM-RESPONSIVE-20261022 — Shared responsive presentation
 
-## TEACHER-PROFILE-DASHBOARD-CLEANUP-20261022 — IN_REVIEW
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
 
-- Removed Teacher My Profile back/contact actions and the Teacher Dashboard Instructor Actions section.
-- Teacher profile KPI cards now read the existing own-record dashboard projection so saved batches, weekly hours, enrolled-student reach and class slots remain account/branch scoped.
-- Focused tests, Edge QA, ESLint and build pass. No commit/push; owner review remains required.
+Acceptance evidence: the existing Super Admin visual system is shared by all role dashboards without copying restricted content. The shell, mobile drawer, global search, KPI/action grids, forms, tables and dialogs fit the required phone, landscape, tablet and desktop widths. Narrow Receptionist cards and 1024px Teacher actions no longer create document-level horizontal overflow. Business logic, data, permissions and Super Admin design remain unchanged.
 
-## FINAL-FRONTEND-QA-DEV-PUSH-20261023 — Final release verification
+## TEACHER-PROFILE-DASHBOARD-CLEANUP-20261022 — Teacher self-service cleanup
 
-Owner explicitly authorizes final QA and one normal commit/push to `dev` after all critical gates pass. Review covers all existing uncommitted frontend source, tests and tracking docs. Confirmed corrections: permission-safe Reports default category, Teacher session navigation to own timetable, viewport-contained phone notifications, and nine-category Reports assertion. Final QA VERIFIED: 692/692 complete tests, zero ESLint errors/warnings, production build and five-role responsive browser checks PASS. Evidence and limitations: `FINAL_FRONTEND_QA_20261023.md`. No backend deployment or production-readiness claim.
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
+
+Acceptance: Teacher My Profile omits Back to Dashboard, WhatsApp and Call actions; administrative faculty profiles retain their existing back/contact controls. Teacher Dashboard omits the complete Instructor Actions section. Profile KPIs and academic assignments use the permission-scoped own-record projection and never broaden Teacher access to branch-wide faculty or students.
+
+## FINAL-FRONTEND-QA-DEV-PUSH-20261023 — Owner-authorized release QA
+
+Scope: full ESLint, complete Vitest, production build, five-role saved-data and access checks, payroll/report/export reconciliation, cache invalidation, responsive browser QA and reviewed normal `dev` commit/push. Existing work, data and artifacts must survive. No new dependencies, disabled rules/tests, backend work, reset/stash/clean, rebase or forced push. Acceptance evidence is centralized in `FINAL_FRONTEND_QA_20261023.md`; Git publication is conditional on the final passing gates and unchanged remote ancestry.

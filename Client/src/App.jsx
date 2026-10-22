@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import AppRouter from './routes/AppRouter.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { BranchProvider } from './contexts/BranchContext.jsx'
@@ -24,7 +25,7 @@ function App() {
   }, [])
 
   return (
-    <AuthProvider><BranchProvider><AcademyProvider><ThemeProvider><AppRouter /></ThemeProvider></AcademyProvider></BranchProvider></AuthProvider>
+    <AuthProvider><BranchProvider><AcademyProvider><ThemeProvider><AppRouter /><SpeedInsights /></ThemeProvider></AcademyProvider></BranchProvider></AuthProvider>
   )
 }
 

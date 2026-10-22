@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -72,15 +72,12 @@ describe('context invalidation and deny-by-default guard', () => {
     expect(screen.queryByLabelText('Branch draft')).not.toBeInTheDocument()
   })
 
-  it('ignores a stale session restoration that finishes after a login', async () => {
-    let finishRestore
-    vi.spyOn(authService, 'getSession').mockReturnValue(new Promise((resolve) => { finishRestore = resolve }))
+  it('restores a saved session on the first render without a loading frame', async () => {
+    await authService.login({ userId: 'demo-owner' })
     render(<Harness />)
-    const user = userEvent.setup()
-    await user.click(screen.getByRole('button', { name: 'Change user' }))
-    const restored = { user: { id: 'stale', enabled: true, assignments: [] }, branchId: null }
-    await act(async () => finishRestore(restored))
     expect(screen.getByTestId('identity')).toHaveTextContent('demo-owner:demo-central:owner')
+    expect(screen.getByLabelText('Branch draft')).toBeInTheDocument()
+    expect(screen.queryByText('Restoring session...')).not.toBeInTheDocument()
   })
 
   it('clears in-memory identity and reports failure if saved logout cannot be cleared', async () => {

@@ -589,18 +589,18 @@ After implementation, agents must:
 
 ## 20. Related Documents
 
-- [Documentation Index](README.md)
-- [Product Requirements](PRD.md)
-- [System Design](SYSTEM_DESIGN.md)
+- [Documentation Index](../00-CORE/README.md)
+- [Product Requirements](../00-CORE/PRD.md)
+- [System Design](../00-CORE/SYSTEM_DESIGN.md)
 - [Database ERD](ERD.md)
-- [Design System](DESIGN.md)
-- [Security Specification](SECURITY.md)
-- [Frontend Integration](FRONTEND_INTEGRATION.md)
-- [Engineering Rules](RULES.md)
-- [Feature Tickets](FEATURE_TICKETS.md)
-- [Current Tasks](TASKS.md)
-- [Project Decisions](MEMORY.md)
-- [Progress](PROGRESS.md)
+- [Design System](../04-FRONTEND/DESIGN.md)
+- [Security Specification](../SECURITY.md)
+- [Frontend Integration](../04-FRONTEND/FRONTEND_INTEGRATION.md)
+- [Engineering Rules](../00-CORE/RULES.md)
+- [Feature Tickets](../00-CORE/FEATURE_TICKETS.md)
+- [Current Tasks](../00-CORE/TASKS.md)
+- [Project Decisions](../00-CORE/MEMORY.md)
+- [Progress](../00-CORE/PROGRESS.md)
 
 ---
 

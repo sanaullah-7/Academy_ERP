@@ -1,6 +1,6 @@
 # Academy Management ERP — Documentation Guide
 
-**Document:** docs/README.md
+**Document:** docs/00-CORE/README.md
 **Version:** 1.0
 **Status:** ACTIVE — Documentation Index; Specifications Under Review
 **Last Updated:** 2026-10-09
@@ -76,19 +76,16 @@ Academy-ERP/
 ├── Client/
 ├── Server/
 ├── docs/
-│   ├── README.md
-│   ├── PRD.md
-│   ├── SYSTEM_DESIGN.md
-│   ├── ARCHITECTURE.md
-│   ├── ERD.md
-│   ├── DESIGN.md
+│   ├── 00-CORE/
+│   ├── 01-ARCHITECTURE/
+│   ├── 02-DATABASE-AND-API/
+│   ├── 03-SECURITY/
+│   ├── 04-FRONTEND/
+│   ├── 05-DEVELOPMENT/
+│   ├── 06-OPERATIONS/
+│   ├── 07-INTEGRATIONS-AND-QA/
 │   ├── SECURITY.md
-│   ├── FRONTEND_INTEGRATION.md
-│   ├── RULES.md
-│   ├── FEATURE_TICKETS.md
-│   ├── TASKS.md
-│   ├── MEMORY.md
-│   └── PROGRESS.md
+│   └── FINAL_FRONTEND_QA_20261023.md
 ├── AGENTS.md
 ├── README.md
 ├── .gitignore
@@ -115,11 +112,11 @@ Each document has one primary responsibility.
 |---|---|
 | [PRD.md](PRD.md) | Product requirements, scope, user needs, modules and success criteria |
 | [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md) | Business workflows, module interactions, entity lifecycles and operational behavior |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technology stack, architectural boundaries, application layers and infrastructure |
-| [ERD.md](ERD.md) | Database entities, collections, relationships, constraints and data integrity |
-| [DESIGN.md](DESIGN.md) | Visual system, UX, reusable UI components, responsive design and accessibility |
-| [SECURITY.md](SECURITY.md) | Authentication, roles, permissions, branch access, sensitive operations and privacy controls |
-| [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md) | Frontend pages, mock services, data/API contracts and integration behavior |
+| [ARCHITECTURE.md](../01-ARCHITECTURE/ARCHITECTURE.md) | Technology stack, architectural boundaries, application layers and infrastructure |
+| [ERD.md](../01-ARCHITECTURE/ERD.md) | Database entities, collections, relationships, constraints and data integrity |
+| [DESIGN.md](../04-FRONTEND/DESIGN.md) | Visual system, UX, reusable UI components, responsive design and accessibility |
+| [SECURITY.md](../SECURITY.md) | Authentication, roles, permissions, branch access, sensitive operations and privacy controls |
+| [FRONTEND_INTEGRATION.md](../04-FRONTEND/FRONTEND_INTEGRATION.md) | Frontend pages, mock services, data/API contracts and integration behavior |
 | [RULES.md](RULES.md) | Mandatory coding standards, engineering restrictions, testing and quality gates |
 | [FEATURE_TICKETS.md](FEATURE_TICKETS.md) | Small implementation tickets, scope, dependencies and acceptance criteria |
 | [TASKS.md](TASKS.md) | Current authorized task and near-term backlog |
@@ -130,8 +127,8 @@ Each document has one primary responsibility.
 
 | Document | Responsibility |
 |---|---|
-| [AGENTS.md](../AGENTS.md) | Instructions for AI coding agents and required document-reading behavior |
-| [README.md](../README.md) | Repository overview, installation, commands and developer onboarding |
+| [AGENTS.md](../../AGENTS.md) | Instructions for AI coding agents and required document-reading behavior |
+| [README.md](../../README.md) | Repository overview, installation, commands and developer onboarding |
 
 ### Important Distinction
 
@@ -198,11 +195,11 @@ A document marked APPROVED does not automatically approve unrelated TBD requirem
 
 Read:
 
-1. [Root Agent Instructions](../AGENTS.md)
+1. [Root Agent Instructions](../../AGENTS.md)
 2. [Engineering Rules](RULES.md)
 3. [Product Requirements](PRD.md)
 4. [System Design](SYSTEM_DESIGN.md)
-5. [Technical Architecture](ARCHITECTURE.md)
+5. [Technical Architecture](../01-ARCHITECTURE/ARCHITECTURE.md)
 6. [Current Tasks](TASKS.md)
 7. [Feature Tickets](FEATURE_TICKETS.md)
 8. [Progress](PROGRESS.md)
@@ -558,7 +555,7 @@ Perform integrated testing and client acceptance before using real operational d
 
 ### Governance
 
-- [Agent Instructions](../AGENTS.md)
+- [Agent Instructions](../../AGENTS.md)
 - [Engineering Rules](RULES.md)
 - [Current Tasks](TASKS.md)
 - [Feature Tickets](FEATURE_TICKETS.md)
@@ -569,15 +566,15 @@ Perform integrated testing and client acceptance before using real operational d
 
 - [Product Requirements](PRD.md)
 - [System Design](SYSTEM_DESIGN.md)
-- [Technical Architecture](ARCHITECTURE.md)
-- [Database Design](ERD.md)
-- [Visual Design](DESIGN.md)
-- [Security](SECURITY.md)
-- [Frontend Integration](FRONTEND_INTEGRATION.md)
+- [Technical Architecture](../01-ARCHITECTURE/ARCHITECTURE.md)
+- [Database Design](../01-ARCHITECTURE/ERD.md)
+- [Visual Design](../04-FRONTEND/DESIGN.md)
+- [Security](../SECURITY.md)
+- [Frontend Integration](../04-FRONTEND/FRONTEND_INTEGRATION.md)
 
 ### Repository
 
-- [Project README](../README.md)
+- [Project README](../../README.md)
 
 ---
 

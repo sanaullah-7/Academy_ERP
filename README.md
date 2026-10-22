@@ -33,7 +33,7 @@ The project follows a frontend-first development approach using mock data and ce
 
 This README introduces the project and development workflow.
 
-Detailed requirements are maintained in the [documentation directory](docs/README.md).
+Detailed requirements are maintained in the [documentation directory](docs/00-CORE/README.md).
 
 ---
 
@@ -98,7 +98,7 @@ During frontend development, mock adapters supply fictional demo data.
 
 During backend integration, HTTP adapters connect the frontend to authorized Express API endpoints.
 
-Refer to [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Refer to [ARCHITECTURE.md](docs/01-ARCHITECTURE/ARCHITECTURE.md).
 
 ---
 
@@ -391,7 +391,7 @@ Do not scatter localStorage operations across page components.
 
 Mock authentication is not secure production authentication.
 
-Detailed contracts belong in [FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md).
+Detailed contracts belong in [FRONTEND_INTEGRATION.md](docs/04-FRONTEND/FRONTEND_INTEGRATION.md).
 
 ---
 
@@ -426,7 +426,7 @@ The frontend is divided into controlled development phases.
 - Update project progress honestly.
 - Do not automatically begin the next phase.
 
-Detailed implementation plans belong in [FEATURE_TICKETS.md](docs/FEATURE_TICKETS.md).
+Detailed implementation plans belong in [FEATURE_TICKETS.md](docs/00-CORE/FEATURE_TICKETS.md).
 
 ---
 
@@ -437,7 +437,7 @@ This project uses Codex and Antigravity for development assistance.
 Both tools must follow:
 
 - [AGENTS.md](AGENTS.md).
-- [RULES.md](docs/RULES.md).
+- [RULES.md](docs/00-CORE/RULES.md).
 - The active approved ticket.
 - Relevant authoritative specifications.
 
@@ -586,7 +586,7 @@ Frontend implementation must follow the approved visual design rather than intro
 
 Exact colors, font choices, layout dimensions and detailed interactions require verification against approved screenshots or source files.
 
-See [DESIGN.md](docs/DESIGN.md).
+See [DESIGN.md](docs/04-FRONTEND/DESIGN.md).
 
 ---
 
@@ -596,19 +596,19 @@ All central project specifications are stored under the root `docs/` directory.
 
 | Document | Purpose |
 |---|---|
-| [docs/README.md](docs/README.md) | Documentation index |
-| [docs/PRD.md](docs/PRD.md) | Product requirements |
-| [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md) | System workflows |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture |
-| [docs/ERD.md](docs/ERD.md) | Database design |
-| [docs/DESIGN.md](docs/DESIGN.md) | Visual and UX standards |
+| [docs/00-CORE/README.md](docs/00-CORE/README.md) | Documentation index |
+| [docs/00-CORE/PRD.md](docs/00-CORE/PRD.md) | Product requirements |
+| [docs/00-CORE/SYSTEM_DESIGN.md](docs/00-CORE/SYSTEM_DESIGN.md) | System workflows |
+| [docs/01-ARCHITECTURE/ARCHITECTURE.md](docs/01-ARCHITECTURE/ARCHITECTURE.md) | Technical architecture |
+| [docs/01-ARCHITECTURE/ERD.md](docs/01-ARCHITECTURE/ERD.md) | Database design |
+| [docs/04-FRONTEND/DESIGN.md](docs/04-FRONTEND/DESIGN.md) | Visual and UX standards |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security and permissions |
-| [docs/FRONTEND_INTEGRATION.md](docs/FRONTEND_INTEGRATION.md) | Frontend/service/API contracts |
-| [docs/RULES.md](docs/RULES.md) | Engineering rules |
-| [docs/FEATURE_TICKETS.md](docs/FEATURE_TICKETS.md) | Implementation tickets |
-| [docs/TASKS.md](docs/TASKS.md) | Active work |
-| [docs/MEMORY.md](docs/MEMORY.md) | Decision history |
-| [docs/PROGRESS.md](docs/PROGRESS.md) | Verified progress |
+| [docs/04-FRONTEND/FRONTEND_INTEGRATION.md](docs/04-FRONTEND/FRONTEND_INTEGRATION.md) | Frontend/service/API contracts |
+| [docs/00-CORE/RULES.md](docs/00-CORE/RULES.md) | Engineering rules |
+| [docs/00-CORE/FEATURE_TICKETS.md](docs/00-CORE/FEATURE_TICKETS.md) | Implementation tickets |
+| [docs/00-CORE/TASKS.md](docs/00-CORE/TASKS.md) | Active work |
+| [docs/00-CORE/MEMORY.md](docs/00-CORE/MEMORY.md) | Decision history |
+| [docs/00-CORE/PROGRESS.md](docs/00-CORE/PROGRESS.md) | Verified progress |
 
 Do not duplicate conflicting central specifications in the application folders.
 
@@ -650,7 +650,7 @@ The presence of a requirement in a draft does not authorize implementation.
 - Detailed business rules and security permissions remain partly unresolved.
 - A fresh repository audit is required before implementing F00.
 
-Refer to [PROGRESS.md](docs/PROGRESS.md) for verified status.
+Refer to [PROGRESS.md](docs/00-CORE/PROGRESS.md) for verified status.
 
 Do not use this introductory README as a substitute for implementation evidence.
 
@@ -660,10 +660,10 @@ Do not use this introductory README as a substitute for implementation evidence.
 
 1. Read this README.
 2. Read [AGENTS.md](AGENTS.md).
-3. Read [docs/README.md](docs/README.md).
-4. Review [RULES.md](docs/RULES.md).
-5. Read the active approved task in [TASKS.md](docs/TASKS.md).
-6. Read the corresponding ticket in [FEATURE_TICKETS.md](docs/FEATURE_TICKETS.md).
+3. Read [docs/00-CORE/README.md](docs/00-CORE/README.md).
+4. Review [RULES.md](docs/00-CORE/RULES.md).
+5. Read the active approved task in [TASKS.md](docs/00-CORE/TASKS.md).
+6. Read the corresponding ticket in [FEATURE_TICKETS.md](docs/00-CORE/FEATURE_TICKETS.md).
 7. Review the relevant specifications.
 8. Inspect the existing project and Git status.
 9. Install dependencies if required and approved.

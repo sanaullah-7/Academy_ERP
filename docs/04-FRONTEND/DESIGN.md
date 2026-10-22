@@ -20,7 +20,7 @@ Owner-approved login-only polish: the configured academy logo keeps its white im
 
 Owner accepted F00-004's implemented/report-tested mock design scope with the other foundations; prior pending-acceptance snapshots remain history. No formal accessibility certification or production deployment is claimed.
 
-F01-001 reuses approved teal/Jakarta/sidebar/topbar/Card tokens. Current read-only reference DOM confirms Plus Jakarta Sans and rgb(248,249,255) canvas; observed greeting, four KPI cards, larger chart area and Quick Operations inspired the section hierarchy. The web tool could not access the URL; Edge rendered content in interactive state although an initial complete-state wait timed out. No new exact tokens, example financial figures/actions, role policies or statistics were adopted. [Skeleton screenshots and checks](PROGRESS.md#f01-001--dashboard-skeleton-delivery-2026-10-10).
+F01-001 reuses approved teal/Jakarta/sidebar/topbar/Card tokens. Current read-only reference DOM confirms Plus Jakarta Sans and rgb(248,249,255) canvas; observed greeting, four KPI cards, larger chart area and Quick Operations inspired the section hierarchy. The web tool could not access the URL; Edge rendered content in interactive state although an initial complete-state wait timed out. No new exact tokens, example financial figures/actions, role policies or statistics were adopted. [Skeleton screenshots and checks](../00-CORE/PROGRESS.md#f01-001--dashboard-skeleton-delivery-2026-10-10).
 
 ---
 
@@ -43,7 +43,7 @@ The live reference was rechecked in Edge before implementation. Rendered measure
 
 Only the five requested shadcn-derived source components were added; manual config targets existing Tailwind v4. Default Button/Input targets are at least 44px, Input uses a visible outline and focus ring, Dialog requires accessible title/description and handles keyboard modality through Radix. Input callers must provide labels. No dark theme, authentication, branch/session controls, search workflow, working module navigation or dashboard data introduced.
 
-[Executed verification and limitations](PROGRESS.md#f00-004--verification-evidence-2026-10-09). Sampled contrast and keyboard/ARIA checks passed; screen-reader certification, maintained tests and deployment fallback remain unverified. Future visual/business changes require separate approval.
+[Executed verification and limitations](../00-CORE/PROGRESS.md#f00-004--verification-evidence-2026-10-09). Sampled contrast and keyboard/ARIA checks passed; screen-reader certification, maintained tests and deployment fallback remain unverified. Future visual/business changes require separate approval.
 
 ---
 
@@ -101,7 +101,7 @@ Teal/blue financial highlights and red outstanding-fee emphasis are visible. Ful
 
 Reference availability is resolved for this review. Observations are verified for this public page/date, not blanket approval to replace application tokens. The narrow-screen defects and sampled inactive controls need owner review. Existing draft values remain provisional until approved reconciliation. No code, packages or theme tokens were changed.
 
-[Progress evidence](PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09) and [current task](TASKS.md#doc-sync-001--latest-task-state-2026-10-09) record the delivery limits. No additional implementation is authorized.
+[Progress evidence](../00-CORE/PROGRESS.md#doc-sync-001--delivery-evidence-2026-10-09) and [current task](../00-CORE/TASKS.md#doc-sync-001--latest-task-state-2026-10-09) record the delivery limits. No additional implementation is authorized.
 
 ---
 
@@ -1177,16 +1177,16 @@ This DESIGN.md owns the visual standards and UX consistency rules.
 
 Other documents own their respective requirements:
 
-- [PRD](PRD.md) — Product requirements.
-- [System Design](SYSTEM_DESIGN.md) — Business workflows.
-- [Technical Architecture](ARCHITECTURE.md) — Implementation architecture.
-- [Security](SECURITY.md) — Roles and authorization.
+- [PRD](../00-CORE/PRD.md) — Product requirements.
+- [System Design](../00-CORE/SYSTEM_DESIGN.md) — Business workflows.
+- [Technical Architecture](../01-ARCHITECTURE/ARCHITECTURE.md) — Implementation architecture.
+- [Security](../SECURITY.md) — Roles and authorization.
 - [Frontend Integration](FRONTEND_INTEGRATION.md) — UI behavior and API contracts.
-- [Feature Tickets](FEATURE_TICKETS.md) — Implementation tasks.
-- [Engineering Rules](RULES.md) — Mandatory code quality.
-- [Tasks](TASKS.md) — Active implementation work.
-- [Progress](PROGRESS.md) — Verified completion.
-- [Documentation Index](README.md) — Documentation navigation.
+- [Feature Tickets](../00-CORE/FEATURE_TICKETS.md) — Implementation tasks.
+- [Engineering Rules](../00-CORE/RULES.md) — Mandatory code quality.
+- [Tasks](../00-CORE/TASKS.md) — Active implementation work.
+- [Progress](../00-CORE/PROGRESS.md) — Verified completion.
+- [Documentation Index](../00-CORE/README.md) — Documentation navigation.
 
 If requirements conflict, stop and request clarification rather than inventing a resolution.
 

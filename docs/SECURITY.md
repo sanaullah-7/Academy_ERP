@@ -17,7 +17,7 @@
 
 Owner accepted F00's implemented mock access scope and separately authorized /dashboard shared skeleton under the existing workspace.view guard. No new permission or Super Admin bypass is granted. Sidebar navigation is available only with valid selected authorized branch context; invalid sessions/assignments retain existing recovery/denial flows. The page shows no real metrics or executable ERP actions.
 
-Mock route access is not production security. Final role dashboard selection/combining, metric visibility, sensitive actions, All Branches and server authorization remain separately approval-gated. [Current evidence and limitations](PROGRESS.md#f01-001--dashboard-skeleton-delivery-2026-10-10).
+Mock route access is not production security. Final role dashboard selection/combining, metric visibility, sensitive actions, All Branches and server authorization remain separately approval-gated. [Current evidence and limitations](00-CORE/PROGRESS.md#f01-001--dashboard-skeleton-delivery-2026-10-10).
 
 ---
 
@@ -25,7 +25,7 @@ Mock route access is not production security. Final role dashboard selection/com
 
 F00-005/006/007 implementations now exist and their current regression checks passed; earlier future-work wording is historical. F00-010 grants no additional permission: workspace.view remains the sole baseline for a valid assigned branch/recognized role. Unknown, ERP and sensitive operations remain denied to every role, including Super Admin. hasRole is informational and must never substitute for can(permission).
 
-Mock storage/identity and branch filtering are not production authorization. Real backend enforcement, session revocation and privacy/integration validation remain unimplemented/unverified. Broad matrix, role-combining/deny policy, financial visibility, record scope and All Branches require approval before affected F01/ERP behavior. Full WCAG/security/remote CI audits were not performed. [Current evidence and readiness limitations](PROGRESS.md#f00-010--foundation-verification-delivery-2026-10-09).
+Mock storage/identity and branch filtering are not production authorization. Real backend enforcement, session revocation and privacy/integration validation remain unimplemented/unverified. Broad matrix, role-combining/deny policy, financial visibility, record scope and All Branches require approval before affected F01/ERP behavior. Full WCAG/security/remote CI audits were not performed. [Current evidence and readiness limitations](00-CORE/PROGRESS.md#f00-010--foundation-verification-delivery-2026-10-09).
 
 ---
 
@@ -37,7 +37,7 @@ Only `workspace.view` is allowed for a valid fictional enabled user with a concr
 
 Mock persistence contains only user/branch IDs and a schema version; roles are reconstructed from canonical fictional fixtures. Malformed sessions, disabled users and unauthorized branches do not confer workspace access. Mock browser storage/route guards remain forgeable frontend UX and are not production authentication or authorization.
 
-The broad proposed matrix and role-combination TBD later in this document remain unapproved for ERP/production use. This minimal baseline does not resolve them. F00-006/F00-007 remain separately approved future work. [Executed tests](PROGRESS.md#f00-005--completed-implementation-evidence-2026-10-09).
+The broad proposed matrix and role-combination TBD later in this document remain unapproved for ERP/production use. This minimal baseline does not resolve them. F00-006/F00-007 remain separately approved future work. [Executed tests](00-CORE/PROGRESS.md#f00-005--completed-implementation-evidence-2026-10-09).
 
 ---
 
@@ -1362,18 +1362,18 @@ This document owns authentication, authorization and data protection requirement
 
 Related documentation:
 
-- [Documentation Index](README.md)
-- [Product Requirements](PRD.md)
-- [System Design](SYSTEM_DESIGN.md)
-- [Technical Architecture](ARCHITECTURE.md)
-- [Database ERD](ERD.md)
-- [Visual Design](DESIGN.md)
-- [Frontend Integration](FRONTEND_INTEGRATION.md)
-- [Engineering Rules](RULES.md)
-- [Feature Tickets](FEATURE_TICKETS.md)
-- [Current Tasks](TASKS.md)
-- [Project Memory](MEMORY.md)
-- [Verified Progress](PROGRESS.md)
+- [Documentation Index](00-CORE/README.md)
+- [Product Requirements](00-CORE/PRD.md)
+- [System Design](00-CORE/SYSTEM_DESIGN.md)
+- [Technical Architecture](01-ARCHITECTURE/ARCHITECTURE.md)
+- [Database ERD](01-ARCHITECTURE/ERD.md)
+- [Visual Design](04-FRONTEND/DESIGN.md)
+- [Frontend Integration](04-FRONTEND/FRONTEND_INTEGRATION.md)
+- [Engineering Rules](00-CORE/RULES.md)
+- [Feature Tickets](00-CORE/FEATURE_TICKETS.md)
+- [Current Tasks](00-CORE/TASKS.md)
+- [Project Memory](00-CORE/MEMORY.md)
+- [Verified Progress](00-CORE/PROGRESS.md)
 
 ### Ownership Rules
 
@@ -1454,27 +1454,27 @@ Every admission read/write checks current mock identity and active assigned bran
 
 ## F02-003 latest simple legacy deletion rule (2026-10-10)
 
-The owner's latest simple CRUD instruction SUPERSEDES the earlier requirement that both linked records carry createdByAdmissionFlow markers. A uniquely linked same-branch Provisional student may be removed atomically with its admission, including unmarked legacy pairs. Reciprocal links, branch matching, uniqueness and status are validated; ambiguous/broken/Active links are denied without a write. No unrelated records or sequence counters are removed. Existing markers remain optional historical metadata, not a deletion prerequisite. No data-reset/migration framework, production permission, backend or fees/enrollment changes. F02-003 IN_REVIEW; final 176/176 regressions PASS. [Evidence](PROGRESS.md#f02-003-simple-crud-completion---legacy-deletion-correction-2026-10-10).
+The owner's latest simple CRUD instruction SUPERSEDES the earlier requirement that both linked records carry createdByAdmissionFlow markers. A uniquely linked same-branch Provisional student may be removed atomically with its admission, including unmarked legacy pairs. Reciprocal links, branch matching, uniqueness and status are validated; ambiguous/broken/Active links are denied without a write. No unrelated records or sequence counters are removed. Existing markers remain optional historical metadata, not a deletion prerequisite. No data-reset/migration framework, production permission, backend or fees/enrollment changes. F02-003 IN_REVIEW; final 176/176 regressions PASS. [Evidence](00-CORE/PROGRESS.md#f02-003-simple-crud-completion---legacy-deletion-correction-2026-10-10).
 
 ## F02-003 latest gapless display serial contract (2026-10-10)
 
 Latest owner instruction SUPERSEDES earlier permanent-counter values as visible serials. A response-only projection derives independent Student displaySerial and Admission displaySerial/displayAdmissionId from complete branch insertion order, before search/filter/sort. Linked Student admissionDisplaySerialId reflects the admission's current serial. Create appends; edit retains order; deletion closes gaps; reload retains persisted array order. Projection fields are never stored or used as lookup keys.
 
-Immutable internal id/studentId/student.admissionId foreign keys and historical admissionId/admissionNumber/studentNumber/admissionDisplayId metadata remain untouched, including legacy ADM-* internal IDs. Existing durable counters remain historical allocation metadata, not visible list positions. Admissions View distinguishes current serial from permanent reference; actions continue using internal IDs. Student serials cover all branch students, including legacy/unrelated records. No schema migration, reset, backend, production permission, fees/enrollment or new Student page. Future HTTP responses must preserve deterministic full-branch serial semantics. [Verified evidence](PROGRESS.md#f02-003-gapless-branch-display-numbering-correction-2026-10-10).
+Immutable internal id/studentId/student.admissionId foreign keys and historical admissionId/admissionNumber/studentNumber/admissionDisplayId metadata remain untouched, including legacy ADM-* internal IDs. Existing durable counters remain historical allocation metadata, not visible list positions. Admissions View distinguishes current serial from permanent reference; actions continue using internal IDs. Student serials cover all branch students, including legacy/unrelated records. No schema migration, reset, backend, production permission, fees/enrollment or new Student page. Future HTTP responses must preserve deterministic full-branch serial semantics. [Verified evidence](00-CORE/PROGRESS.md#f02-003-gapless-branch-display-numbering-correction-2026-10-10).
 
 ## F03-001 limited directory order exception (2026-10-11)
 
-CONFIRMED owner authorization: read-only DEMO Students Directory before F02-004; defer enrollment dependency only for listing. /students and sidebar now display saved branch students, gapless serials and linked Admission references. Missing legacy status is Active presentation only; stored records unchanged by directory reads. Existing workspace.view only; no production permissions. IN_REVIEW, acceptance pending. F02-002/F02-003 acceptance remains pending. Final 198/198 tests (19 files), lint/build and local Edge four-viewport/keyboard/admission-link/refresh/branch/logout checks PASS; actual CI/deployment/backend/formal accessibility NOT_RUN. No dependencies installed. [Full evidence](PROGRESS.md#f03-001-limited-demo-students-directory-2026-10-11). Next F02-004 requires separate approval; all remaining tickets preserved.
+CONFIRMED owner authorization: read-only DEMO Students Directory before F02-004; defer enrollment dependency only for listing. /students and sidebar now display saved branch students, gapless serials and linked Admission references. Missing legacy status is Active presentation only; stored records unchanged by directory reads. Existing workspace.view only; no production permissions. IN_REVIEW, acceptance pending. F02-002/F02-003 acceptance remains pending. Final 198/198 tests (19 files), lint/build and local Edge four-viewport/keyboard/admission-link/refresh/branch/logout checks PASS; actual CI/deployment/backend/formal accessibility NOT_RUN. No dependencies installed. [Full evidence](00-CORE/PROGRESS.md#f03-001-limited-demo-students-directory-2026-10-11). Next F02-004 requires separate approval; all remaining tickets preserved.
 ## F02-004 approved DEMO course/batch selection (2026-10-12)
 
 CONFIRMED scope: branch-specific mock courses retained; Course required, Batch optional; minimal batch {id, branchId, courseId, name}; same shared popup/standalone form; admission courseId and optional preferredBatchId with legacy course text retained. No automatic name-to-ID mapping. Safe additive version-3 envelope behind existing mock storage key adds minimum batches from saved courses, preserves valid records/links/counters and never reseeds existing valid batches. New/changed selections validate branch/course/batch relations atomically; unchanged legacy/unresolved references may survive unrelated edits and display explicit unresolved labels. Session/branch guards remain DEMO UX safeguards; workspace.view unchanged. No backend, permissions, fees/enrollment/schedules/capacity rules or dependencies added.
 
-IN_REVIEW; acceptance pending. F02-002/F02-003/F03-001 also remain acceptance pending. Baseline 198/198 PASS; final 223/223 tests (21 files; 25 new), lint/build and local Edge shared popup/View/Edit/optional batch/refresh/branch/keyboard/360-768-1024-1440 checks PASS. Existing lint/bundle warnings remain; actual CI/deployment/backend/formal accessibility NOT_RUN. [Full files, libraries, migration limitations and evidence](PROGRESS.md#f02-004-program-and-batch-selection-delivery-2026-10-12). Next F02-005 Admission Status Workflow needs separate owner decisions/approval; no following ticket started.
+IN_REVIEW; acceptance pending. F02-002/F02-003/F03-001 also remain acceptance pending. Baseline 198/198 PASS; final 223/223 tests (21 files; 25 new), lint/build and local Edge shared popup/View/Edit/optional batch/refresh/branch/keyboard/360-768-1024-1440 checks PASS. Existing lint/bundle warnings remain; actual CI/deployment/backend/formal accessibility NOT_RUN. [Full files, libraries, migration limitations and evidence](00-CORE/PROGRESS.md#f02-004-program-and-batch-selection-delivery-2026-10-12). Next F02-005 Admission Status Workflow needs separate owner decisions/approval; no following ticket started.
 ## F02-005 owner-approved DEMO status decisions (2026-10-12)
 
 CONFIRMED owner approval: Pending -> Approved/Rejected only, explicit confirmation, same-status idempotency, no opposite transitions/reopening; canonical active-branch Owner/Super Admin only (any approved eligible role membership, never dashboard preview authority). Unique reciprocal same-branch linked Provisional student required; legacy unlinked/unsafe records refuse without changes. Student remains Provisional. Optional rejection reason; status plus append-only actor/time history committed atomically. Decided admissions, including existing Approved/Rejected records, are read-only and cannot be physically deleted. These latest rules supersede prior generic Edit/Delete availability for decided DEMO records only; existing comments/history preserved. workspace.view remains sole production-independent demo baseline, no real permission grant/bypass/backend change.
 
-Implemented IN_REVIEW; acceptance pending, as are F02-002/F02-003/F02-004/F03-001. Existing version-3 storage accepts optional embedded statusHistory without reset/backfill; current identity/branch and policy validated at service/database boundaries, stale/conflicting operations fail without writes. Final 248/248 tests (23 files; 25 new), lint/build and local Edge status/keyboard/four-viewport/persistence checks PASS; existing warnings remain. Actual CI/deployment/backend/formal accessibility NOT_RUN. [Exact files/libraries/history contract/evidence](PROGRESS.md#f02-005-admission-status-workflow-delivery-2026-10-12). Next F02-006 Admission-to-Enrollment Mock Integration requires separate scope and owner approval. Stop after F02-005.
+Implemented IN_REVIEW; acceptance pending, as are F02-002/F02-003/F02-004/F03-001. Existing version-3 storage accepts optional embedded statusHistory without reset/backfill; current identity/branch and policy validated at service/database boundaries, stale/conflicting operations fail without writes. Final 248/248 tests (23 files; 25 new), lint/build and local Edge status/keyboard/four-viewport/persistence checks PASS; existing warnings remain. Actual CI/deployment/backend/formal accessibility NOT_RUN. [Exact files/libraries/history contract/evidence](00-CORE/PROGRESS.md#f02-005-admission-status-workflow-delivery-2026-10-12). Next F02-006 Admission-to-Enrollment Mock Integration requires separate scope and owner approval. Stop after F02-005.
 
 ## Owner Role Matrix Reconciliation (2026-10-12)
 
