@@ -63,7 +63,7 @@ describe('confirmed Super Admin admission status policy', () => {
     expect(migrated).not.toHaveProperty('statusHistory')
   })
 
-  it.each(['demo-owner', 'demo-reception', 'demo-teacher'])('denies decision authority to %s without mutation', async userId => {
+  it.each(['demo-owner', 'demo-teacher'])('denies decision authority to %s without mutation', async userId => {
     const branchId = userId === 'demo-reception' ? 'demo-north' : 'demo-central'
     const courseId = branchId === 'demo-north' ? 'course-demo-1' : 'course-demo-2'
     const admission = createMockDatabase().createAdmission({ ...input, courseId }, { branchId })

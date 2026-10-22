@@ -33,7 +33,7 @@ export default function ReportTrendCard({ tab, source, rows, sessionUnconfigured
   const summary = reportTrendSummary(tab, rows)
   const summaryIcons = [TrendingUp, Target, Layers]
 
-  return <section aria-label="Report trend analytics" aria-busy={loading} className="flex min-w-0 flex-col rounded-xl border border-slate-200/90 bg-white px-3 py-1 shadow-2xs lg:col-span-7">
+  return <section aria-label={tab === 'payroll' ? 'Payroll financial breakdown' : 'Report trend analytics'} aria-busy={loading} className="flex min-w-0 flex-col rounded-xl border border-slate-200/90 bg-white px-3 py-1 shadow-2xs lg:col-span-7">
     <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-1">
       <div className="min-w-0">
         <h3 className="flex items-center gap-2 text-[13px] leading-tight font-bold text-slate-900"><span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-[#f0d5d9] bg-[#F9EBEE] text-[#940016]"><TrendingUp size={15} /></span>{config.title}</h3>

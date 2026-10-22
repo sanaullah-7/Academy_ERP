@@ -191,7 +191,7 @@ The architecture should remain maintainable without introducing infrastructure f
 
 # 7. User Roles and User Scope
 
-The system has four primary roles.
+The system has five primary roles.
 
 ## 7.1 Super Admin
 
@@ -200,6 +200,12 @@ CONFIRMED:
 The Super Admin can manage academy branches and individual staff user accounts.
 
 The interface should support academy-wide administration and authorized all-branch visibility.
+
+## 7.1A Admin
+
+CONFIRMED — 2026-10-21:
+
+Admin has the same module and tab access as Super Admin within one explicitly assigned branch. Admin cannot access or switch to another branch unless separately assigned there. In User Management, Admin may create only Owner, Receptionist and Teacher accounts; Admin and Super Admin accounts may be created only by Super Admin.
 
 ### Proposed Functional Areas
 
@@ -1604,3 +1610,11 @@ A module name or requirement entry alone is not blanket implementation permissio
 **Document Status:** DRAFT — Pending Detailed Product Review
 **Version:** 1.0
 **Next Step:** Review with SYSTEM_DESIGN.md and SECURITY.md, resolve requirements needed for F00/F01, then approve relevant feature tickets.
+
+## PAYROLL-TWO-METHODS - 2026-10-22
+
+CONFIRMED by the owner's attached two-method payroll request: new salary agreements are assignment/batch-specific and support Fixed Monthly or Percentage only. Percentage uses eligible distinct active subject enrollment times the saved listed subject/course fee times agreed percentage, independently of cash receipts or student discounts. Full-course fee use requires separate explicit authorization for each assignment. Missing participation mapping or required fee must be flagged. No assignment means no eligible salary. New active payroll excludes bonuses, allowances, deductions/tax and advance recovery; legacy financial history must survive unchanged. Monthly effective versions and frozen approved salary/payment snapshots govern future method changes. Earlier four-method/new-advance workflows and teacher-account-based eligibility are SUPERSEDED for new payroll. The prior header control removal remains in effect; content-level salary-period navigation fulfills this newer request's selected-month and history workflow. Full monthly salaries use first-day-effective agreements without guessed mid-month proration; PKR amounts round to two decimals. A known explicitly configured zero listed fee yields zero percentage salary; missing fee is never inferred as zero.
+
+## PAYROLL-RUNNING-BALANCE - 2026-10-22
+
+CONFIRMED by the owner's latest request and clarification: retain only one running salary balance per assignment, without automatic monthly renewals, Add Salary cycles or approval. Partial/full salary payments may be recorded on their actual dates, and unpaid balance persists indefinitely. Explicit agreement saves adjust the same total payable while preserving all recorded payments and salary revisions; total payable cannot fall below already-paid money. Percentage fees/enrollment calculations occur on explicit salary save rather than time/navigation. Prior PAYROLL-TWO-METHODS monthly effective dates, draft recalculation and approval/locking policies are SUPERSEDED for active payroll; original historical sources remain preserved. No automatic Payroll idle/focus/storage refresh. Finance Overview keeps its existing behavior.

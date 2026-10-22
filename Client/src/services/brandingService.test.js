@@ -23,6 +23,14 @@ describe('isolated mock branding service', () => {
     expect(brandingService.get()).toEqual(saved)
     expect(JSON.parse(localStorage.getItem(MOCK_BRANDING_KEY)).version).toBe(1)
   })
+  it('keeps theme colors isolated per branch while sharing academy identity', () => {
+    brandingService.save({ ...DEFAULT_BRANDING, name: 'Branch Theme Academy', primaryColor: '#123ABC', sidebarBackground: '#123456' }, 'demo-central')
+    expect(brandingService.get('demo-central')).toMatchObject({ name: 'Branch Theme Academy', primaryColor: '#123ABC', sidebarBackground: '#123456' })
+    expect(brandingService.get('demo-north')).toMatchObject({ name: 'Branch Theme Academy', primaryColor: '#940016', sidebarBackground: '#FFFFFF' })
+    brandingService.save({ ...DEFAULT_BRANDING, name: 'Branch Theme Academy', primaryColor: '#654321', sidebarBackground: '#222222', sidebarText: '#EEEEEE', sidebarIcon: '#DDDDDD' }, 'demo-north')
+    expect(brandingService.get('demo-central')).toMatchObject({ primaryColor: '#123ABC', sidebarBackground: '#123456' })
+    expect(brandingService.get('demo-north')).toMatchObject({ primaryColor: '#654321', sidebarBackground: '#222222', sidebarText: '#EEEEEE', sidebarIcon: '#DDDDDD' })
+  })
   it.each(['#ffffff', '#00ff00', '#fff', 'red', '#123456;'])('rejects invalid or inaccessible color %s without changing saved data', (primaryColor) => {
     brandingService.save(DEFAULT_BRANDING)
     const raw = localStorage.getItem(MOCK_BRANDING_KEY)

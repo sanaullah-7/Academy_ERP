@@ -5,14 +5,16 @@ import NewAdmissionForm from './NewAdmissionForm.jsx'
 import { admissionService } from '../../services/admissionService.js'
 
 const courses = [
-  { id: 'alpha', name: 'Alpha Course', active: true, pricingMode: 'subject' },
-  { id: 'beta', name: 'Beta Course', active: true, pricingMode: 'subject' },
+  { id: 'alpha', name: 'Alpha Course', active: true, pricingMode: 'subjects' },
+  { id: 'beta', name: 'Beta Course', active: true, pricingMode: 'subjects' },
+  { id: 'gamma', name: 'Gamma Course', active: true, pricingMode: 'course', feeAmount: 9000 },
 ]
 const subjects = [
   { id: 'bio', courseId: 'alpha', name: 'Alpha Biology', active: true, feeAmount: 1000 },
   { id: 'chem', courseId: 'alpha', name: 'Alpha Chemistry', active: true, feeAmount: 2000 },
   { id: 'inactive', courseId: 'alpha', name: 'Inactive Subject', active: false, feeAmount: 9000 },
   { id: 'math', courseId: 'beta', name: 'Beta Maths', active: true, feeAmount: 4000 },
+  { id: 'physics', courseId: 'gamma', name: 'Gamma Physics', active: true, feeAmount: 5000 },
 ]
 vi.mock('../../hooks/useBranch.js', () => ({ useBranch: () => ({ branchId: 'north', scopeKey: 'north' }) }))
 vi.mock('../../hooks/usePermissions.js', () => ({ usePermissions: () => ({ can: () => true }) }))
@@ -71,5 +73,16 @@ describe('new course default subjects', () => {
     await open({ id: 'existing', studentName: 'Saved Student', course: 'Alpha Course', courseId: 'alpha', subjectIds: ['chem'] })
     expect(subject('Alpha Biology')).toHaveAttribute('aria-pressed', 'false')
     expect(subject('Alpha Chemistry')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows subject prices only for courses using selected-subject pricing', async () => {
+    const user = await open()
+    await user.click(screen.getByRole('button', { name: /Alpha Course/ }))
+    expect(subject('Alpha Biology')).toHaveTextContent('1,000')
+    expect(subject('Alpha Chemistry')).toHaveTextContent('2,000')
+
+    await user.click(screen.getByRole('button', { name: /Gamma Course/ }))
+    expect(subject('Gamma Physics')).not.toHaveTextContent('5,000')
+    expect(subject('Gamma Physics')).not.toHaveTextContent(/Fee not set/i)
   })
 })

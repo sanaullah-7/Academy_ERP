@@ -30,3 +30,13 @@ export function rememberPageResource(key, value, startedVersion) {
   }
   return value
 }
+
+// Reuse the same bounded, canonical-version cache for expensive authorized reads.
+// Callers must enforce authorization before entering this helper.
+export async function readPageResource(key, load) {
+  const cached = peekPageResource(key)
+  if (cached !== null) return cached
+  const startedVersion = capturePageVersion()
+  const value = await load()
+  return rememberPageResource(key, value, startedVersion)
+}

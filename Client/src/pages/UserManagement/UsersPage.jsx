@@ -1,7 +1,7 @@
 import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CirclePlus, Eye, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
+import { CirclePlus, Search, ShieldCheck, UserCog, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
@@ -13,14 +13,17 @@ import { ROLE_LABELS, ROLES } from '../../constants/roles.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import { TableToolbarActions } from '../../components/Shared/TableUtilities.jsx'
-const roles=Object.values(ROLES), blank={name:'',login:'',contact:'',enabled:true,assignments:[]}
+import { usePermissions } from '../../hooks/usePermissions.js'
+import CustomSelect from '../../components/ui/CustomSelect.jsx'
+const roles=Object.values(ROLES), adminAssignableRoles=[ROLES.OWNER,ROLES.RECEPTIONIST,ROLES.TEACHER], blank={name:'',login:'',contact:'',enabled:true,assignments:[]}
 export default function UsersPage(){
  const {branchId,branch:currentBranch}=useBranch()
- const [data,setData]=useState(() => peekPageResource(`users:${branchId}`)),[search,setSearch]=useState(''),[branch,setBranch]=useState('All'),[role,setRoleFilter]=useState('All'),[dialog,setDialog]=useState(false),[viewing,setViewing]=useState(null),[editing,setEditing]=useState(null),[form,setForm]=useState(blank),[message,setMessage]=useState(''),[error,setError]=useState(''),[page,setPage]=useState(1)
+ const {hasRole}=usePermissions(),assignableRoles=hasRole(ROLES.ADMIN)?adminAssignableRoles:roles
+ const [data,setData]=useState(() => peekPageResource(`users:${branchId}`)),[search,setSearch]=useState(''),[role,setRoleFilter]=useState('All'),[dialog,setDialog]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState(blank),[message,setMessage]=useState(''),[error,setError]=useState(''),[page,setPage]=useState(1),[loading,setLoading]=useState(!data)
  const [deleting,setDeleting]=useState(null),[deleteBusy,setDeleteBusy]=useState(false),[deleteError,setDeleteError]=useState('')
  async function removeStaff(){setDeleteBusy(true);setDeleteError('');try{await organizationService.deleteUser(deleting.id);setDeleting(null);setMessage('Staff login and role access removed. Faculty profile and related records are preserved.');await load()}catch(e){setDeleteError(e.message)}finally{setDeleteBusy(false)}}
- const load=useCallback(()=>{const loadVersion=capturePageVersion();return organizationService.staffOverview().then(data=>setData(rememberPageResource(`users:${branchId}`,data,loadVersion)),e=>setError(e.message))},[branchId]);useEffect(()=>{void load()},[load])
- const rows=useMemo(()=>data?.users.filter(u=>`${u.name} ${u.login??u.id} ${u.contact??''}`.toLowerCase().includes(search.toLowerCase())&&(branch==='All'||u.assignments.some(a=>a.branchId===branch))&&(role==='All'||u.assignments.some(a=>a.roles.includes(role))))??[],[data,search,branch,role])
+ const load=useCallback(async()=>{const loadVersion=capturePageVersion();setLoading(true);setError('');try{const next=await organizationService.staffOverview();setData(rememberPageResource(`users:${branchId}`,next,loadVersion))}catch(e){setData(null);setError(e.message)}finally{setLoading(false)}},[branchId]);useEffect(()=>{void load()},[load])
+ const rows=useMemo(()=>data?.users.filter(u=>`${u.name} ${u.login??u.id} ${u.contact??''}`.toLowerCase().includes(search.toLowerCase())&&(role==='All'||u.assignments.some(a=>a.roles.includes(role))))??[],[data,search,role])
  const open=item=>{setEditing(item??null);setForm(item?{name:item.name,login:item.login??item.id,contact:item.contact??'',enabled:item.enabled,assignments:item.assignments.map(a=>({...a,roles:[a.roles[0]]}))}:{...blank,assignments:[{branchId,roles:[ROLES.RECEPTIONIST]}]});setError('');setDialog(true)}
  const pages=Math.max(1,Math.ceil(rows.length/8)),visible=rows.slice((Math.min(page,pages)-1)*8,Math.min(page,pages)*8)
  const assignment=id=>form.assignments.find(a=>a.branchId===id); const setRole=(id,value)=>setForm({...form,assignments:form.assignments.map(a=>a.branchId===id?{...a,roles:[value]}:a)})
@@ -43,7 +46,7 @@ export default function UsersPage(){
    exportTablePdf({
      filename: `users-report-${new Date().toISOString().slice(0, 10)}.pdf`,
      title: 'Staff Users & Role Assignments Report',
-     branchName: branch !== 'All' ? data?.branches.find(b => b.id === branch)?.name : 'All Campuses',
+     branchName: currentBranch?.name ?? 'Current Branch',
      headers: ['Staff Member', 'Login / ID', 'Contact', 'Branch Access & Roles', 'Status'],
      rows: rows.map(u => [
        u.name,
@@ -68,6 +71,7 @@ export default function UsersPage(){
     </header>
 
     {message && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-medium text-emerald-800">{message}</p>}
+    {error && !dialog && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-xs text-destructive"><span>{error}</span><Button type="button" variant="outline" size="sm" className="h-8" onClick={() => void load()}>Retry loading users</Button></div>}
 
     <section className="grid gap-3 sm:grid-cols-3">
       {[
@@ -95,14 +99,16 @@ export default function UsersPage(){
           <Search className="absolute left-3 top-2.5 text-muted-foreground" size={14}/>
           <Input className="h-9 pl-8 text-xs" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search staff"/>
         </div>
-        <select className="h-9 rounded-md border border-input bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-ring" value={branch} onChange={e=>setBranch(e.target.value)}>
-          <option>All</option>
-          {data?.branches.map(b=><option value={b.id} key={b.id}>{b.name}</option>)}
-        </select>
-        <select className="h-9 rounded-md border border-input bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-ring" value={role} onChange={e=>setRoleFilter(e.target.value)}>
-          <option>All</option>
-          {roles.map(r=><option value={r} key={r}>{ROLE_LABELS[r]}</option>)}
-        </select>
+        <CustomSelect
+          aria-label="Filter staff by role"
+          value={role}
+          onChange={value => { setRoleFilter(value); setPage(1) }}
+          options={[{ value: 'All', label: 'All Roles' }, ...roles.map(value => ({ value, label: ROLE_LABELS[value] }))]}
+          className="h-9 w-44 rounded-xl border-primary/20 bg-card px-3 text-sm shadow-sm hover:border-primary/40 hover:bg-primary/5"
+          containerClassName="relative shrink-0"
+          menuWidthClass="w-52"
+          menuAlign="right"
+        />
         <TableToolbarActions onRefresh={load} showColumns={false} onPrint={() => window.print()} onExportCsv={exportUsers} onExportPdf={exportUsersPdf} />
       </CardContent>
     </Card>
@@ -150,9 +156,6 @@ export default function UsersPage(){
                   </td>
                   <td className="px-3.5 py-2.5 text-right whitespace-nowrap">
                     <div className="inline-flex items-center gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setViewing(u)}>
-                        <Eye size={13} className="mr-1" />View
-                      </Button>
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" aria-label={`Delete staff ${u.name}`} onClick={()=>{setDeleting(u);setDeleteError('')}}>Delete</Button>
                       <Button size="sm" variant="outline" className="h-7 px-2 text-xs font-medium cursor-pointer" disabled={base} onClick={() => open(u)}>
                         Edit
@@ -168,7 +171,8 @@ export default function UsersPage(){
           </tbody>
         </table>
       </div>
-      {visible.length === 0 && (
+      {loading && !data && <div role="status" className="p-8 text-center text-xs text-muted-foreground">Loading staff accounts...</div>}
+      {!loading && !error && visible.length === 0 && (
         <div className="p-8 text-center text-xs text-muted-foreground">No staff members match these filters.</div>
       )}
     </div>
@@ -180,30 +184,6 @@ export default function UsersPage(){
         <Button size="sm" variant="outline" className="h-7 px-2 text-xs cursor-pointer" disabled={page >= pages} onClick={() => setPage(x => x + 1)}>Next</Button>
       </div>
     </div>
-
-    <Dialog open={Boolean(viewing)} onOpenChange={open=>!open&&setViewing(null)}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{viewing?.name}</DialogTitle>
-          <DialogDescription>Saved staff identity and branch role assignments.</DialogDescription>
-        </DialogHeader>
-        {viewing && (
-          <div className="grid gap-2 rounded-lg bg-muted/40 p-4 text-xs">
-            <p><b>Login:</b> {viewing.login ?? viewing.id}</p>
-            <p><b>Contact:</b> {viewing.contact || 'Not configured'}</p>
-            <p><b>Status:</b> {viewing.enabled ? 'Active' : 'Inactive'}</p>
-            <div className="mt-1 space-y-1">
-              <span className="font-semibold text-gray-900">Branch Assignments:</span>
-              {viewing.assignments.map(a => (
-                <p key={a.branchId} className="pl-2">
-                  <b>{data.branches.find(b => b.id === a.branchId)?.name ?? a.branchId}:</b> {ROLE_LABELS[a.roles[0]] ?? a.roles[0]}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
 
     <Dialog open={dialog} onOpenChange={setDialog}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -225,7 +205,7 @@ export default function UsersPage(){
 
                 <span className="text-xs font-medium text-gray-800">{b.name || currentBranch?.name}</span>
                 <select aria-label="Staff role" disabled={!assignment(b.id)} className="h-8 rounded-md border border-input bg-background px-2 text-xs outline-none" value={assignment(b.id)?.roles[0] ?? ROLES.RECEPTIONIST} onChange={e => setRole(b.id, e.target.value)}>
-                  {roles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  {assignableRoles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                 </select>
               </div>
             ))}

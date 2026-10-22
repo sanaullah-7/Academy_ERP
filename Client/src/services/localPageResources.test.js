@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MOCK_DATABASE_KEY, MOCK_ORGANIZATION_KEY, MOCK_SESSION_KEY } from '../constants/storageKeys.js'
-import { capturePageVersion, clearPageResources, peekPageResource, rememberPageResource } from './localPageResources.js'
+import { capturePageVersion, clearPageResources, peekPageResource, rememberPageResource, readPageResource } from './localPageResources.js'
 import { authService } from './authService.js'
 
 beforeEach(() => {
@@ -9,6 +9,16 @@ beforeEach(() => {
 })
 
 describe('current local page data on warm remount', () => {
+  it('reuses initialized derived reads and recomputes on canonical mutations', async () => {
+    const load = vi.fn(async () => ({ rows: [1] }))
+    const first = await readPageResource('report-read:test', load)
+    first.rows.push(2)
+    expect(await readPageResource('report-read:test', load)).toEqual({ rows: [1] })
+    expect(load).toHaveBeenCalledTimes(1)
+    localStorage.setItem(MOCK_DATABASE_KEY, 'changed')
+    await readPageResource('report-read:test', load)
+    expect(load).toHaveBeenCalledTimes(2)
+  })
   it('detaches cached records and resets transient request markers without changing data', () => {
     const value = { scopeKey: 'old', request: 3, data: [{ amount: 100 }] }
     rememberPageResource('fees', value, capturePageVersion())

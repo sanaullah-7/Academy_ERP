@@ -1,3 +1,5 @@
+import { runningOverview, saveRunningAgreement, materializeRunningLine } from './runningPayroll.js'
+import { payrollReportRows } from '../utils/payrollReport.js'
 import { appendAudit } from './mockAudit.js'
 import { formatBatchDuration } from '../utils/batchDuration.js'
 import { demoRegistrationClasses } from '../utils/demoRegistrationClasses.js'
@@ -211,8 +213,15 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       if (!data.courses.some(course => course.id === assignment.courseId && course.branchId === assignment.branchId)) fail('INVALID_REFERENCE', 'Saved faculty assignment course link is invalid.')
       if (!data.batches.some(batch => batch.id === assignment.batchId && batch.branchId === assignment.branchId && batch.courseId === assignment.courseId)) fail('INVALID_REFERENCE', 'Saved faculty assignment batch link is invalid.')
       if (!data.subjects.some(subject => subject.id === assignment.subjectId && subject.branchId === assignment.branchId && subject.courseId === assignment.courseId)) fail('INVALID_REFERENCE', 'Saved faculty assignment subject link is invalid.')
-      const teacher = getDemoUsers().find(user => user.id === assignment.teacherId && user.enabled && getBranchRoles(user, assignment.branchId).includes(ROLES.TEACHER))
-      if (!teacher) fail('INVALID_REFERENCE', 'Saved faculty assignment teacher link is invalid.')
+      // Persisted history references a professional identity, not its current
+      // login status or role. Deactivation/role edits must not break every read.
+      // New assignments still enforce enabled branch Teacher eligibility below.
+      const teacher = getDemoUsers().find(user => user.id === assignment.teacherId)
+      // Older Users deletion removed a created identity while deliberately leaving
+      // its academic history. A matching deletion tombstone is trusted only for
+      // backward-compatible reads; arbitrary unknown teacher IDs still fail.
+      const legacyDeletedTeacher = readOrganization().deletedUserIds.includes(assignment.teacherId)
+      if (!teacher && !legacyDeletedTeacher) fail('INVALID_REFERENCE', 'Saved faculty assignment teacher link is invalid.')
     }
     const admissionIds = new Set()
     const activeCombinations = new Set()
@@ -850,7 +859,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
   function classScheduleOperation(operation, { id, record, query = {} } = {}) {
     if (!object(query) || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
     const session = readMockSession()
-    const permission = operation === 'list' || operation === 'get' ? PERMISSIONS.CLASSES_VIEW : PERMISSIONS.CLASSES_MANAGE
+    const permission = operation === 'list' || operation === 'get' ? PERMISSIONS.CLASSES_VIEW : operation === 'update' ? PERMISSIONS.CLASSES_EDIT : PERMISSIONS.CLASSES_MANAGE
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for this class schedule action.')
     const data = read(false)
@@ -1539,6 +1548,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     const readOnly = ['list', 'get'].includes(operation)
     if (!canAccess(readOnly ? PERMISSIONS.ASSETS_VIEW : PERMISSIONS.ASSETS_MANAGE, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This role is not authorized for the requested asset action.')
+    if (getBranchRoles(session.user, query.branchId).includes(ROLES.RECEPTIONIST) && !['list', 'get', 'create', 'update'].includes(operation)) fail('DEMO_ACTION_DENIED', 'Receptionist can add, edit and view assets only.')
     const data = read(readOnly)
     const branchAssets = data.assets.filter(item => item.branchId === query.branchId)
     const present = item => ({ ...item, assignedToName: item.assignedToId ? getDemoUsers().find(user => user.id === item.assignedToId)?.name ?? 'Unresolved staff' : null })
@@ -1602,10 +1612,11 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const allBranches = query.allBranches === true
     if (allBranches && !canAccess(PERMISSIONS.REPORTS_COMPARE_BRANCHES, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'Cross-branch comparison requires authorized Super Admin access.')
     const data = read()
-    const branchIds = allBranches ? getDemoBranches().filter(branch => session.user.assignments.some(item => item.branchId === branch.id)).map(branch => branch.id) : [query.branchId]
+    const branchIds = allBranches ? getDemoBranches().filter(branch => canAccess(PERMISSIONS.REPORTS_VIEW, session.user, branch.id)).map(branch => branch.id) : [query.branchId]
     const selected = collection => (data[collection] || []).filter(item => branchIds.includes(item.branchId))
     return {
       branchIds,
+      payroll: branchIds.filter(id => canAccess(PERMISSIONS.PAYROLL_VIEW, session.user, id)).flatMap(id => payrollReportRows(runningOverview(data, getDemoUsers(), id, getAcademyDateOnly()), data)),
       branches: getDemoBranches().filter(branch => branchIds.includes(branch.id)),
       admissions: selected('admissions'),
       students: selected('students'),
@@ -1614,13 +1625,79 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       batches: selected('batches'),
       challans: selected('challans'),
       payments: selected('payments').filter(item => item.status === 'Verified'),
-      expenses: selected('expenses'),
+      expenses: getBranchRoles(session.user, query.branchId).includes(ROLES.RECEPTIONIST) ? [] : selected('expenses'),
       demoClasses: selected('demoClasses'),
       assets: selected('assets'),
       facultyAssignments: selected('facultyAssignments'),
       academicStreams: selected('academicStreams'),
       subjects: selected('subjects'),
       classes: selected('classes')
+    }
+  }
+
+  function dashboardOperation(operation, { query = {} } = {}) {
+    if (operation !== 'overview' || !object(query) || Object.keys(query).some(key => key !== 'branchId') || !validBranch(query.branchId)) fail('INVALID_QUERY', 'A concrete known demo branchId is required.')
+    const session = readMockSession()
+    if (!session?.user || session.branchId !== query.branchId || !canAccess(PERMISSIONS.DASHBOARD_VIEW, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This role is not authorized to view this dashboard.')
+    const roles = getBranchRoles(session.user, query.branchId)
+    if (roles.length !== 1) fail('DEMO_ACTION_DENIED', 'Choose one unambiguous role for the selected branch.')
+    const role = roles[0]
+    const data = read()
+    const branch = item => item.branchId === query.branchId
+    const activeEnrollments = data.enrollments.filter(item => branch(item) && item.status === 'Active')
+    const verifiedPayments = data.payments.filter(item => branch(item) && item.status === 'Verified')
+    const challans = data.challans.filter(branch).map(challan => {
+      const paid = verifiedPayments.filter(payment => payment.challanId === challan.id).reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+      return { ...challan, paidAmount: paid, balance: Math.max(0, Number(challan.amount || 0) - paid) }
+    })
+    const courses = data.courses.filter(item => branch(item) && item.active !== false)
+    const batches = data.batches.filter(item => branch(item) && item.active !== false)
+    const subjects = data.subjects.filter(item => branch(item) && item.active !== false)
+    const assignments = data.facultyAssignments.filter(branch).map(item => ({
+      ...item,
+      teacherName: getDemoUsers().find(user => user.id === item.teacherId)?.name ?? 'Teacher',
+      courseName: courses.find(course => course.id === item.courseId)?.name ?? 'Unresolved course',
+      batchName: batches.find(batch => batch.id === item.batchId)?.name ?? 'Unresolved batch',
+      subjectName: subjects.find(subject => subject.id === item.subjectId)?.name ?? 'Unresolved subject',
+    }))
+    const classes = data.classes.filter(branch)
+    const admissions = data.admissions.filter(branch)
+    const demos = data.demoClasses.filter(branch)
+    const payroll = payrollReportRows(runningOverview(data, getDemoUsers(), query.branchId, getAcademyDateOnly()), data)
+    const teacherOnly = role === ROLES.TEACHER
+    const ownAssignments = teacherOnly ? assignments.filter(item => item.teacherId === session.user.id) : assignments
+    const ownBatchIds = new Set(ownAssignments.map(item => item.batchId))
+    const ownSubjectByBatch = new Map()
+    ownAssignments.forEach(item => {
+      if (!ownSubjectByBatch.has(item.batchId)) ownSubjectByBatch.set(item.batchId, new Set())
+      ownSubjectByBatch.get(item.batchId).add(item.subjectId)
+    })
+    const ownEnrollments = teacherOnly ? activeEnrollments.filter(item => {
+      const subjectsForBatch = ownSubjectByBatch.get(item.batchId)
+      return subjectsForBatch && (!Array.isArray(item.subjectIds) || item.subjectIds.some(subjectId => subjectsForBatch.has(subjectId)))
+    }) : activeEnrollments
+    const ownStudentIds = new Set(ownEnrollments.map(item => item.studentId))
+    const selectedStudents = data.students.filter(item => branch(item) && (!teacherOnly || ownStudentIds.has(item.id)))
+    const selectedClasses = teacherOnly ? classes.filter(item => item.teacherId === session.user.id) : classes
+    const selectedPayroll = teacherOnly
+      ? payroll.filter(item => item.teacherId === session.user.id)
+      : canAccess(PERMISSIONS.PAYROLL_VIEW, session.user, query.branchId) ? payroll : []
+    return {
+      role,
+      branchId: query.branchId,
+      students: selectedStudents,
+      admissions: teacherOnly ? [] : admissions,
+      enrollments: ownEnrollments,
+      courses: teacherOnly ? courses.filter(item => ownAssignments.some(assignment => assignment.courseId === item.id)) : courses,
+      batches: teacherOnly ? batches.filter(item => ownBatchIds.has(item.id)) : batches,
+      subjects: teacherOnly ? subjects.filter(item => ownAssignments.some(assignment => assignment.subjectId === item.id)) : subjects,
+      assignments: ownAssignments,
+      classes: selectedClasses,
+      demoClasses: teacherOnly ? [] : demos,
+      payments: teacherOnly ? [] : verifiedPayments,
+      challans: teacherOnly ? [] : challans,
+      expenses: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.OWNER].includes(role) ? data.expenses.filter(item => branch(item) && item.status === 'Posted') : [],
+      payroll: selectedPayroll,
     }
   }
 
@@ -1689,13 +1766,13 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const session = readMockSession()
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     const mutating = ['create', 'update', 'delete'].includes(operation)
-    const permission = operation==='checkTeacherDelete' ? PERMISSIONS.USERS_MANAGE : mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
+    const permission = operation==='checkTeacherDelete' ? PERMISSIONS.USERS_MANAGE : operation === 'update' ? PERMISSIONS.CLASSES_EDIT : mutating ? PERMISSIONS.CLASSES_MANAGE : PERMISSIONS.FACULTY_VIEW
     if (!canAccess(permission, session.user, query.branchId)) fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for faculty assignments.')
 
     const data = read(!mutating, !mutating)
     data.facultyAssignments ??= []
     if(operation==='checkTeacherDelete') {
-      if(data.facultyAssignments.some(item=>item.teacherId===id)||data.classes.some(item=>item.teacherId===id)||data.demoClasses.some(item=>item.scheduledSession?.teacherId===id)||data.assets.some(item=>item.assignedToId===id))fail('LINKED_RECORDS','Remove or reassign this faculty member\'s teaching schedules, demo sessions and asset assignments before deleting. Existing linked records are protected.')
+      if(data.facultyAssignments.some(item=>item.teacherId===id)||data.classes.some(item=>item.teacherId===id)||data.assets.some(item=>item.assignedToId===id))fail('LINKED_RECORDS','Remove or reassign this faculty member\'s saved teaching schedules and asset assignments before deleting. Existing linked records are protected.')
       return true
     }
 
@@ -1819,7 +1896,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
     }
     if (!canAccess(PERMISSIONS.ADMISSIONS_DECIDE, session.user, query.branchId) || !canAccess(PERMISSIONS.FEES_MANAGE, session.user, query.branchId)) {
-      fail('DEMO_ACTION_DENIED', 'Only an authorized Super Admin can complete instant admission and issue financial records.')
+      fail('DEMO_ACTION_DENIED', 'Only an authorized Super Admin, Admin or Receptionist can complete instant admission and issue financial records.')
     }
 
     if (!object(record)) fail('INVALID_RECORD', 'Admission details are required.')
@@ -2112,31 +2189,21 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     const session = readMockSession()
     if (!session?.user || session.branchId !== query.branchId) fail('INVALID_SCOPE', 'Choose your active authorized DEMO branch.')
 
-    const manageOps = ['updateSettings', 'saveAgreement', 'calculatePeriod', 'approvePeriod', 'recordPayment', 'requestAdvance', 'addAdjustment']
+    const manageOps = ['updateSettings', 'saveAgreement', 'recordPayment', 'requestAdvance', 'addAdjustment']
 
     const isManage = manageOps.includes(operation)
-    const requiredPermission = isManage ? PERMISSIONS.EXPENSES_MANAGE : PERMISSIONS.FINANCE_VIEW
-    if (!canAccess(requiredPermission, session.user, query.branchId)) {
+    if (isManage && !getBranchRoles(session.user, query.branchId).some(role => [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role))) fail('DEMO_ACTION_DENIED', 'Only Admin or Super Admin can manage payroll.')
+    if (['requestAdvance', 'addAdjustment'].includes(operation)) fail('INVALID_STATE', 'New payroll supports assignment salary only; historical advances and adjustments are preserved.')
+    const userRoles = getBranchRoles(session.user, query.branchId)
+    const isTeacher = userRoles.includes(ROLES.TEACHER)
+    const canTeacherViewSelf = isTeacher && ['getTeacherCompensation', 'getPayslip'].includes(operation)
+    const requiredPermission = isManage ? PERMISSIONS.EXPENSES_MANAGE : PERMISSIONS.PAYROLL_VIEW
+    if (!canTeacherViewSelf && !canAccess(requiredPermission, session.user, query.branchId)) {
       fail('DEMO_ACTION_DENIED', 'This DEMO role is not authorized for payroll operations.')
     }
 
     const data = read(!isManage)
-    const validDateOnly=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(new Date(value+'T00:00:00Z').getTime())&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value
     const validMonth=value=>typeof value==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value)
-    const teacherFor=id=>getDemoUsers().find(u=>u.id===id&&u.enabled&&getBranchRoles(u,query.branchId).includes(ROLES.TEACHER))
-    const isLocked=period=>Boolean(period?.approvedAt)||['Approved','Partially Paid','Paid'].includes(period?.status)
-    const positiveAmount=value=>Number.isSafeInteger(Number(value))&&Number(value)>0
-    const recoverAdvance=line=>{
-      let remaining=Math.max(0,line.advancesDeducted-(line.advancesRecovered??0))
-      for(const advance of data.payrollAdvances){
-        if(advance.branchId!==query.branchId||advance.teacherId!==line.teacherId||advance.balance<=0||remaining<=0)continue
-        const recovered=Math.min(advance.balance,remaining)
-        advance.recoveredAmount+=recovered;advance.balance-=recovered
-        if(advance.balance===0)advance.status='Fully Recovered'
-        line.advancesRecovered=(line.advancesRecovered??0)+recovered
-        remaining-=recovered
-      }
-    }
     const org = readOrganization()
 
     data.salaryAgreements ??= createSalaryAgreementSeeds()
@@ -2160,72 +2227,35 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       return { enabled: nextSettings.teacherPayrollEnabled, branchId: query.branchId }
     }
 
-    if (operation === 'getAgreements') {
-      const branchAgreements = data.salaryAgreements.filter(a => a.branchId === query.branchId)
-      const branchTeachers = getDemoUsers().filter(u =>
-        u.enabled && u.assignments.some(a => a.branchId === query.branchId && (a.roles || []).includes(ROLES.TEACHER))
-      )
-      const teachersWithAgreements = branchTeachers.map(teacher => {
-        const agreement = branchAgreements.find(a => a.teacherId === teacher.id && a.status === 'Active') || null
-        return {
-          teacherId: teacher.id,
-          teacherName: teacher.name,
-          login: teacher.login,
-          contact: teacher.contact,
-          agreement
-        }
-      })
+    if (operation === 'getTeacherCompensation') {
+      const targetTeacherId = query.teacherId || session.user.id
+      if (isTeacher && targetTeacherId !== session.user.id) fail('DEMO_ACTION_DENIED', 'Teachers can only view their own compensation.')
+      const overview = runningOverview(data, getDemoUsers(), query.branchId, getAcademyDateOnly())
+      const lines = overview.lines.filter(l => l.teacherId === targetTeacherId)
+      const ownLineIds = new Set(lines.map(l => l.id))
+      const payments = (overview.recentPayments || []).filter(p => p.teacherId === targetTeacherId || ownLineIds.has(p.payrollLineId))
+      const totalNetPayable = lines.reduce((sum, l) => sum + (l.netPayable || 0), 0)
+      const totalPaid = lines.reduce((sum, l) => sum + (l.totalPaid || 0), 0)
+      const totalOutstanding = lines.reduce((sum, l) => sum + (l.outstanding || 0), 0)
       return {
-        agreements: branchAgreements,
-        teachers: teachersWithAgreements
+        teacherId: targetTeacherId,
+        lines,
+        payments,
+        totals: {
+          netPayable: Math.round(totalNetPayable * 100) / 100,
+          paid: Math.round(totalPaid * 100) / 100,
+          outstanding: Math.round(totalOutstanding * 100) / 100,
+          lineCount: lines.length,
+          paymentCount: payments.length
+        }
       }
     }
 
-    if (operation === 'saveAgreement') {
-      if (!object(record) || !validText(record.teacherId)) fail('INVALID_RECORD', 'Teacher is required.')
-      const teacher = teacherFor(record.teacherId)
-      if (!teacher) fail('INVALID_REFERENCE', 'Selected teacher was not found.')
-      const validMethods = ['fixed', 'per_lecture', 'per_student', 'fee_percentage']
-      if (!validMethods.includes(record.calculationMethod)) fail('INVALID_RECORD', 'Valid calculation method is required.')
-
-      for(const key of ['monthlySalary','perLectureRate','perStudentRate','allowances','standardDeductions']){
-        if(record[key]!=null&&record[key]!==''&&(!Number.isSafeInteger(Number(record[key]))||Number(record[key])<0))fail('INVALID_RECORD','Salary amounts must be non-negative whole PKR values.')
-      }
-      if(record.feePercentage!=null&&(!Number.isFinite(Number(record.feePercentage))||Number(record.feePercentage)<0||Number(record.feePercentage)>100))fail('INVALID_RECORD','Fee percentage must be between 0 and 100.')
-      const rateKey={fixed:'monthlySalary',per_lecture:'perLectureRate',per_student:'perStudentRate',fee_percentage:'feePercentage'}[record.calculationMethod]
-      if(Number(record[rateKey])<=0||!Number.isFinite(Number(record[rateKey])))fail('INVALID_RECORD','Enter a positive rate for the selected salary method.')
-      if(record.effectiveFrom&&!validDateOnly(record.effectiveFrom)||record.effectiveTo&&!validDateOnly(record.effectiveTo)||record.effectiveFrom&&record.effectiveTo&&record.effectiveTo<record.effectiveFrom)fail('INVALID_RECORD','Choose valid agreement dates in order.')
-      const existingIndex = data.salaryAgreements.findIndex(a => a.branchId===query.branchId && a.teacherId===record.teacherId && (record.id?a.id===record.id:a.status==='Active'))
-      if(record.id&&existingIndex<0)fail('INVALID_REFERENCE','Salary agreement was not found in this branch.')
-      const generatedId = existingIndex >= 0 ? data.salaryAgreements[existingIndex].id : makeId()
-
-      const candidate = {
-        id: generatedId,
-        branchId: query.branchId,
-        teacherId: record.teacherId,
-        calculationMethod: record.calculationMethod,
-        monthlySalary: Math.max(0, Number(record.monthlySalary) || 0),
-        perLectureRate: Math.max(0, Number(record.perLectureRate) || 0),
-        perStudentRate: Math.max(0, Number(record.perStudentRate) || 0),
-        feePercentage: Math.min(100, Math.max(0, Number(record.feePercentage) || 0)),
-        allowances: Math.max(0, Number(record.allowances) || 0),
-        standardDeductions: Math.max(0, Number(record.standardDeductions) || 0),
-        effectiveFrom: record.effectiveFrom || getAcademyDateOnly(),
-        effectiveTo: record.effectiveTo || null,
-        status: record.status || 'Active',
-        notes: typeof record.notes === 'string' ? record.notes.trim() : '',
-        updatedAt: new Date().toISOString(),
-        actorUserId: session.user.id
-      }
-      if (existingIndex >= 0) {
-        data.salaryAgreements[existingIndex] = { ...data.salaryAgreements[existingIndex], ...candidate }
-      } else {
-        candidate.createdAt = new Date().toISOString()
-        data.salaryAgreements.push(candidate)
-      }
-      write(data)
-      return candidate
+    if (operation === 'getRunningOverview' || operation === 'getAgreements') {
+      const result=runningOverview(data,getDemoUsers(),query.branchId,getAcademyDateOnly())
+      return operation==='getAgreements'?{teachers:result.teachers,agreements:data.salaryAgreements.filter(a=>a.branchId===query.branchId)}:result
     }
+    if (operation === 'saveAgreement') return saveRunningAgreement({data,record,query,users:getDemoUsers(),actorId:session.user.id,makeId,write,fail,today:getAcademyDateOnly()})
 
     if (operation === 'getPeriods') {
       const periods = data.payrollPeriods
@@ -2245,261 +2275,40 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
       }
       if (!period) return { period: null, lines: [], payments: [], advances: [] }
 
-      const lines = data.payrollLines.filter(l => l.payrollPeriodId === period.id && l.branchId === query.branchId)
+      const lines = data.payrollLines.filter(l => l.payrollPeriodId === period.id && l.branchId === query.branchId && !l.supersededAt)
       const payments = data.payrollPayments.filter(p => p.periodId === period.id && p.branchId === query.branchId)
       const advances = data.payrollAdvances.filter(a => a.branchId === query.branchId)
       return { period, lines, payments, advances }
     }
 
-    if (operation === 'calculatePeriod') {
-      const yearMonth = (record?.yearMonth || '').trim() || getAcademyDateOnly().slice(0, 7)
-      if(!validMonth(yearMonth))fail('INVALID_RECORD','Choose a valid payroll month.')
-      const branchTeachers = getDemoUsers().filter(u =>
-        u.enabled && u.assignments.some(a => a.branchId === query.branchId && (a.roles || []).includes(ROLES.TEACHER))
-      )
-
-      let period = data.payrollPeriods.find(p => p.branchId === query.branchId && p.yearMonth === yearMonth)
-      if(isLocked(period))fail('INVALID_STATE','Approved payroll is locked. Choose an unapproved month to recalculate.')
-      const periodId = period ? period.id : makeId()
-
-      const calculatedLines = []
-      let totalGross = 0
-      let totalAllowances = 0
-      let totalDeductions = 0
-      let totalAdvancesDeducted = 0
-      let totalNetPayable = 0
-      let totalPaid = 0
-      let totalOutstanding = 0
-
-      for (const teacher of branchTeachers) {
-        const agreement = data.salaryAgreements.find(a =>
-          a.branchId === query.branchId && a.teacherId === teacher.id && a.status === 'Active' && (!a.effectiveFrom || a.effectiveFrom.slice(0,7)<=yearMonth) && (!a.effectiveTo || a.effectiveTo>=yearMonth+'-01')
-        )
-        const method = agreement ? agreement.calculationMethod : 'fixed'
-        let baseEarnings = 0
-        let calcDetails = {}
-
-        if (method === 'fixed') {
-          baseEarnings = agreement ? Number(agreement.monthlySalary) || 0 : 0
-          calcDetails = {
-            method: 'fixed',
-            contractedSalary: baseEarnings,
-            description: 'Fixed Monthly: PKR ' + baseEarnings.toLocaleString()
-          }
-        } else if (method === 'per_lecture') {
-          const rate = agreement ? Number(agreement.perLectureRate) || 0 : 0
-          const verifiedClasses = (data.classes || []).filter(c =>
-            c.branchId === query.branchId &&
-            c.teacherId === teacher.id &&
-            c.classDate && c.classDate.startsWith(yearMonth) &&
-            !['cancelled','canceled'].includes(String(c.status??'').toLowerCase()) &&
-            new Date(c.classDate+'T'+c.endTime+':00+05:00').getTime()<=Date.now()
-          )
-          const uniqueClasses = []
-          const seen = new Set()
-          for (const c of verifiedClasses) {
-            const key = c.classDate + '_' + c.startTime + '_' + c.location
-            if (!seen.has(key)) {
-              seen.add(key)
-              uniqueClasses.push(c)
-            }
-          }
-          const lectureCount = uniqueClasses.length
-          baseEarnings = lectureCount * rate
-          calcDetails = {
-            method: 'per_lecture',
-            verifiedLecturesCount: lectureCount,
-            ratePerLecture: rate,
-            verifiedLectureIds: uniqueClasses.map(c => c.id),
-            description: lectureCount + ' Verified Lectures @ PKR ' + rate.toLocaleString()
-          }
-        } else if (method === 'per_student') {
-          const rate = agreement ? Number(agreement.perStudentRate) || 0 : 0
-          const teacherAssignments = (data.facultyAssignments || []).filter(a =>
-            a.branchId === query.branchId && a.teacherId === teacher.id
-          )
-          const assignedBatchIds = [...new Set(teacherAssignments.map(a => a.batchId))]
-          const studentIds = new Set()
-          for (const enr of (data.enrollments || [])) {
-            if (enr.branchId === query.branchId && enr.status === 'Active' && assignedBatchIds.includes(enr.batchId)) {
-              const adm = (data.admissions || []).find(a => a.studentId === enr.studentId && a.branchId === query.branchId)
-              if (!adm || adm.status === 'Approved') {
-                studentIds.add(enr.studentId)
-              }
-            }
-          }
-          const studentCount = studentIds.size
-          baseEarnings = studentCount * rate
-          calcDetails = {
-            method: 'per_student',
-            uniqueEnrolledStudentsCount: studentCount,
-            ratePerStudent: rate,
-            studentIds: Array.from(studentIds),
-            description: studentCount + ' Enrolled Students @ PKR ' + rate.toLocaleString()
-          }
-        } else if (method === 'fee_percentage') {
-          const percentage = agreement ? Number(agreement.feePercentage) || 0 : 0
-          const teacherAssignments = (data.facultyAssignments || []).filter(a =>
-            a.branchId === query.branchId && a.teacherId === teacher.id
-          )
-          const teacherBatchIds = [...new Set(teacherAssignments.map(a => a.batchId))]
-          const eligibleEnrollmentIds=new Set(data.enrollments.filter(e=>e.branchId===query.branchId&&teacherBatchIds.includes(e.batchId)).map(e=>e.id))
-          const eligibleChallanIds=new Set(data.challans.filter(c=>c.branchId===query.branchId&&eligibleEnrollmentIds.has(c.enrollmentId)).map(c=>c.id))
-          const eligiblePayments=data.payments.filter(p=>p.branchId===query.branchId&&p.status==='Verified'&&p.paidAt&&getAcademyDateOnly(new Date(p.paidAt)).startsWith(yearMonth)&&eligibleChallanIds.has(p.challanId))
-          const tuitionCollected = eligiblePayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-          baseEarnings = Math.round(tuitionCollected * (percentage / 100))
-          calcDetails = {
-            method: 'fee_percentage',
-            totalVerifiedTuitionCollected: tuitionCollected,
-            feePercentage: percentage,
-            eligiblePaymentIds: eligiblePayments.map(p => p.id),
-            description: percentage + '% of PKR ' + tuitionCollected.toLocaleString() + ' Tuition Collections'
-          }
-        }
-
-        const allowances = agreement ? Number(agreement.allowances) || 0 : 0
-        const deductions = agreement ? Number(agreement.standardDeductions) || 0 : 0
-
-        const teacherAdvances = (data.payrollAdvances || []).filter(a =>
-          a.branchId === query.branchId && a.teacherId === teacher.id && a.balance > 0
-        )
-        const reserved=data.payrollLines.filter(l=>l.branchId===query.branchId&&l.teacherId===teacher.id&&l.payrollPeriodId!==periodId&&isLocked(data.payrollPeriods.find(p=>p.id===l.payrollPeriodId))).reduce((sum,l)=>sum+Math.max(0,l.advancesDeducted-(l.advancesRecovered??(data.payrollPayments.some(p=>p.payrollLineId===l.id)?l.advancesDeducted:0))),0)
-        const unrecoveredAdvance = Math.max(0,teacherAdvances.reduce((sum, a) => sum + a.balance, 0)-reserved)
-        const grossBeforeAdvance = Math.max(0, baseEarnings + allowances - deductions)
-        const advancesDeducted = Math.min(unrecoveredAdvance, grossBeforeAdvance)
-
-        const adjustments = (data.payrollAdjustments || [])
-          .filter(adj => adj.branchId === query.branchId && adj.teacherId === teacher.id && adj.yearMonth === yearMonth)
-          .reduce((sum, adj) => sum + (adj.type === 'bonus' ? adj.amount : -adj.amount), 0)
-
-        const netPayable = Math.max(0, grossBeforeAdvance - advancesDeducted + adjustments)
-
-        const existingLine = (data.payrollLines || []).find(l =>
-          l.payrollPeriodId === periodId && l.teacherId === teacher.id
-        )
-        const linePaid = existingLine ? existingLine.totalPaid : 0
-        const lineOutstanding = Math.max(0, netPayable - linePaid)
-        const lineStatus = linePaid >= netPayable && netPayable > 0 ? 'Paid' : linePaid > 0 ? 'Partially Paid' : (period?.status === 'Approved' ? 'Approved' : 'Draft')
-
-        const lineId = existingLine ? existingLine.id : makeId()
-        const lineRecord = {
-          id: lineId,
-          payrollPeriodId: periodId,
-          branchId: query.branchId,
-          teacherId: teacher.id,
-          teacherName: teacher.name,
-          designation: teacher.qualifications || 'Faculty Member',
-          yearMonth,
-          calculationMethod: method,
-          calculationDetails: calcDetails,
-          baseEarnings,
-          allowances,
-          deductions,
-          advancesDeducted,
-          adjustments,
-          netPayable,
-          totalPaid: linePaid,
-          outstanding: lineOutstanding,
-          status: lineStatus,
-          updatedAt: new Date().toISOString()
-        }
-        calculatedLines.push(lineRecord)
-
-        totalGross += baseEarnings
-        totalAllowances += allowances
-        totalDeductions += deductions
-        totalAdvancesDeducted += advancesDeducted
-        totalNetPayable += netPayable
-        totalPaid += linePaid
-        totalOutstanding += lineOutstanding
-      }
-
-      data.payrollLines = data.payrollLines.filter(l => l.payrollPeriodId !== periodId).concat(calculatedLines)
-
-      const periodStatus = totalOutstanding === 0 && totalPaid > 0 ? 'Paid' : totalPaid > 0 ? 'Partially Paid' : (period?.status === 'Approved' ? 'Approved' : 'Draft')
-      const periodRecord = {
-        id: periodId,
-        branchId: query.branchId,
-        yearMonth,
-        status: periodStatus,
-        totalGross,
-        totalAllowances,
-        totalDeductions,
-        totalAdvancesDeducted,
-        totalNetPayable,
-        totalPaid,
-        totalOutstanding,
-        teachersCount: calculatedLines.length,
-        approvedAt: period?.approvedAt || null,
-        approvedBy: period?.approvedBy || null,
-        createdAt: period?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-
-      const pIdx = data.payrollPeriods.findIndex(p => p.id === periodId)
-      if (pIdx >= 0) {
-        data.payrollPeriods[pIdx] = periodRecord
-      } else {
-        data.payrollPeriods.push(periodRecord)
-      }
-
-      write(data)
-      return { period: periodRecord, lines: calculatedLines }
-    }
-
-    if (operation === 'approvePeriod') {
-      const period = data.payrollPeriods.find(p => (p.id === id || p.yearMonth === id) && p.branchId === query.branchId)
-      if (!period) fail('NOT_FOUND', 'Payroll period was not found.')
-      if(isLocked(period))return period
-      for(const line of data.payrollLines.filter(l=>l.payrollPeriodId===period.id)){
-        const reserved=data.payrollLines.filter(l=>l.branchId===query.branchId&&l.teacherId===line.teacherId&&l.payrollPeriodId!==period.id&&isLocked(data.payrollPeriods.find(p=>p.id===l.payrollPeriodId))).reduce((sum,l)=>sum+Math.max(0,l.advancesDeducted-(l.advancesRecovered??(data.payrollPayments.some(p=>p.payrollLineId===l.id)?l.advancesDeducted:0))),0)
-        const balance=data.payrollAdvances.filter(advance=>advance.branchId===query.branchId&&advance.teacherId===line.teacherId).reduce((sum,advance)=>sum+advance.balance,0)
-        if(line.advancesDeducted>Math.max(0,balance-reserved))fail('INVALID_STATE','Advance balances changed. Recalculate this draft payroll before approving.')
-      }
-      if(!data.payrollLines.some(l=>l.payrollPeriodId===period.id))fail('INVALID_STATE','Calculate salary lines before approval.')
-      period.status = period.totalOutstanding === 0 && period.totalPaid > 0 ? 'Paid' : period.totalPaid > 0 ? 'Partially Paid' : 'Approved'
-      period.approvedAt = new Date().toISOString()
-      period.approvedBy = session.user.id
-      period.updatedAt = new Date().toISOString()
-
-      for (const line of data.payrollLines) {
-        if (line.payrollPeriodId === period.id && line.status === 'Draft') {
-          line.status = line.netPayable===0?'Paid':'Approved'
-          if(line.netPayable===0)recoverAdvance(line)
-          line.updatedAt = new Date().toISOString()
-        }
-      }
-      if(period.totalOutstanding===0)period.status='Paid'
-      write(data)
-      return period
-    }
-
     if (operation === 'recordPayment') {
       if (!object(record) || !validText(record.payrollLineId)) fail('INVALID_RECORD', 'Payroll line ID is required.')
-      const line = data.payrollLines.find(l => l.id === record.payrollLineId && l.branchId === query.branchId)
-      if (!line) fail('NOT_FOUND', 'Payroll record was not found.')
-      const period = data.payrollPeriods.find(p => p.id === line.payrollPeriodId && p.branchId===query.branchId)
-      if(!isLocked(period))fail('INVALID_STATE','Approve payroll before disbursing salary.')
+      const balance=runningOverview(data,getDemoUsers(),query.branchId,getAcademyDateOnly()).lines.find(l=>l.id===record.payrollLineId||(l.sourcePayrollLineIds||[]).includes(record.payrollLineId))
+      if (!balance || balance.calculationError) fail('INVALID_STATE','Save a valid assignment salary before adding payment.')
+      const line=materializeRunningLine(data,balance,makeId,getAcademyDateOnly())
       const transactionReference=typeof record.transactionReference==='string'?record.transactionReference.trim():''
-      if(transactionReference&&data.payrollPayments.some(p=>p.branchId===query.branchId&&p.payrollLineId===line.id&&p.transactionReference?.trim()===transactionReference))fail('DUPLICATE_RECORD','This transaction reference has already been posted.')
+      if (line.payrollVersion >= 2 && !transactionReference) fail('INVALID_RECORD', 'A unique payment reference is required.')
+      if(transactionReference&&data.payrollPayments.some(p=>p.branchId===query.branchId&&p.transactionReference?.trim()===transactionReference))fail('DUPLICATE_RECORD','This transaction reference has already been posted.')
 
       const amount = Number(record.amount)
-      if (!positiveAmount(amount)) fail('INVALID_RECORD', 'Disbursement amount must be greater than zero.')
+      if (!(Number.isFinite(amount) && amount > 0 && amount <= Number.MAX_SAFE_INTEGER && Math.abs(amount * 100 - Math.round(amount * 100)) < 0.00001)) fail('INVALID_RECORD', 'Disbursement must be positive with at most two decimal places.')
       if (amount > line.outstanding) fail('INVALID_RECORD', 'Disbursement amount exceeds outstanding balance of PKR ' + line.outstanding.toLocaleString() + '.')
 
       const validMethods = ['Cash', 'Bank Transfer', 'Mobile Wallet', 'Cheque', 'EasyPaisa', 'Bank / 1Link']
       if(!validMethods.includes(record.method))fail('INVALID_RECORD','Choose a valid payment method.')
       const method = record.method
 
+      const paidDate=record.paymentDate||getAcademyDateOnly()
+      if (!validDateOnly(paidDate) || paidDate>getAcademyDateOnly()) fail('INVALID_RECORD','Choose a valid actual payment date, today or earlier.')
       const generatedExpenseId = makeId()
       const expense = {
         id: generatedExpenseId,
         branchId: query.branchId,
-        amount: Math.round(amount),
+        amount,
         category: 'Faculty',
-        description: 'Teacher Salary Disbursement - ' + line.teacherName + ' (' + line.yearMonth + ') [PAYROLL-' + line.id + ']',
+        description: ('Teacher Salary - ' + line.teacherName.slice(0,45) + (line.batchName ? ' / ' + line.batchName.slice(0,30) + ' / ' + line.subjectName.slice(0,25) : '') + ' (' + (line.salaryDate || line.yearMonth || 'Salary') + ') [PAYROLL-' + line.id + ']').slice(0,200),
         method,
-        entryDate: getAcademyDateOnly(),
+        entryDate: paidDate,
         status: 'Posted',
         createdAt: new Date().toISOString(),
         actorUserId: session.user.id
@@ -2512,6 +2321,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
         id: paymentId,
         periodId: line.payrollPeriodId,
         payrollLineId: line.id,
+        ...(line.payrollVersion >= 2 ? {tenantId:line.tenantId,facultyAssignmentId:line.facultyAssignmentId,courseId:line.courseId,batchId:line.batchId,subjectId:line.subjectId,status:'Verified'} : {}),
         branchId: query.branchId,
         teacherId: line.teacherId,
         teacherName: line.teacherName,
@@ -2520,118 +2330,32 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
         transactionReference: transactionReference || ('TXN-' + paymentId.slice(-6).toUpperCase()),
         financeExpenseId: expense.id,
         notes: record.notes || '',
-        paidAt: new Date().toISOString(),
+        paidAt: paidDate+'T12:00:00+05:00',
         actorUserId: session.user.id
       }
-      if(line.advancesRecovered==null)line.advancesRecovered=data.payrollPayments.some(p=>p.payrollLineId===line.id)?line.advancesDeducted:0
       data.payrollPayments.push(payment)
 
-      line.totalPaid += amount
-      line.outstanding = Math.max(0, line.netPayable - line.totalPaid)
+      line.totalPaid = Math.round((line.totalPaid + amount) * 100) / 100
+      line.outstanding = Math.max(0, Math.round((line.netPayable - line.totalPaid) * 100) / 100)
       line.status = line.outstanding === 0 ? 'Paid' : 'Partially Paid'
       line.updatedAt = new Date().toISOString()
 
-      recoverAdvance(line)
-
-      if (period) {
-        period.totalPaid += amount
-        period.totalOutstanding = Math.max(0, period.totalNetPayable - period.totalPaid)
-        period.status = period.totalOutstanding === 0 ? 'Paid' : 'Partially Paid'
-        period.updatedAt = new Date().toISOString()
-      }
-
       write(data)
-      return { payment, expense, line, period }
-    }
-
-    if (operation === 'requestAdvance') {
-      if (!object(record) || !validText(record.teacherId)) fail('INVALID_RECORD', 'Teacher is required.')
-      const amount = Number(record.amount)
-      if (!positiveAmount(amount)) fail('INVALID_RECORD', 'Advance amount must be greater than zero.')
-
-      const teacher = teacherFor(record.teacherId)
-      if (!teacher) fail('INVALID_REFERENCE', 'Teacher was not found.')
-
-      const validMethods = ['Cash', 'Bank Transfer', 'Mobile Wallet', 'Cheque']
-      if(!validMethods.includes(record.method??'Cash'))fail('INVALID_RECORD','Choose a valid advance payment method.')
-      const method = record.method??'Cash'
-
-      const advanceId = makeId()
-
-      const expenseId = makeId()
-      const expense = {
-        id: expenseId,
-        branchId: query.branchId,
-        amount: Math.round(amount),
-        category: 'Faculty',
-        description: 'Teacher Salary Advance - ' + teacher.name + ' (' + (record.reason || 'Staff Advance') + ') [ADVANCE-' + advanceId + ']',
-        method,
-        entryDate: getAcademyDateOnly(),
-        status: 'Posted',
-        createdAt: new Date().toISOString(),
-        actorUserId: session.user.id
-      }
-      validateRecord(expense, 'expenses')
-      data.expenses.push(expense)
-
-      const advance = {
-        id: advanceId,
-        branchId: query.branchId,
-        teacherId: record.teacherId,
-        teacherName: teacher.name,
-        amount,
-        recoveredAmount: 0,
-        balance: amount,
-        method,
-        reason: record.reason || 'Staff Advance Request',
-        status: 'Disbursed',
-        financeExpenseId: expense.id,
-        disbursedAt: new Date().toISOString(),
-        actorUserId: session.user.id
-      }
-      data.payrollAdvances.push(advance)
-      write(data)
-      return { advance, expense }
+      return { payment, expense, line }
     }
 
     if (operation === 'getAdvances') {
       return (data.payrollAdvances || []).filter(a => a.branchId === query.branchId)
     }
 
-    if (operation === 'addAdjustment') {
-      if (!object(record) || !validText(record.teacherId) || !['bonus', 'deduction'].includes(record.type)) {
-        fail('INVALID_RECORD', 'Valid adjustment type and teacher are required.')
-      }
-      const amount = Number(record.amount)
-      if (!positiveAmount(amount)) fail('INVALID_RECORD', 'Adjustment amount must be positive.')
-
-      if(!teacherFor(record.teacherId))fail('INVALID_REFERENCE','Choose an active teacher in this branch.')
-      const month=record.yearMonth||getAcademyDateOnly().slice(0,7)
-      if(!validMonth(month))fail('INVALID_RECORD','Choose a valid payroll month.')
-      if(isLocked(data.payrollPeriods.find(p=>p.branchId===query.branchId&&p.yearMonth===month)))fail('INVALID_STATE','Approved payroll is locked. Adjust an unapproved month instead.')
-      const adj = {
-        id: makeId(),
-        branchId: query.branchId,
-        teacherId: record.teacherId,
-        yearMonth: record.yearMonth || getAcademyDateOnly().slice(0, 7),
-        type: record.type,
-        amount,
-        reason: record.reason || '',
-        createdAt: new Date().toISOString(),
-        actorUserId: session.user.id
-      }
-      data.payrollAdjustments.push(adj)
-      write(data)
-      return adj
-    }
-
     if (operation === 'getPayslip') {
-      const line = data.payrollLines.find(l => l.id === id && l.branchId === query.branchId)
+      const line = runningOverview(data,getDemoUsers(),query.branchId,getAcademyDateOnly()).lines.find(l=>l.id===id||(l.sourcePayrollLineIds||[]).includes(id))
       if (!line) fail('NOT_FOUND', 'Payslip record was not found.')
+      if (isTeacher && line.teacherId !== session.user.id) fail('DEMO_ACTION_DENIED', 'Teachers can only access their own payslips.')
       const period = data.payrollPeriods.find(p => p.id === line.payrollPeriodId)
       const teacher = getDemoUsers().find(u => u.id === line.teacherId)
-      const agreement = data.salaryAgreements.find(a => a.branchId === query.branchId && a.teacherId === line.teacherId && a.status === 'Active')
-      const payments = data.payrollPayments.filter(p => p.payrollLineId === line.id)
+      const agreement = line.agreementSnapshot || data.salaryAgreements.find(a => a.id === line.agreementId && a.branchId === query.branchId) || null
+      const payments = data.payrollPayments.filter(p => p.branchId === query.branchId && [line.id,...(line.sourcePayrollLineIds||[])].includes(p.payrollLineId))
       const branch = getDemoBranches().find(b => b.id === query.branchId)
 
       return {
@@ -2700,5 +2424,5 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
     return branch
   }
 
-  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation, assetOperation, reportOperation, facultyAssignmentOperation, completeInstantAdmission, deleteStudent, deleteEmptyBranch, payrollOperation }
+  return { run, runTransaction, createAdmission, updateAdmission, deleteAdmission, getAdmission, changeAdmissionStatus, enrollStudent, updateEnrollmentFeeStatus, studentOperation, academicOperation, classScheduleOperation, financialOperation, demoClassOperation, assetOperation, reportOperation, dashboardOperation, facultyAssignmentOperation, completeInstantAdmission, deleteStudent, deleteEmptyBranch, payrollOperation }
 }

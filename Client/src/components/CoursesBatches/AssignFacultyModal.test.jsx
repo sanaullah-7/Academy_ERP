@@ -1,4 +1,4 @@
-import { render,screen,fireEvent } from '@testing-library/react'
+import { render as renderBase,screen,fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach,expect,it,vi } from 'vitest'
 import AssignFacultyModal from './AssignFacultyModal.jsx'
@@ -8,6 +8,11 @@ import { authService } from '../../services/authService.js'
 import { resolveDailyClasses } from '../../services/classScheduleService.js'
 import { admissionService } from '../../services/admissionService.js'
 import App from '../../App.jsx'
+import { AuthProvider } from '../../contexts/AuthContext.jsx'
+import { BranchProvider } from '../../contexts/BranchContext.jsx'
+
+function TestAccess({ children }) { return <AuthProvider><BranchProvider>{children}</BranchProvider></AuthProvider> }
+const render = ui => renderBase(ui, { wrapper: TestAccess })
 
 beforeEach(async()=>{localStorage.clear();await authService.login({userId:'demo-admin'});await authService.selectBranch('demo-admin','demo-central')})
 it('saves and edits through dialog handlers, shares academic projections and removes only the selected assignment',async()=>{

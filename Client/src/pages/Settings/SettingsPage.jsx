@@ -1,6 +1,6 @@
 import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useEffect, useState } from 'react'
-import { Building2, GraduationCap, ImagePlus, Palette, PanelLeft, Save, Settings2, Undo2, Wallet } from 'lucide-react'
+import { Building2, GraduationCap, ImagePlus, Palette, PanelLeft, Save, Settings2, Undo2 } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent } from '../../components/ui/card.jsx'
@@ -10,29 +10,18 @@ import { useBranch } from '../../hooks/useBranch.js'
 import useAcademy from '../../hooks/useAcademy.js'
 const blankProfile={tagline:'',contactEmail:'',contactPhone:'',website:'',streetAddress:'',city:'',province:'',country:'',description:''}
 export default function SettingsPage(){
- const {branchId}=useBranch(),{branding,updateBranding}=useAcademy();const [data,setData]=useState(() => peekPageResource('settings')?.data ?? null),[form,setForm]=useState({academyName:branding.name,...blankProfile,primaryColor:branding.primaryColor,logo:branding.logo??'',sidebarBackground:branding.sidebarBackground,sidebarText:branding.sidebarText,sidebarIcon:branding.sidebarIcon,sidebarActive:branding.sidebarActive,teacherPayrollEnabled:Boolean(branding.teacherPayrollEnabled)}),[message,setMessage]=useState('')
- useEffect(()=>{const loadVersion=capturePageVersion();let active=true;organizationService.overview().then(o=>{if(!active)return;rememberPageResource('settings',{data:o},loadVersion);setData(o);setForm(current=>({...current,...blankProfile,...o.settings,logo:o.settings.logo??'',teacherPayrollEnabled:Boolean(o.settings.teacherPayrollEnabled)}))},e=>{if(active)setMessage(e.message)});return()=>{active=false}},[branchId])
+ const {branchId,branch:currentBranch}=useBranch(),{branding,updateBranding}=useAcademy();const resourceKey=`settings:${branchId}`,[data,setData]=useState(() => peekPageResource(resourceKey)?.data ?? null),[form,setForm]=useState({academyName:branding.name,...blankProfile,primaryColor:branding.primaryColor,logo:branding.logo??'',sidebarBackground:branding.sidebarBackground,sidebarText:branding.sidebarText,sidebarIcon:branding.sidebarIcon,sidebarActive:branding.sidebarActive,teacherPayrollEnabled:Boolean(branding.teacherPayrollEnabled)}),[message,setMessage]=useState('')
+ useEffect(()=>{const loadVersion=capturePageVersion();let active=true;organizationService.overview().then(o=>{if(!active)return;rememberPageResource(resourceKey,{data:o},loadVersion);setData(o);setForm(current=>({...current,...blankProfile,...o.settings,primaryColor:branding.primaryColor,sidebarBackground:branding.sidebarBackground,sidebarText:branding.sidebarText,sidebarIcon:branding.sidebarIcon,sidebarActive:branding.sidebarActive,logo:o.settings.logo??'',teacherPayrollEnabled:Boolean(o.settings.teacherPayrollEnabled)}))},e=>{if(active)setMessage(e.message)});return()=>{active=false}},[branchId,branding.primaryColor,branding.sidebarActive,branding.sidebarBackground,branding.sidebarIcon,branding.sidebarText,resourceKey])
  async function uploadLogo(event){const file=event.target.files?.[0];if(!file)return;if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)){setMessage('Logo must be PNG, JPG, WEBP or GIF.');event.target.value='';return}if(file.size>262144){setMessage('Logo must be 256 KB or smaller.');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{setForm(current=>({...current,logo:String(reader.result)}));setMessage('Logo preview ready. Save Settings to persist it.')};reader.onerror=()=>setMessage('Logo file could not be read.');reader.readAsDataURL(file)}
  async function save(){try{const value={...form,logo:form.logo||null};const saved=await organizationService.saveSettings(value);if(!updateBranding({name:saved.academyName,primaryColor:saved.primaryColor,logo:saved.logo,sidebarBackground:saved.sidebarBackground,sidebarText:saved.sidebarText,sidebarIcon:saved.sidebarIcon,sidebarActive:saved.sidebarActive}))throw new Error('Branding values are invalid.');setData(current=>({...current,settings:saved}));setMessage('Academy settings saved.')}catch(e){setMessage(e.message)}}
  async function resetSidebar(){const defaults={primaryColor:'#940016',sidebarBackground:'#FFFFFF',sidebarText:'#111827',sidebarIcon:'#111827',sidebarActive:'#940016'};const next={...form,...defaults};setForm(next);try{if(!updateBranding({name:next.academyName,logo:next.logo||null,...defaults}))throw new Error('TSA defaults could not be restored.');await organizationService.saveSettings({academyName:next.academyName,logo:next.logo||null,...defaults});setMessage('TSA default theme restored.')}catch(e){setMessage(e.message)}}
 
-  async function togglePayroll(){
-    const nextVal = !form.teacherPayrollEnabled;
-    try {
-      const saved = await organizationService.saveSettings({ ...form, teacherPayrollEnabled: nextVal });
-      setForm(curr => ({ ...curr, teacherPayrollEnabled: nextVal }));
-      setData(curr => ({ ...curr, settings: saved }));
-      setMessage(nextVal ? 'Teacher Payroll module enabled.' : 'Teacher Payroll module disabled. Baseline view restored while preserving all payroll history.');
-    } catch(e) {
-      setMessage(e.message);
-    }
-  }
   return <DashboardLayout><div className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
       <div>
 
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">Academy Settings</h1>
-        <p className="text-xs text-muted-foreground">Configure academy branding, logo and sidebar appearance.</p>
+        <p className="text-xs text-muted-foreground">Configure branding and the shared visual theme for everyone in {currentBranch?.name ?? 'this branch'}.</p>
       </div>
       <div className="flex gap-2"><Button onClick={save} disabled={!data} className="h-9 gap-1.5 text-xs font-medium cursor-pointer bg-[#940016] text-white hover:bg-[#7a0012] shadow-sm"><Save size={15}/>Save Settings</Button></div>
     </header>
@@ -64,7 +53,7 @@ export default function SettingsPage(){
                 <span className="rounded-lg bg-muted/60 px-3 py-2 font-mono text-xs text-foreground">{form.primaryColor}</span>
               </span>
             </label>
-            <p className="mt-2 text-[11px] leading-5 text-muted-foreground">Accent color for buttons and highlights.</p>
+            <p className="mt-2 text-[11px] leading-5 text-muted-foreground">Shared across buttons, highlights, tabs and controls for every role in this branch.</p>
           </div>
           <div className="min-w-0 rounded-xl border border-primary/10 bg-white p-4 shadow-xs">
             <label className="block text-xs font-semibold text-foreground">
@@ -115,45 +104,6 @@ export default function SettingsPage(){
             </div>
           </div>
         </section>
-      </CardContent>
-    </Card>
-
-    <Card className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-[0_8px_28px_rgba(70,15,30,0.05)]">
-      <div className="flex items-start gap-3 border-b border-primary/10 bg-[#fcf5f7] px-5 py-5 sm:px-6">
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-primary/10 bg-primary/10 text-primary">
-          <Wallet size={22} aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-base font-bold tracking-tight text-foreground">Feature Modules &amp; Extensions</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">Manage optional functional modules. Disabling a module restores the baseline interface while preserving all saved historical records.</p>
-        </div>
-      </div>
-      <CardContent className="space-y-4 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-border/80 bg-background/50 p-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-foreground">Teacher Payroll &amp; Salary Management</span>
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${form.teacherPayrollEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground'}`}>
-                {form.teacherPayrollEnabled ? 'Active (ON)' : 'Disabled (OFF - Baseline)'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground max-w-2xl">
-              Complete faculty compensation system with all 4 salary calculation methods (Fixed Monthly, Per Completed Lecture, Per Student / Batch, and % Fee Collection), staff advances, partial salary payments, payslips, and verified Finance expense integration.
-            </p>
-          </div>
-          <Button
-            type="button"
-            onClick={togglePayroll}
-            disabled={!data}
-            className={`h-9 px-4 text-xs font-semibold cursor-pointer shrink-0 ${
-              form.teacherPayrollEnabled
-                ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                : 'bg-[#940016] text-white hover:bg-[#7a0012] shadow-sm'
-            }`}
-          >
-            {form.teacherPayrollEnabled ? 'Disable Module (Undo)' : 'Enable Teacher Payroll'}
-          </Button>
-        </div>
       </CardContent>
     </Card>
 

@@ -140,8 +140,8 @@ describe('F11-F13 organization service',()=>{
  it('blocks self-deactivation and persists settings',async()=>{await expect(organizationService.toggleUser('demo-admin')).rejects.toThrow('own');const saved=await organizationService.saveSettings({academyName:'QA Fictional Academy',primaryColor:'#7F1D1D',logo:null});expect(saved.academyName).toBe('QA Fictional Academy');expect((await organizationService.overview()).settings).toEqual(saved)})
  it('persists academy contact details and current-user profile overrides separately',async()=>{const saved=await organizationService.saveSettings({academyName:'QA Fictional Academy',contactEmail:'office@example.test',contactPhone:'+92 300 0000000',website:'https://example.test',streetAddress:'1 Demo Road',city:'Test City',province:'Punjab',country:'Pakistan',description:'Fictional QA academy.'});expect((await organizationService.overview()).settings).toMatchObject(saved);await organizationService.saveOwnProfile({name:'QA Admin Updated',email:'admin@example.test',phone:'+92 301 0000000',photo:null});expect((await authService.getSession()).user).toMatchObject({name:'QA Admin Updated',email:'admin@example.test'});expect((await organizationService.overview()).settings.academyName).toBe('QA Fictional Academy')})
  it('deletes built-in staff persistently while preserving other accounts and guarding self',async()=>{
-   await organizationService.deleteUser('teacher-irfan')
-   await expect(authService.login({userId:'teacher-irfan'})).rejects.toThrow()
+   await organizationService.deleteUser('teacher-bilal')
+   await expect(authService.login({userId:'teacher-bilal'})).rejects.toThrow()
    await organizationService.deleteUser('demo-unassigned')
    expect((await organizationService.overview()).users.some(u=>u.id==='demo-unassigned')).toBe(false)
    expect((await organizationService.overview()).users.some(u=>u.id==='teacher-naeem')).toBe(true)

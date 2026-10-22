@@ -1281,8 +1281,20 @@ Owner approves reference-style icon/label/value summaries inside each Reports le
 
 Owner authorizes visual polish of Branding & Visual Identity only. SettingsPage.jsx now uses a soft theme-tinted maroon/white gradient, icon-led header, three white identity/color/logo field cards, bordered color-swatch tiles and framed sidebar preview. Small sky/slate tint balances the sidebar section; primary accents still follow configured theme tokens. Responsive grids/wrapping preserve desktop/mobile fit. Added explicit input labels and semantic sidebar section. Original upload validation/file reader, save/cancel/reset handlers and hidden settings persistence are unchanged. No extra sections, packages or workflows introduced.
 
+## Premium role-dashboard alignment — 2026-10-22
+
+The Super Admin dashboard remains the visual reference. All five roles now render the same shared KPI card primitive with identical 12px radius, 144px minimum height, accent-bar palettes, icon treatments, typography and shadow. Owner, Receptionist and Teacher panels use the same white surfaces, soft borders, rounded headers and spacing against the existing `#F7F8FC` theme background. Role-specific content and semantic status colors remain unchanged.
+
 PASS12/12 AdminOperations/branding-context regression tests, touched ESLint, production build (existing export chunk warning), whitespace check. Isolated Edge verifies1440/1024/768/390 widths without page overflow, live color preview, Cancel, Save/reload, Reset and no JS errors; visually reviewed desktop screenshot. All browser changes used disposable demo storage, no owner records changed. Upload handler unchanged; additional file-upload browser regression NOT_RUN. Full repository suite NOT_RUN. IN_REVIEW pending owner visual acceptance. Application file: Client/src/pages/Settings/SettingsPage.jsx; task/progress/ticket/design records updated. Screenshots/check: artifacts/settings-branding-design-20261020. No commit/push; unrelated edits retained. Next approval: owner visual review.
 
 
 ## AUDIT-LOG-20261020
 Owner-authorized Audit Log uses existing maroon accents, semantic white Card, compact labeled search/filter row, desktop six-column table and mobile activity cards, colored Important/Normal markers, shared pagination and readonly before/after dialog. Current branch and Asia/Karachi timestamp context shown. No redesign of other modules. Desktop/mobile browser evidence and actual tests recorded in PROGRESS.md. IN_REVIEW.
+
+## F13-BRANCH-THEME-DARK-MODE - 2026-10-21
+
+CONFIRMED: Global theme and independent sidebar colors are saved per branch and shared by all roles assigned to that branch. Primary color drives semantic buttons, active controls, highlights, focus states and legacy maroon utilities. Dark mode uses dark semantic page, topbar, card, menu, table, input, gradient and status surfaces with high-contrast text; explicitly customized sidebar colors remain independent, while untouched default sidebar colors receive dark-mode defaults. Print styles remain unchanged.
+
+## Responsive role-dashboard rules — 2026-10-22
+
+Phone dashboards use compact two-column KPI/action grids from 360px and a single KPI column below 360px. Tablet quick actions use two columns through 1199px so labels and icons remain contained beside the desktop sidebar. Mobile navigation, search and dialogs keep touch-sized controls and viewport-bounded surfaces; wide tables retain their fields inside local horizontal scrollers rather than widening the document. Desktop presentation keeps the established Super Admin design tokens.

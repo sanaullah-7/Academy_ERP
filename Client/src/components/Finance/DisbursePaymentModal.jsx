@@ -1,3 +1,4 @@
+import { getAcademyDateOnly } from '../../utils/formatDate.js'
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog.jsx'
 import { Button } from '../ui/button.jsx'
@@ -10,6 +11,7 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
   const [amount, setAmount] = useState(line.outstanding || '')
   const [method, setMethod] = useState('Bank Transfer')
   const [transactionRef, setTransactionRef] = useState(() => `TXN-SAL-${Math.floor(100000 + Math.random() * 900000)}`)
+  const [paymentDate, setPaymentDate] = useState(getAcademyDateOnly())
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -33,6 +35,7 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
       await onDisburse({
         payrollLineId: line.id,
         amount: numAmount,
+        paymentDate,
         method,
         transactionReference: transactionRef.trim(),
         notes: notes.trim(),
@@ -50,10 +53,10 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
       <DialogHeader>
         <div className="flex items-center gap-2 text-primary font-bold">
           <Banknote size={20} />
-          <DialogTitle className="text-lg">Disburse Teacher Salary</DialogTitle>
+          <DialogTitle className="text-lg">Add Salary Payment</DialogTitle>
         </div>
         <DialogDescription className="text-xs text-muted-foreground">
-          Disburse payment to <strong className="text-foreground">{line.teacherName}</strong> for <strong className="text-foreground">{line.yearMonth}</strong>
+          Record actual payment to <strong className="text-foreground">{line.teacherName}</strong>{line.batchName && <span className="block mt-1">{line.courseName} / {line.batchName} / {line.subjectName}</span>}
         </DialogDescription>
       </DialogHeader>
 
@@ -79,6 +82,7 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <label className="block text-xs font-semibold">Payment date<Input aria-label="Payment date" type="date" value={paymentDate} max={getAcademyDateOnly()} onChange={e=>setPaymentDate(e.target.value)} required/></label>
         <div>
           <div className="flex justify-between items-center mb-1">
             <label className="text-xs font-semibold text-foreground">Disbursement Amount (PKR)</label>
@@ -97,7 +101,8 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
               value={amount}
             onChange={e => setAmount(e.target.value)}
             max={line.outstanding}
-            min="1"
+            min="0.01"
+            step="0.01"
             required
             className="text-base font-semibold"
           />
@@ -160,7 +165,7 @@ function DisbursePaymentForm({ line, onClose, onDisburse }) {
           </Button>
           <Button type="submit" disabled={submitting} className="bg-[#940016] text-white hover:bg-[#7a0012]">
             <CheckCircle2 size={15} className="mr-1.5" />
-            {submitting ? 'Posting Disbursement...' : 'Disburse & Post to Finance'}
+            {submitting ? 'Posting Disbursement...' : 'Add Payment & Post to Finance'}
           </Button>
         </div>
       </form>

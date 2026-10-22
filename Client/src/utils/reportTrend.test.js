@@ -52,7 +52,9 @@ describe('Reports trend source integrity', () => {
     expect(result.events).toHaveLength(1)
     expect(source(tab, [{ id: '2', date: '' }]).undated).toBe(1)
   })
-  it('has honest tab-specific chart definitions for all eight tabs', () => expect(Object.keys(TREND_CONFIG)).toHaveLength(8))
+  it('defines every report category including the payroll ledger', () => {
+    expect(Object.keys(TREND_CONFIG).sort()).toEqual(['admissions', 'assets', 'courses', 'demos', 'faculty', 'fees', 'finance', 'payroll', 'students'])
+  })
 })
 
 describe('Reports trend calendar grouping', () => {

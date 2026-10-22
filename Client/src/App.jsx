@@ -24,7 +24,7 @@ function App() {
   }, [])
 
   return (
-    <AcademyProvider><ThemeProvider><AuthProvider><BranchProvider><AppRouter /></BranchProvider></AuthProvider></ThemeProvider></AcademyProvider>
+    <AuthProvider><BranchProvider><AcademyProvider><ThemeProvider><AppRouter /></ThemeProvider></AcademyProvider></BranchProvider></AuthProvider>
   )
 }
 

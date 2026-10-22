@@ -629,6 +629,8 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                 {subjects.map(subject => {
                   const assignment = assignmentFor(subject)
                   const isChecked = formData.subjectIds.includes(subject.id)
+                  const subjectCourse = selectedCourses.find(course => course.id === subject.courseId)
+                  const showSubjectFee = subjectCourse?.pricingMode === 'subjects'
                   return (
                     <button
                       type="button"
@@ -651,9 +653,9 @@ export default function NewAdmissionForm({ onSuccess, onCancel, onPendingChange,
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-1.5">
                           <strong className="block text-xs sm:text-sm font-bold text-slate-900 leading-snug">{subject.name}</strong>
-                          <span className="shrink-0 text-right text-[11px] sm:text-xs font-bold text-[#940016]">
+                          {showSubjectFee && <span className="shrink-0 text-right text-[11px] sm:text-xs font-bold text-[#940016]">
                             {Number.isFinite(subject.feeAmount) ? money(subject.feeAmount) : 'Fee not set'}
-                          </span>
+                          </span>}
                         </div>
                         
                         {/* Faculty Chip */}

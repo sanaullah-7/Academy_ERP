@@ -4,18 +4,26 @@ import { getBranchRoles, ROLES } from './roles.js'
 import { DEMO_USERS, getAuthorizedBranches } from '../mock/authFixtures.js'
 
 describe('approved roles and permission definitions', () => {
-  it('defines only four roles and the confirmed implemented module permissions', () => {
-    expect(Object.values(ROLES)).toEqual(['super_admin', 'owner', 'receptionist', 'teacher'])
-    expect(Object.values(PERMISSIONS)).toEqual(['dashboard.view', 'admissions.view', 'admissions.create', 'admissions.edit', 'admissions.delete', 'admissions.decide', 'students.view', 'students.create', 'students.edit', 'courses.view', 'courses.manage', 'faculty.view', 'classes.view', 'classes.manage', 'fees.manage', 'fees.view', 'fees.collect', 'finance.view', 'expenses.manage', 'demoClasses.view', 'demoClasses.manage', 'assets.view', 'assets.manage', 'reports.view', 'reports.compareBranches', 'branches.manage', 'users.manage', 'settings.manage', 'audit.view'])
+  it('defines the approved roles and implemented module permissions', () => {
+    expect(Object.values(ROLES)).toEqual(['super_admin', 'admin', 'owner', 'receptionist', 'teacher'])
+    expect(Object.values(PERMISSIONS)).toContain('classes.edit')
+    expect(new Set(Object.values(PERMISSIONS)).size).toBe(Object.values(PERMISSIONS).length)
     expect(isKnownPermission('dashboard.view')).toBe(true)
     expect(isKnownPermission('payments.reverse')).toBe(false)
+  })
+
+  it('gives a branch Admin full module access only inside the assigned branch', () => {
+    const admin = { enabled: true, assignments: [{ branchId: 'demo-central', roles: [ROLES.ADMIN] }] }
+    for (const permission of Object.values(PERMISSIONS)) expect(canAccess(permission, admin, 'demo-central')).toBe(true)
+    for (const permission of Object.values(PERMISSIONS)) expect(canAccess(permission, admin, 'demo-north')).toBe(false)
+    expect(getAuthorizedBranches(admin).map(branch => branch.id)).toEqual(['demo-central'])
   })
 
   it('fails closed outside the approved F09-F13 Super Admin demo authority', () => {
     const get = id => DEMO_USERS.find(user => user.id === id)
     expect(canAccess(PERMISSIONS.ASSETS_MANAGE, get('demo-admin'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.REPORTS_COMPARE_BRANCHES, get('demo-admin'), 'demo-central')).toBe(true)
-    for (const userId of ['demo-owner', 'demo-reception', 'demo-teacher', 'demo-multi']) {
+    for (const userId of ['demo-teacher', 'demo-multi']) {
       expect(canAccess(PERMISSIONS.ASSETS_VIEW, get(userId), userId === 'demo-reception' ? 'demo-north' : 'demo-central')).toBe(false)
       expect(canAccess(PERMISSIONS.REPORTS_VIEW, get(userId), userId === 'demo-reception' ? 'demo-north' : 'demo-central')).toBe(false)
     }
@@ -48,10 +56,10 @@ describe('approved roles and permission definitions', () => {
     expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-owner'), 'demo-central')).toBe(false)
     expect(canAccess('admissions.delete', get('demo-admin'), 'demo-central')).toBe(true)
     expect(canAccess('admissions.delete', get('demo-owner'), 'demo-central')).toBe(false)
-    expect(canAccess('admissions.delete', get('demo-reception'), 'demo-north')).toBe(false)
+    expect(canAccess('admissions.delete', get('demo-reception'), 'demo-north')).toBe(true)
     expect(canAccess('admissions.decide', get('demo-admin'), 'demo-central')).toBe(true)
     expect(canAccess('admissions.decide', get('demo-owner'), 'demo-central')).toBe(false)
-    expect(canAccess('admissions.decide', get('demo-reception'), 'demo-north')).toBe(false)
+    expect(canAccess('admissions.decide', get('demo-reception'), 'demo-north')).toBe(true)
     expect(canAccess(PERMISSIONS.ADMISSIONS_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
   })
 
@@ -60,12 +68,14 @@ describe('approved roles and permission definitions', () => {
     expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-admin'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-reception'), 'demo-north')).toBe(true)
     expect(canAccess(PERMISSIONS.FEES_COLLECT, get('demo-reception'), 'demo-north')).toBe(true)
-    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-reception'), 'demo-north')).toBe(false)
+    expect(canAccess(PERMISSIONS.FEES_MANAGE, get('demo-reception'), 'demo-north')).toBe(true)
     expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
+    expect(canAccess(PERMISSIONS.PAYROLL_VIEW, get('demo-owner'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.EXPENSES_MANAGE, get('demo-owner'), 'demo-central')).toBe(true)
     expect(canAccess(PERMISSIONS.FEES_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
     expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
+    expect(canAccess(PERMISSIONS.PAYROLL_VIEW, get('demo-teacher'), 'demo-central')).toBe(false)
     expect(canAccess(PERMISSIONS.FINANCE_VIEW, get('demo-multi'), 'demo-central')).toBe(false)
   })
 

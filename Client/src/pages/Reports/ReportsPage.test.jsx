@@ -6,7 +6,8 @@ import { reportService } from '../../services/reportService.js'
 import { assetService } from '../../services/assetService.js'
 import { authService } from '../../services/authService.js'
 
-beforeEach(() => {
+beforeEach(async () => {
+  await import('./ReportsPage.jsx')
   localStorage.clear()
   history.replaceState(null, '', '/reports')
 })
@@ -17,7 +18,24 @@ async function signIn(userId = 'demo-admin', branchId = 'demo-central') {
 }
 
 describe('F10 Reports & Ledgers — UI & Functional QA', () => {
-  it('renders header, 8 tabs, and defaults to Fees & Defaulters with TSA Maroon styling', async () => {
+  it('opens Receptionist Reports on authorized Fees instead of the hidden payroll category', async () => {
+    await signIn('demo-reception', 'demo-north')
+    render(<App />)
+    expect(await screen.findByRole('columnheader', { name: /Challan Coverage/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Fees & Payment Defaulters/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('button', { name: /Teacher Payroll & Salary Ledger/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Finance & Expenses/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Total Salary Payable')).not.toBeInTheDocument()
+  })
+  it('opens the authorized payroll ledger with real zero KPIs and the matching chart and export columns', async () => {
+    await signIn()
+    render(<App />)
+    expect(await screen.findByRole('columnheader', { name: 'Verified Paid (PKR)', exact: true })).toBeInTheDocument()
+    expect(screen.getByText('Total Salary Payable')).toBeInTheDocument()
+    expect(screen.getByText('Teachers in Payroll')).toBeInTheDocument()
+    expect(screen.getByLabelText('Payroll financial breakdown')).toBeInTheDocument()
+  })
+  it('renders header, 9 tabs, and defaults to Teacher Payroll with TSA Maroon styling', async () => {
     await signIn('demo-admin', 'demo-central')
     render(<App />)
 
@@ -25,7 +43,8 @@ describe('F10 Reports & Ledgers — UI & Functional QA', () => {
     expect(await screen.findByRole('heading', { name: /Academy Reports & Ledgers/i })).toBeInTheDocument()
     expect(screen.getByText(/Generate and export filtered operational records/i)).toBeInTheDocument()
 
-    // Verify all 8 tab labels exist
+    // Verify all 9 tab labels exist
+    expect(screen.getByRole('button', { name: /Teacher Payroll & Salary Ledger/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Fees & Payment Defaulters/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Students Directory/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Admissions & Intake/i })).toBeInTheDocument()
@@ -36,9 +55,12 @@ describe('F10 Reports & Ledgers — UI & Functional QA', () => {
     expect(screen.getByRole('button', { name: /Campus Assets/i })).toBeInTheDocument()
 
     // Verify active tab uses TSA Maroon class (bg-[#940016]) and NOT teal (#005c53)
-    const activeTabBtn = screen.getByRole('button', { name: /Fees & Payment Defaulters/i })
+    const activeTabBtn = screen.getByRole('button', { name: /Teacher Payroll & Salary Ledger/i })
     expect(activeTabBtn.className).toContain('bg-[#940016]')
     expect(activeTabBtn.className).not.toContain('#005c53')
+
+    // Switch to Fees tab to verify Fees KPI cards and headers
+    await userEvent.click(screen.getByRole('button', { name: /Fees & Payment Defaulters/i }))
 
     // Verify KPI Cards for Fees tab
     expect(screen.getByText(/SELECTED COHORT/i)).toBeInTheDocument()

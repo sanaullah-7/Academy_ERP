@@ -147,85 +147,14 @@ function State({ loading, error, retry, children }) {
   return children
 }
 
-// Curated metadata enrichment for realistic demo teachers matching approved Lovable design
+// Display metadata only; class allocations and student counts use saved records.
 const TEACHER_ENRICHMENT = {
-  'teacher-irfan': {
-    displayName: 'Dr. Irfan',
-    qualification: 'MBBS, Gold Medalist',
-    subject: 'Biology',
-    department: 'Senior Biology Specialist',
-    contact: '0300-5544332',
-    coursesText: 'MDCAT 2026, FSc Pre-Medical',
-    shiftsText: 'Morning A, Evening A',
-    defaultReach: 240,
-    defaultWeeklyHours: 16.5,
-    syllabusPace: 88,
-    slots: [
-      {
-        id: 'slot-1',
-        course: 'MDCAT 2026',
-        batch: 'Morning A',
-        subject: 'Biology (Cell Biology & Genetics)',
-        room: 'Room 201',
-        days: 'Mon - Fri',
-        time: '08:00 AM - 09:15 AM',
-        students: 120,
-      },
-      {
-        id: 'slot-2',
-        course: 'FSc Pre-Medical',
-        batch: 'Evening A',
-        subject: 'Biology (Physiology)',
-        room: 'Room 102',
-        days: 'Mon - Fri',
-        time: '03:45 PM - 05:00 PM',
-        students: 120,
-      },
-    ],
-  },
   'teacher-naeem': {
     displayName: 'Prof. M. Naeem',
     qualification: 'M.Phil Chemistry',
     subject: 'Chemistry',
     department: 'Chemistry Department Lead',
     contact: '0301-4455667',
-    coursesText: 'MDCAT 2026, ETEA Crash',
-    shiftsText: 'Morning A, Evening A, Crash 1',
-    defaultReach: 310,
-    defaultWeeklyHours: 18.5,
-    syllabusPace: 82,
-    slots: [
-      {
-        id: 'slot-3',
-        course: 'MDCAT Morning A',
-        batch: 'Morning A',
-        subject: 'Chemistry (Organic Foundations)',
-        room: 'Room 201',
-        days: 'Mon - Fri',
-        time: '09:15 AM - 10:30 AM',
-        students: 120,
-      },
-      {
-        id: 'slot-4',
-        course: 'MDCAT Evening A',
-        batch: 'Evening A',
-        subject: 'Inorganic & Numerical Chemistry',
-        room: 'Hall 1',
-        days: 'Mon - Fri',
-        time: '05:15 PM - 06:30 PM',
-        students: 115,
-      },
-      {
-        id: 'slot-5',
-        course: 'ETEA Crash Course',
-        batch: 'Crash 1',
-        subject: 'High-Yield Concept Blitz',
-        room: 'Room 104',
-        days: 'Tue, Thu, Sat',
-        time: '06:45 PM - 08:00 PM',
-        students: 75,
-      },
-    ],
   },
   'teacher-bilal': {
     displayName: 'Engr. Bilal Khan',
@@ -233,33 +162,6 @@ const TEACHER_ENRICHMENT = {
     subject: 'Physics',
     department: 'Physics Department Lead',
     contact: '0312-9876543',
-    coursesText: 'MDCAT, ECAT Engineering',
-    shiftsText: 'Evening A, Weekend Int.',
-    defaultReach: 195,
-    defaultWeeklyHours: 15.0,
-    syllabusPace: 79,
-    slots: [
-      {
-        id: 'slot-6',
-        course: 'ECAT Engineering',
-        batch: 'Evening A',
-        subject: 'Physics (Mechanics & Electromagnetism)',
-        room: 'Room 202',
-        days: 'Mon - Fri',
-        time: '03:45 PM - 05:00 PM',
-        students: 110,
-      },
-      {
-        id: 'slot-7',
-        course: 'MDCAT Regular',
-        batch: 'Weekend Int.',
-        subject: 'Modern Physics & Nuclear',
-        room: 'Hall 2',
-        days: 'Sat, Sun',
-        time: '09:00 AM - 12:00 PM',
-        students: 85,
-      },
-    ],
   },
   'teacher-danyal': {
     displayName: 'Sir Danyal',
@@ -267,33 +169,6 @@ const TEACHER_ENRICHMENT = {
     subject: 'English & Reasoning',
     department: 'English & Reasoning Lead',
     contact: '0333-5566778',
-    coursesText: 'MDCAT, ETEA Crash',
-    shiftsText: 'All MDCAT Batches',
-    defaultReach: 420,
-    defaultWeeklyHours: 20.0,
-    syllabusPace: 91,
-    slots: [
-      {
-        id: 'slot-8',
-        course: 'MDCAT 2026',
-        batch: 'Morning All',
-        subject: 'English & Logical Reasoning',
-        room: 'Auditorium',
-        days: 'Mon - Thu',
-        time: '11:00 AM - 12:15 PM',
-        students: 220,
-      },
-      {
-        id: 'slot-9',
-        course: 'ETEA Crash',
-        batch: 'Evening Combined',
-        subject: 'Vocabulary & Fast Grammar',
-        room: 'Auditorium',
-        days: 'Fri - Sun',
-        time: '04:00 PM - 05:30 PM',
-        students: 200,
-      },
-    ],
   },
   'teacher-tariq': {
     displayName: 'Sir Tariq',
@@ -301,33 +176,6 @@ const TEACHER_ENRICHMENT = {
     subject: 'Mathematics',
     department: 'Mathematics Department',
     contact: '0345-1122334',
-    coursesText: 'ECAT 2026, FSc Pre-Engineering',
-    shiftsText: 'Morning B, Evening B',
-    defaultReach: 180,
-    defaultWeeklyHours: 14.0,
-    syllabusPace: 85,
-    slots: [
-      {
-        id: 'slot-10',
-        course: 'ECAT 2026',
-        batch: 'Morning B',
-        subject: 'Calculus & Analytic Geometry',
-        room: 'Room 203',
-        days: 'Mon - Fri',
-        time: '10:30 AM - 11:45 AM',
-        students: 95,
-      },
-      {
-        id: 'slot-11',
-        course: 'FSc Pre-Engineering',
-        batch: 'Evening B',
-        subject: 'Algebra & Trigonometry',
-        room: 'Room 202',
-        days: 'Mon - Fri',
-        time: '05:30 PM - 06:45 PM',
-        students: 85,
-      },
-    ],
   },
   'demo-teacher': {
     displayName: 'Faculty Teacher',
@@ -335,23 +183,6 @@ const TEACHER_ENRICHMENT = {
     subject: 'General Faculty',
     department: 'Faculty Department',
     contact: '0300-1122334',
-    coursesText: 'Foundation Course',
-    shiftsText: 'Morning Shift',
-    defaultReach: 60,
-    defaultWeeklyHours: 8.0,
-    syllabusPace: 75,
-    slots: [
-      {
-        id: 'slot-12',
-        course: 'Foundation Course',
-        batch: 'Morning Regular',
-        subject: 'General Academic Review',
-        room: 'Room 101',
-        days: 'Mon - Fri',
-        time: '11:00 AM - 12:15 PM',
-        students: 60,
-      },
-    ],
   },
 }
 
@@ -384,7 +215,7 @@ function enrichTeacher(rawTeacher) {
   const department = rawTeacher.department || meta.department || `${inferredSubject} Department`
   const contact = rawTeacher.contact || meta.contact || '0300-0000000'
 
-  // Construct real slots from live assignments and single-date sessions if present, else fallback to enriched template
+  // Timetable content must come only from saved assignments or saved dated sessions.
   const realAssignments = rawTeacher.assignments || []
   const realSessions = rawTeacher.sessions || []
 
@@ -426,18 +257,15 @@ function enrichTeacher(rawTeacher) {
     isSession: true,
   }))
 
-  let slots = [...assignmentSlots, ...sessionSlots]
-  if (slots.length === 0 && meta.slots) {
-    slots = meta.slots
-  }
+  const slots = [...assignmentSlots, ...sessionSlots]
 
   const coursesList = rawTeacher.assignedBatches?.map((b) => b.courseName).filter(Boolean) || []
   const coursesText =
-    coursesList.length > 0 ? [...new Set(coursesList)].join(', ') : meta.coursesText || 'MDCAT 2026'
+    coursesList.length > 0 ? [...new Set(coursesList)].join(', ') : 'No course assigned'
 
   const batchesList = rawTeacher.assignedBatches?.map((b) => b.name).filter(Boolean) || []
   const shiftsText =
-    batchesList.length > 0 ? batchesList.join(', ') : meta.shiftsText || 'Morning A, Evening A'
+    batchesList.length > 0 ? batchesList.join(', ') : 'No batch assigned'
 
   const studentReach = rawTeacher.studentReach ?? 0
   const weeklyHours = rawTeacher.weeklyHours ?? 0
@@ -1415,7 +1243,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
                       {/* Action Buttons */}
                       <div className="space-y-2 pt-2">
                         <div className="grid grid-cols-2 gap-2">
-                          {canManage && (
+                          {can(PERMISSIONS.CLASSES_EDIT) && (
                             <Button
                               type="button"
                               variant="outline"
@@ -1529,6 +1357,7 @@ export default function FacultyClassesPage({ section = 'directory' }) {
             assignments={assignModalConfig.addNew ? [] : assignModalConfig.teacher?.assignments || []}
             branchId={branchId}
             initialTeacherId={assignModalConfig.teacher?.id}
+            initialAssignment={!canManage ? assignModalConfig.teacher?.assignments?.[0] : null}
             onAssigned={() => {
               retry()
               setAssignModalConfig(null)

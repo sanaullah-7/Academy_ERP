@@ -3034,3 +3034,173 @@ Owner-approved visual-only refinement; IN_REVIEW. The full outer background now 
 ## LOGIN-OUTER-THREE-REMOVE-MOBILE-NAME - 2026-10-21
 
 Owner-approved visual rollback and responsive typography correction; IN_REVIEW. The page background is plain after removing the outer Three.js/GSAP component. The academy name uses a smaller mobile-only responsive clamp and remains a complete single line; tablet/desktop size and all section dimensions are unchanged. PASS: desktop/mobile Edge screenshots, 14 focused tests, targeted ESLint and production build. No commit/push.
+
+## SETTINGS-REMOVE-FEATURE-MODULES - 2026-10-21
+
+Owner-approved Settings-only removal; IN_REVIEW. The `Feature Modules & Extensions` section and its toggle UI/code no longer render in Settings. Finance Payroll remains governed by the existing stored setting and its implementation was not changed. PASS: 21 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## PAYROLL-MONTH-SELECTION-STABILITY - 2026-10-21
+
+Owner-approved payroll behavior fix; IN_REVIEW. Acceptance: a month selected by the user remains selected while viewing that branch, including after the payroll view remounts; the current month appears initially only when the branch has no prior selection. A focused remount regression test covers the reported failure. PASS: 22 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F12-BRANCH-ADMIN-ROLE - 2026-10-21
+
+Owner-approved frontend mock role ticket; IN_REVIEW. Acceptance: Super Admin can assign Admin; Admin receives every implemented module/tab permission inside its assigned branch, cannot select or access an unassigned branch, and the Users form/service allow Admin to create only Owner, Receptionist and Teacher. Permission and login/service regressions cover branch denial and privileged-role creation rejection. PASS: 50 focused tests, full 625-test suite, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F13-BRANCH-THEME-DARK-MODE - 2026-10-21
+
+Owner-approved frontend theme ticket; IN_REVIEW. Acceptance: settings saved in one branch are visible to every role in that branch, remain isolated from other branches, global theme color changes system accents, sidebar colors remain independently configurable, and dark mode presents readable dark topbar/surfaces/text across shared UI. Added branch-isolation regression coverage. PASS: 57 focused tests, full 626-test suite, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F13-BRANCH-NOTIFICATIONS - 2026-10-21
+
+Owner-approved frontend mock ticket; IN_REVIEW. Acceptance: topbar notifications belong to one recipient and one branch; Receptionist student/admission and challan actions notify branch Admin/Super Admin; Admin/Super Admin equivalents notify branch Receptionists; a class assignment notifies its assigned Teacher; Owner receives none. Duplicate events are suppressed. PASS: 14 focused tests, ESLint, production build and diff check. Full suite: 628 passed, 1 Demo Classes lazy-route timeout failed. Browser QA NOT_RUN. No commit/push.
+
+## F02-ADMISSION-PRICING-DISPLAY - 2026-10-21
+
+Owner-approved frontend ticket; IN_REVIEW. Acceptance: Admission subject cards display each configured subject fee for courses using `subjects` pricing and omit subject prices for courses using `course` pricing, including mixed multi-course selection. Existing configured total calculation remains authoritative. PASS: 23 Admission tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F03-F05-PROFILE-TAB-COLOR - 2026-10-21
+
+Owner-approved visual ticket; IN_REVIEW. Acceptance: every active tab on Student and Teacher profiles uses the academy primary maroon surface and readable foreground while inactive tabs retain their existing presentation. PASS: targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F12-USERS-FILTER-ACTIONS - 2026-10-21
+
+Owner-approved frontend ticket; IN_REVIEW. Acceptance: Users toolbar contains search plus one styled role dropdown whose default label is `All Roles`; the duplicate branch-wide `All` dropdown is absent; table Actions has no View control while existing management actions continue to work. PASS: 37 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## F12-USERS-DATA-LOAD-FIX - 2026-10-21
+
+Owner-approved reliability fix; IN_REVIEW. Acceptance: current-branch staff rows appear after a successful Users load; loading is distinguishable from an empty result; load failures are visible and retryable instead of silently rendering an empty table. Existing branch authorization and account actions remain unchanged. PASS: 37 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push.
+
+## DATA-LEGACY-FACULTY-LINK-REPAIR - 2026-10-21
+
+Owner-approved compatibility repair; IN_REVIEW. Acceptance: retained faculty assignments linked to identities deleted by the earlier Users workflow load without blocking Dashboard or other tabs; deleted accounts cannot log in and do not reappear in Users; unrelated invalid teacher links still produce a validation error. No local data reset or history deletion is required. PASS: 70 focused service/database tests, targeted ESLint, production build and diff check. Browser QA NOT_RUN. No commit/push.
+
+## DATA-LOAD-RECOVERY - 2026-10-21
+
+Owner-reported persistent data-load failure traced to the actual localhost Chrome ERP snapshot: a saved faculty assignment references an existing disabled teacher. The earlier deleted-identity repair did not cover disabled identities. Historical assignment reads now check identity existence independently of current login status/role; new assignment writes retain the enabled branch Teacher requirement. No saved records are erased or reset. Added disabled/role-change regressions covering student reads, dashboard reports, unchanged storage, ineligible new assignments and rejection of arbitrary unknown teacher IDs. PASS: 72 focused service/database tests, targeted ESLint and production build (existing chunk warnings). Actual saved-data replay in a disposable Edge browser resolves the previously failing store and renders dashboard cards. IN_REVIEW; no commit/push.
+
+Browser verification PASS: replayed the read-only localhost Chrome ERP snapshot in a disposable Edge context; Dashboard cards, Students, Admissions, Courses & Batches, Faculty, Fees and Finance loaded with no page errors. Source Chrome storage was never modified. Evidence script and dashboard screenshot: artifacts/data-load-recovery-20261021/. Scoped diff check PASS.
+
+## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
+
+Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
+
+## PAYROLL-TWO-METHODS - 2026-10-22
+
+Owner-approved focused payroll simplification; IN_REVIEW pending owner browser acceptance. New agreements support exactly Percentage (listed subject/course fee, explicit full-course authorization) and Fixed Monthly. Payroll eligibility comes only from saved active-branch Faculty course/batch/subject assignments, with immutable assignment/academic IDs and a fixed single-academy namespace. Assignment rows include course/batch/subject, eligible distinct active subject students, fee/rate, salary/paid/remaining/status/actions and teacher-combined totals. Missing fee/subject mapping/agreement blocks invalid percentage salary and approval. Pending/unrelated students are excluded. Agreements are effective by full calendar month (first day); new future versions close a previous open contract without rewriting approved salary snapshots. Overlapping conflicting versions reject.
+
+New drafts omit bonuses, allowances, deductions, tax and automatic advance recovery. Historical approved/paid payroll and advances remain preserved. Legacy or removed/reassigned draft lines are retained with supersededAt rather than deleted; active views exclude superseded drafts. Historical approved teacher-only rows remain readable/payable under their original snapshot. The month/Recalculate/Staff Advance header controls remain absent; salary-period/history navigation is in the content area to meet the newly requested monthly workflow. Draft calculation refreshes through normal navigation and agreement changes. Six simplified KPIs show salary due/paid/remaining, assigned teachers, current agreements and pending assignment balances.
+
+Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist and Teacher payroll requests remain denied under current policy (Teacher self-service is not enabled). Branch guards and existing adapter serialization remain in effect. No Server changes, new packages, destructive migration, worktree, commit or push.
+
+PASS: 66 unique focused/regression tests (57 payroll/component/faculty/academic/PDF/audit + 4 Finance Overview + 5 financial tests); targeted ESLint; one production build; diff check. A broader run had one receipt-navigation timeout; its isolated five-test file passed. Disposable Edge browser PASS: zero unassigned payroll rows, separate two-batch setup, 50 x 5000 x 30% = 75000, fixed 50000, approval, 25000/50000 partial/full batch payment, exactly one expense per payment, PDF/CSV with assignment details, future fixed-rate switch to 60000 without changing approved history, reload and mobile fit, zero page errors. Existing build chunk warnings remain. Full suite and real backend integration NOT_RUN. Evidence: artifacts/payroll-two-methods-20261022/.
+
+Changed application files: mock/assignmentPayroll.js (new), mock/mockDatabase.js, components/Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, DisbursePaymentModal.jsx, PayslipModal.jsx, utils/pdfHelpers.js and services/payrollService.test.js. Existing unrelated uncommitted work preserved on dev. Next approval: owner browser acceptance.
+
+## PAYROLL-RUNNING-BALANCE - 2026-10-22
+
+Owner explicitly supersedes monthly payroll/approval and confirms ONE salary balance per assignment (no recurring Add Salary action). New workflow: save the assignment salary, then Add Payment for any actual payment date; remaining equals agreed salary less recorded payments. Example verified: PKR 15,000 salary, PKR 5,000 payment, PKR 10,000 remaining, settled months later. Calendar changes, idle time, focus and navigation never add salary or recalculate the balance. Agreement saves update the SAME balance, retain salary revisions/payment records, and reject amounts below money already paid. Percentage and fixed assignment methods remain available; fee/enrollment basis is evaluated only on explicit agreement save. No salary setup means no fabricated payable.
+
+Root cause of visible reload: FinancePage's shared 60-second interval/focus/storage refresh invalidated its resource and unmounted Payroll. These triggers now run only for Finance Overview; Payroll performs one read per branch/mount and reloads only after explicit salary/payment actions or Retry. Loading never calculates salary. Approval UI/service method and active calculatePeriod service method are removed. Historic monthly period reads remain compatibility-only. Period selectors, effective-month fields, monthly labels and approval gates are absent from the active flow. Actions show Add Payment immediately for an owed balance, with amount/method/reference/actual date. Payment date is today or earlier; negative, overpayment, duplicate reference, malformed date and foreign-branch actions reject. Each payment posts exactly one Finance expense with its actual date.
+
+Running balances use payrollVersion:3 in the SAME payrollLines datastore. Old source lines/periods/payments are not rewritten/deleted; pure reads aggregate carry-forward balances and the first explicit salary edit/payment materializes one scoped running record referencing sourcePayrollLineIds. Subsequent reads exclude covered source rows from active totals, and even a direct old-line payment ID resolves to the existing running balance to prevent duplicate settlement. Prior unallocated teacher-only balances remain distinguishable historical balances. Earned unpaid balances remain payable after assignment removal; no new unearned salary is created. Admin/Super Admin management, Owner read-only overview, Receptionist/Teacher denial and branch scope remain enforced.
+
+PASS: 62 focused/regression tests (49 payroll/component/faculty/academic/PDF/audit + 9 Finance Overview/financial + 4 mounted payroll); targeted ESLint; production build; diff check. Disposable Edge PASS: salary 15,000 -> payment 5,000 -> remaining 10,000; 130 seconds idle and focus cause zero extra reads/remounts/writes; later January payment settles the same balance with no period creation; PDF, mobile dialog and Finance once-per-payment verified with zero page errors. Existing large-chunk build warnings remain non-blocking. Full repository suite and backend integration NOT_RUN. IN_REVIEW pending owner acceptance; dev branch, unrelated dirty work preserved, no commit/push. Evidence: artifacts/payroll-running-balance-20261022/.
+
+Changed application files: mock/runningPayroll.js (new), mock/assignmentPayroll.js, mock/mockDatabase.js, services/payrollService.js and test, components/Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, DisbursePaymentModal.jsx, PayslipModal.jsx, pages/Finance/FinancePage.jsx, pages/Finance/TeacherPayrollPage.test.jsx, utils/pdfHelpers.js.
+## PAYROLL-TABLE-CLEANUP - Teacher Payroll table presentation
+
+**Status:** IN_REVIEW
+**Authorized:** 2026-10-22
+
+Acceptance evidence:
+
+- The on-screen payroll table shows only Teacher, Course/Batch/Subject, Method, Salary Amount, Already Paid, Remaining, Status and Actions.
+- Redundant calculation-detail columns and the duplicated Combined Teacher Summary are removed from the view; calculation metadata remains available to exports and payroll logic.
+- The table has no forced minimum width or horizontal overflow container.
+- Mobile payroll entries stack into readable two-column rows while preserving all actions.
+- Salary records, payment history, agreement configuration, payslips, filters and pagination are unchanged.
+- Focused tests (10), targeted ESLint, production build and scoped diff check pass.
+
+## FACULTY-SYNTHETIC-ASSIGNMENT-CLEANUP - Saved faculty data only
+
+**Status:** IN_REVIEW
+**Authorized:** 2026-10-22
+
+Acceptance evidence:
+
+- Central and North branch faculty views do not project hardcoded timetable slots or fictional 120-student counts.
+- Courses, batches, class slots and student reach display only from saved branch-scoped records.
+- An unassigned faculty member displays no course, no batch, zero students and no classes.
+- Unassigned built-in faculty profiles can be removed through the existing Delete Faculty flow.
+- Seeded demo-class registrations do not block faculty profile removal; real recurring assignments, dated classes and asset links still block unsafe deletion.
+- Removal hides the faculty profile while retaining a tombstoned identity for historical references.
+- 27 focused tests, targeted ESLint, production build and scoped diff check pass.
+## PAYSLIP-LAYOUT-REF - 2026-10-22 (IN_REVIEW)
+
+Current salary earnings use full available width; calculation appears once in assignment context. Payslip/class IDs and long payment tokens use compact display-only references consistently in modal/PDF. Short supplied payment references remain readable. Original identifiers remain authoritative in storage. No financial calculation changes.
+## PAYROLL-PROGRESS-FILTER - 2026-10-22 (IN_REVIEW)
+
+Acceptance: reduced progress-section height, removed redundant explanatory paragraph, method label and paid percentage on the same line, accessible progressbar. Progress uses selected calculation method with zero-payable guard; overall KPI totals remain branch-wide. Test verifies 25% fixed, 75% percentage and 63% combined after switching each option. Seven focused tests and targeted ESLint PASS.
+## PAYROLL-COURSE-BATCH-FILTERS - 2026-10-22 (IN_REVIEW)
+
+Acceptance: shared accessible custom menus for All Courses/All Batches; batch choices depend on selected course; changing course resets batch/page; All Courses restores all assignment batches, labeled with their course. Table and exports honor selected IDs. Paid badges emerald, partial badges amber with textual labels and dark variants. Salary/payment persistence and progress calculation unchanged.
+## PAYROLL-METHOD-MENU-WIDTH - 2026-10-22 (IN_REVIEW)
+
+Compact All Methods menu uses 140–150px width and right alignment. Existing options/filter behavior retained; no shared component changes.
+## PAYROLL-ACTIONS-MENU - 2026-10-22 (IN_REVIEW)
+
+Acceptance: each row presents an accessible three-dot menu trigger; existing eligible actions appear inside a styled icon menu. Existing payments, agreement and payslip callbacks preserved. Menu positions above/below within viewport, supports arrow navigation, Escape, outside dismissal and focus restoration on selection.
+## PAYROLL-TABLE-SPACING - 2026-10-22 (IN_REVIEW)
+
+Acceptance: assignment/teacher columns receive additional space; three-dot Actions sits at the right edge; numeric columns align with matching headers; consistent header padding and tracking create separation. Assignment text wraps safely without forced table width.
+## PAYROLL-TABLE-100-ZOOM - 2026-10-22 (IN_REVIEW)
+
+Acceptance: compact normal-zoom desktop table, responsive text/padding, increased salary/status allocation, unbroken method labels, no forced horizontal width. Mobile stacked rows retained. Exact screenshot parity requires visual review at the owner's viewport.
+## FINANCE-SHORT-REFERENCES - 2026-10-22 (IN_REVIEW)
+
+Acceptance: transaction descriptions exclude bracketed payroll/advance tokens; Finance table and exports use compact EXP/RC display refs. Shared payslip/class/payment display refs have three digits. Stored keys, transaction references and financial links remain unchanged; short aliases are presentation only and may repeat.
+## ROLE-MATRIX-UPDATE - 2026-10-22 (IN_REVIEW)
+
+Authorization: owner-supplied final five-role matrix and attached instructions. Scope: existing Admin full module grants, Receptionist full supported admission workflow, restricted administration modules, operational reports/assets and safe existing-class editing. New classes.edit separates editing from create/delete. Admin may not modify, disable or delete Admin/Super Admin accounts or grant those roles through the existing standard staff flow. Receptionist reports exclude expenses and hide the Finance report tab. Owner assets readonly; branch reports allowed without cross-branch comparison. Teacher's unimplemented self-service modules stay denied; no new broad access is substituted for own-record scopes. Monthly approval/four salary methods in the illustration remain superseded by the explicit running-balance decisions. Final acceptance remains IN_REVIEW.
+# ROLE-TAB-ACCESS-STRICT — Strict role-based module discovery and access
+
+**Status:** IN_REVIEW — owner acceptance required.
+
+Centralize visible modules, hide denied sidebar/mobile/search entries, protect direct routes including Teacher Payroll, preserve service/action/export authorization, re-evaluate permissions after branch changes, and clear transient sensitive cache on logout. Existing UI and domain calculations remain unchanged. Teacher remains dashboard-only until separately approved own-record route/query implementations exist; broad branch records were not exposed to simulate missing self-service screens.
+
+## DASHBOARD-PREMIUM-THEME — Shared premium role-dashboard styling
+
+**Status:** IN_REVIEW. Reuse the existing Super Admin KPI card primitive across five roles; align Owner, Receptionist and Teacher headers, content panels, spacing, borders, radii and shadows without changing data, calculations, actions or permissions. Preserve Super Admin presentation and responsive behavior.
+
+## LOGIN-MOCK-CREDENTIAL-REPAIR - Local Super Admin sign-in
+
+**Status:** IN_REVIEW. Ensure the ignored local Vite environment exposes the configured Super Admin email/password to the existing mock credential adapter, reload the dev server environment, preserve browser data and verify the login form in a disposable browser.
+
+## PAYROLL-REPORTS-CACHE-20261022
+
+**Status:** IN_REVIEW. Teacher Payroll & Salary Ledger is accessible to current-branch Admin/Super Admin and readonly/export Owner; Receptionist receives no payroll records, Teacher remains denied organization reports. Salary values project existing saved obligations; verified payments include linked source lines exactly once. Setup-only assignments are excluded. Existing report filters, row selection and PDF/CSV template are reused. Tenant remains the single academy namespace; source/session/organization signatures scope and invalidate the shared transient cache. Full validation evidence is recorded in PROGRESS.md.
+## ROLE-DATA-FLOW-20261022 — Five-role authoritative dashboard data flow
+
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
+
+Acceptance evidence: role dashboards no longer use invented KPI/activity/session values; one branch-scoped projection reads canonical saved records. Teacher results are intersected with the logged-in teacher's assignments, batches, subjects and active enrollments. Verified fee receipts, payroll rows and posted expenses are projected only to approved roles. Transient cache entries include account, branch, effective role and permission signatures and are invalidated by database, organization or session byte changes.
+
+## ALL-ROLE-PREMIUM-RESPONSIVE-20261022 — Shared responsive presentation
+
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
+
+Acceptance evidence: the existing Super Admin visual system is shared by all role dashboards without copying restricted content. The shell, mobile drawer, global search, KPI/action grids, forms, tables and dialogs fit the required phone, landscape, tablet and desktop widths. Narrow Receptionist cards and 1024px Teacher actions no longer create document-level horizontal overflow. Business logic, data, permissions and Super Admin design remain unchanged.
+
+## TEACHER-PROFILE-DASHBOARD-CLEANUP-20261022 — Teacher self-service cleanup
+
+**Status:** IN_REVIEW
+**Authorization:** Owner approved, 2026-10-22.
+
+Acceptance: Teacher My Profile omits Back to Dashboard, WhatsApp and Call actions; administrative faculty profiles retain their existing back/contact controls. Teacher Dashboard omits the complete Instructor Actions section. Profile KPIs and academic assignments use the permission-scoped own-record projection and never broaden Teacher access to branch-wide faculty or students.
+
+## FINAL-FRONTEND-QA-DEV-PUSH-20261023 — Owner-authorized release QA
+
+Scope: full ESLint, complete Vitest, production build, five-role saved-data and access checks, payroll/report/export reconciliation, cache invalidation, responsive browser QA and reviewed normal `dev` commit/push. Existing work, data and artifacts must survive. No new dependencies, disabled rules/tests, backend work, reset/stash/clean, rebase or forced push. Acceptance evidence is centralized in `FINAL_FRONTEND_QA_20261023.md`; Git publication is conditional on the final passing gates and unchanged remote ancestry.

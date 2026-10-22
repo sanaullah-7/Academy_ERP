@@ -1,4 +1,4 @@
-import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { payrollService } from '../../services/payrollService.js'
 import TeacherPayrollView from '../../components/Finance/TeacherPayrollView.jsx'
 import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
@@ -309,6 +309,8 @@ export default function FinancePage({ initialTab = 'overview' }) {
   const queryTab = searchParams.get('tab')
   const teacherIdParam = searchParams.get('teacherId')
   const isPayrollTarget = location.pathname.includes('/finance/payroll') || queryTab === 'payroll' || initialTab === 'payroll'
+  const { can } = usePermissions()
+  const canViewPayroll = can(PERMISSIONS.PAYROLL_VIEW)
 
   const [payrollEnabled, setPayrollEnabled] = useState(false)
   useEffect(() => {
@@ -317,8 +319,7 @@ export default function FinancePage({ initialTab = 'overview' }) {
     }).catch(() => setPayrollEnabled(false))
   }, [branchId])
 
-  const activeSubTab = payrollEnabled && isPayrollTarget ? 'payroll' : 'overview'
-  const { can } = usePermissions()
+  const activeSubTab = payrollEnabled && canViewPayroll && isPayrollTarget ? 'payroll' : 'overview'
   const [result, setResult] = useState(() => peekPageResource('finance', { scopeKey, request: 0 }))
   const [request, setRequest] = useState(0)
   const [type, setType] = useState('All')
@@ -327,7 +328,6 @@ export default function FinancePage({ initialTab = 'overview' }) {
   const [error, setError] = useState('')
   const [exportError, setExportError] = useState('')
   const [payrollExportTarget, setPayrollExportTarget] = useState(null)
-  const [payrollActionsTarget, setPayrollActionsTarget] = useState(null)
   const [form, setForm] = useState({ amount: '', category: '', customCategory: '', description: '', method: 'Cash', entryDate: today() })
 
   // Persistent manual month or auto-follow current month
@@ -341,6 +341,7 @@ export default function FinancePage({ initialTab = 'overview' }) {
 
   const [clock, setClock] = useState(() => new Date())
   useEffect(() => {
+    if (activeSubTab === 'payroll') return
     const update = () => {
       setClock(new Date())
       setRequest(value => value + 1)
@@ -356,7 +357,7 @@ export default function FinancePage({ initialTab = 'overview' }) {
       window.removeEventListener('focus', update)
       window.removeEventListener('storage', storage)
     }
-  }, [])
+  }, [activeSubTab])
 
   const currentMonthKey = useMemo(() => {
     const y = clock.getFullYear()
@@ -424,7 +425,7 @@ export default function FinancePage({ initialTab = 'overview' }) {
       ...(data?.payments ?? []).map(x => ({
         id: x.id,
         date: x.paidAt,
-        reference: x.receiptReference,
+        reference: payrollReference(x.id, 'RC'),
         description: `Fee receipt · ${x.studentName}`,
         category: 'Tuition Fee',
         method: x.method,
@@ -434,8 +435,8 @@ export default function FinancePage({ initialTab = 'overview' }) {
       ...(data?.expenses ?? []).map(x => ({
         id: x.id,
         date: x.entryDate,
-        reference: `EXP-${x.id.slice(0, 6)}`,
-        description: x.description,
+        reference: payrollReference(x.id, 'EXP'),
+        description: String(x.description || '').replace(/\[(?:PAYROLL|ADVANCE)-[^\]]+\]/gi, '').trim(),
         category: x.category,
         method: x.method,
         amount: -x.amount,
@@ -554,6 +555,8 @@ export default function FinancePage({ initialTab = 'overview' }) {
     }
   }
 
+  if (isPayrollTarget && !canViewPayroll) return <Navigate to="/unauthorized" replace />
+
   if (!current) {
     return (
       <DashboardLayout>
@@ -634,7 +637,7 @@ export default function FinancePage({ initialTab = 'overview' }) {
           )}
         </header>
 
-        {payrollEnabled && (
+        {payrollEnabled && canViewPayroll && (
           <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60 w-fit">
             <button
@@ -662,12 +665,11 @@ export default function FinancePage({ initialTab = 'overview' }) {
               Teacher Payroll
             </button>
           </div>
-          {activeSubTab === 'payroll' && <div ref={setPayrollActionsTarget} className="min-w-0" />}
           </div>
         )}
 
         {payrollEnabled && activeSubTab === 'payroll' ? (
-          <TeacherPayrollView branchId={branchId} branchName={branch?.name} initialTeacherId={teacherIdParam} exportTarget={payrollExportTarget} actionsTarget={payrollActionsTarget} />
+          <TeacherPayrollView branchId={branchId} branchName={branch?.name} initialTeacherId={teacherIdParam} exportTarget={payrollExportTarget} />
         ) : (
           <>
 
@@ -1064,3 +1066,4 @@ export default function FinancePage({ initialTab = 'overview' }) {
     </DashboardLayout>
   )
 }
+import { payrollReference } from '../../utils/payrollReference.js'

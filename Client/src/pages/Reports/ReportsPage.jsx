@@ -27,6 +27,7 @@ import {
   TrendingUp,
   UserCheck,
   Users,
+  Wallet,
   X
 } from 'lucide-react'
 import {
@@ -48,11 +49,14 @@ import { TableToolbarActions } from '../../components/Shared/TableUtilities.jsx'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx'
 import { reportService } from '../../services/reportService.js'
 import { useBranch } from '../../hooks/useBranch.js'
+import { usePermissions } from '../../hooks/usePermissions.js'
+import { PERMISSIONS } from '../../constants/permissions.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import { downloadWordTable } from '../../utils/wordExport.js'
 import { getDemoUsers } from '../../mock/authFixtures.js'
 import tsaLogo from '../../assets/images/tsa-logo.png'
+import { payrollReportTotals, payrollReportHeaders, payrollReportCells } from '../../utils/payrollReport.js'
 
 const money = value =>
   new Intl.NumberFormat('en-PK', {
@@ -62,6 +66,7 @@ const money = value =>
   }).format(value || 0)
 
 const TAB_CONFIG = {
+  payroll: { id: 'payroll', iconColor: 'text-[#940016]', tint: 'border-[#f0d5d9] bg-[#F9EBEE] text-[#940016]', badgeColor: 'bg-[#F9EBEE] text-[#940016]', icon: DollarSign, label: 'Teacher Payroll & Salary Ledger', shortLabel: 'Teacher Payroll', description: 'Saved assignment salary balances, verified payments, and payout ledgers.' },
   fees: {
     id: 'fees',
     iconColor: 'text-emerald-700',
@@ -151,7 +156,10 @@ const reportingMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short
 
 export default function ReportsPage() {
   const { branchId, branch, scopeKey } = useBranch()
-  const [activeTab, setActiveTab] = useState('fees')
+  const { can } = usePermissions()
+  const [selectedTab, setActiveTab] = useState('payroll')
+  const activeTab = (selectedTab === 'payroll' && !can(PERMISSIONS.PAYROLL_VIEW)) ||
+    (selectedTab === 'finance' && !can(PERMISSIONS.FINANCE_VIEW)) ? 'fees' : selectedTab
   const [rawResult, setRawResult] = useState(() => peekPageResource('reports', { scopeKey, refresh: 0 }))
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
@@ -171,6 +179,8 @@ export default function ReportsPage() {
   const [courseFilter, setCourseFilter] = useState('All')
   const [batchFilter, setBatchFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [teacherFilter, setTeacherFilter] = useState('All')
+  const [payPeriodFilter, setPayPeriodFilter] = useState('All')
 
   // Pagination & Selection
   const [currentPage, setCurrentPage] = useState(1)
@@ -186,7 +196,7 @@ export default function ReportsPage() {
   useEffect(() => {
     let isMounted = true
     const loadVersion = capturePageVersion()
-    reportService.overview({ branchId }).then(
+    reportService.overview({ branchId }, { refresh: refreshTrigger > 0 }).then(
       data => {
         if (isMounted) {
           setRawResult(rememberPageResource('reports', { scopeKey, refresh: refreshTrigger, data, error: null }, loadVersion))
@@ -289,6 +299,7 @@ export default function ReportsPage() {
     if (!reportData) return {}
     return {
       fees: challans.length,
+      payroll: reportData.payroll?.length ?? 0,
       students: students.length,
       admissions: admissions.length,
       courses: batches.length,
@@ -585,6 +596,7 @@ export default function ReportsPage() {
 
     return {
       fees: feesRows,
+      payroll: reportData.payroll ?? [],
       students: studentsRows,
       admissions: admissionsRows,
       courses: coursesRows,
@@ -636,6 +648,7 @@ export default function ReportsPage() {
   // Apply Global Filters to Active Dataset
   const filteredRows = useMemo(() => {
     return rawTabRows.filter(row => {
+      if (activeTab === 'payroll' && ((teacherFilter !== 'All' && row.teacherId !== teacherFilter) || (payPeriodFilter !== 'All' && row.payPeriod !== payPeriodFilter))) return false
       // 1. Search Query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase()
@@ -647,6 +660,7 @@ export default function ReportsPage() {
       }
 
       // 2. Stream Filter
+      if (activeTab === 'payroll' && ((streamFilter !== 'All' && row.streamId !== streamFilter) || (courseFilter !== 'All' && row.courseId !== courseFilter) || (batchFilter !== 'All' && row.batchId !== batchFilter))) return false
       if (streamFilter !== 'All' && row.streamId && row.streamId !== streamFilter) {
         return false
       }
@@ -674,7 +688,7 @@ export default function ReportsPage() {
 
       return true
     })
-  }, [rawTabRows, searchQuery, streamFilter, courseFilter, batchFilter, statusFilter, windowThreshold])
+  }, [rawTabRows, searchQuery, streamFilter, courseFilter, batchFilter, statusFilter, windowThreshold, activeTab, teacherFilter, payPeriodFilter])
 
   // Paginated Rows
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
@@ -707,6 +721,57 @@ export default function ReportsPage() {
   // Calculate Dynamic Authentic KPIs per Tab (Strictly no fabricated percentages or fallbacks)
   const kpiData = useMemo(() => {
     const count = filteredRows.length
+    if (activeTab === 'payroll') {
+      const totals = payrollReportTotals(filteredRows)
+      const settlementRate = totals.payable > 0
+        ? Math.min(100, Math.round((totals.paid / totals.payable) * 1000) / 10)
+        : 100
+
+      return [
+        {
+          key: 'payable',
+          label: 'Total Salary Payable',
+          mainValue: money(totals.payable),
+          subValue: `${totals.teachers} assigned instructors`,
+          icon: Wallet,
+          theme: 'maroon'
+        },
+        {
+          key: 'paid',
+          label: 'Verified Salary Paid',
+          mainValue: money(totals.paid),
+          subValue: `${totals.paidEntries} settled disbursement records`,
+          icon: CheckCircle2,
+          theme: 'emerald'
+        },
+        {
+          key: 'outstanding',
+          label: 'Outstanding Salary',
+          mainValue: money(totals.outstanding),
+          subValue: `${totals.pendingEntries} pending or partial payouts`,
+          icon: AlertCircle,
+          theme: totals.outstanding > 0 ? 'crimson' : 'slate',
+          isAlert: totals.outstanding > 0
+        },
+        {
+          key: 'teachers',
+          label: 'Teachers in Payroll',
+          mainValue: totals.teachers,
+          subValue: `${filteredRows.length} total ledger records`,
+          icon: Users,
+          theme: 'blue'
+        },
+        {
+          key: 'settlementRate',
+          label: 'Salary Settlement Rate',
+          mainValue: `${settlementRate}%`,
+          subValue: `${totals.paidEntries}/${filteredRows.length || 0} entries cleared`,
+          icon: TrendingUp,
+          theme: 'amber',
+          gaugeValue: settlementRate
+        }
+      ]
+    }
 
     if (activeTab === 'fees') {
       const targetCourseObj = courseFilter !== 'All' ? courseMap.get(courseFilter) : null
@@ -1154,6 +1219,25 @@ export default function ReportsPage() {
   const chartAnalytics = useMemo(() => {
     if (filteredRows.length === 0) return { pieData: [], summaryText: 'No records to visualize.' }
 
+    if (activeTab === 'payroll') {
+      const paidCount = filteredRows.filter(r => r.status === 'Paid').length
+      const partialCount = filteredRows.filter(r => r.status === 'Partially Paid').length
+      const pendingCount = filteredRows.filter(r => r.status === 'Pending').length
+
+      const pieData = [
+        { name: 'Fully Paid / Cleared', value: paidCount, color: '#10b981' },
+        { name: 'Partially Paid', value: partialCount, color: '#f59e0b' },
+        { name: 'Pending Disbursement', value: pendingCount, color: '#940016' }
+      ].filter(d => d.value > 0)
+
+      const totals = payrollReportTotals(filteredRows)
+      return {
+        title: 'Salary Disbursement & Payout Status',
+        pieData,
+        summaryText: `${paidCount} Cleared • ${partialCount} Partial • ${pendingCount} Pending (${money(totals.paid)} Paid)`
+      }
+    }
+
     if (activeTab === 'fees') {
       const paidCount = filteredRows.filter(r => r.status === 'Paid in Full').length
       const partialCount = filteredRows.filter(r => r.status === '1 Installment Due' || r.status === 'Partial Due').length
@@ -1280,6 +1364,8 @@ export default function ReportsPage() {
 
   // Reset Filters
   const handleResetFilters = () => {
+    setTeacherFilter('All')
+    setPayPeriodFilter('All')
     setSearchQuery('')
     setWindowFilter('all')
     setStreamFilter('All')
@@ -1293,6 +1379,7 @@ export default function ReportsPage() {
 
   // Export Operations (Respecting user selections & active filters)
   const getExportRows = () => {
+    if (activeTab === 'payroll' && !can(PERMISSIONS.PAYROLL_VIEW)) return []
     if (selectedRowIds.size > 0) {
       return filteredRows.filter(r => selectedRowIds.has(r.id))
     }
@@ -1309,7 +1396,10 @@ export default function ReportsPage() {
     let headers
     let rowsFormatted
 
-    if (activeTab === 'fees') {
+    if (activeTab === 'payroll') {
+      headers = payrollReportHeaders
+      rowsFormatted = exportData.map(payrollReportCells)
+    } else if (activeTab === 'fees') {
       headers = [
         'Roll No / ID',
         'Student Name',
@@ -1393,7 +1483,10 @@ export default function ReportsPage() {
     let headers
     let rowsFormatted
 
-    if (activeTab === 'fees') {
+    if (activeTab === 'payroll') {
+      headers = payrollReportHeaders
+      rowsFormatted = exportData.map(payrollReportCells)
+    } else if (activeTab === 'fees') {
       headers = ['Roll No', 'Student & Guardian', 'Course & Batch', 'Total Fee', 'Paid', 'Balance', 'Status']
       rowsFormatted = exportData.map(r => [
         r.rollNumber,
@@ -1531,7 +1624,7 @@ export default function ReportsPage() {
           aria-label="Report Categories"
           className="flex items-center gap-1.5 overflow-x-auto rounded-xl border border-[#efd0d6] bg-[#F9EBEE]/50 p-1.5 shadow-2xs no-scrollbar print:hidden"
         >
-          {Object.values(TAB_CONFIG).map(tab => {
+          {Object.values(TAB_CONFIG).filter(tab => (tab.id !== 'finance' || can(PERMISSIONS.FINANCE_VIEW)) && (tab.id !== 'payroll' || can(PERMISSIONS.PAYROLL_VIEW))).map(tab => {
             const isActive = activeTab === tab.id
             const badgeValue = tabCounts[tab.id] ?? 0
             const TabIcon = tab.icon
@@ -1697,6 +1790,7 @@ export default function ReportsPage() {
         {/* =========================================================================
             4. REAL KPI CARDS (TSA Maroon Accents & Reconciled Figures)
             ========================================================================= */}
+        {activeTab === 'payroll' && <div className="flex flex-wrap gap-3"><CustomSelect aria-label="Payroll teacher" value={teacherFilter} onChange={value => { setTeacherFilter(value); setCurrentPage(1) }} options={[{ value: 'All', label: 'All Teachers' }, ...Array.from(new Map(rawTabRows.map(row => [row.teacherId, { value: row.teacherId, label: row.teacherName }])).values())]} /><CustomSelect aria-label="Payroll pay period" value={payPeriodFilter} onChange={value => { setPayPeriodFilter(value); setCurrentPage(1) }} options={[{ value: 'All', label: 'All Pay Periods' }, ...Array.from(new Set(rawTabRows.map(row => row.payPeriod))).map(value => ({ value, label: value }))]} /></div>}
         <section className="reports-summary-cards grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {kpiData.map(kpi => {
             const Icon = kpi.icon || FileText
@@ -1971,6 +2065,21 @@ export default function ReportsPage() {
                     />
                   </th>
 
+                  {activeTab === 'payroll' && (
+                    <>
+                      <th className="px-3.5 py-3">Teacher</th>
+                      <th className="px-3.5 py-3">Course</th>
+                      <th className="px-3.5 py-3">Batch</th>
+                      <th className="px-3.5 py-3">Subject</th>
+                      <th className="px-3.5 py-3 text-center">Salary Method</th>
+                      <th className="px-3.5 py-3 text-center">Eligible Students</th>
+                      <th className="px-3.5 py-3 text-right">Salary (PKR)</th>
+                      <th className="px-3.5 py-3 text-right">Verified Paid (PKR)</th>
+                      <th className="px-3.5 py-3 text-right">Remaining (PKR)</th>
+                      <th className="px-3.5 py-3 text-center">Status</th>
+                      <th className="px-3.5 py-3 text-center">Pay Period</th>
+                    </>
+                  )}
                   {activeTab === 'fees' && (
                     <>
                       <th className="px-3.5 py-3">Roll No / ID</th>
@@ -2096,7 +2205,109 @@ export default function ReportsPage() {
                         />
                       </td>
 
-                      {/* 1. FEES ROWS */}
+                      {/* PAYROLL ROWS */}
+                      {activeTab === 'payroll' && (
+                        <>
+                          {/* Teacher Name & Initial Avatar */}
+                          <td className="px-3.5 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#F9EBEE] text-[10px] font-bold text-[#940016] border border-[#f0d5d9]">
+                                {row.teacherName ? row.teacherName.charAt(0).toUpperCase() : 'T'}
+                              </span>
+                              <div className="min-w-0">
+                                <span className="font-bold text-slate-900 block truncate">
+                                  {row.teacherName}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block font-mono">
+                                  ID: {row.teacherId}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Course */}
+                          <td className="px-3.5 py-3">
+                            <span className="font-semibold text-slate-800 block truncate">
+                              {row.courseName}
+                            </span>
+                          </td>
+
+                          {/* Batch */}
+                          <td className="px-3.5 py-3">
+                            <span className="text-slate-700 block truncate">
+                              {row.batchName}
+                            </span>
+                          </td>
+
+                          {/* Subject */}
+                          <td className="px-3.5 py-3">
+                            <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
+                              {row.subjectName || '—'}
+                            </span>
+                          </td>
+
+                          {/* Salary Method */}
+                          <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
+                              {row.method}
+                            </span>
+                          </td>
+
+                          {/* Eligible Students */}
+                          <td className="px-3.5 py-3 text-center whitespace-nowrap font-mono text-slate-700">
+                            {row.eligibleStudents ?? '—'}
+                          </td>
+
+                          {/* Salary Amount */}
+                          <td className="px-3.5 py-3 text-right font-semibold text-slate-800 whitespace-nowrap font-mono">
+                            {money(row.salaryAmount)}
+                          </td>
+
+                          {/* Verified Paid */}
+                          <td className="px-3.5 py-3 text-right font-bold text-emerald-700 whitespace-nowrap font-mono">
+                            {money(row.paid)}
+                          </td>
+
+                          {/* Remaining Balance */}
+                          <td className="px-3.5 py-3 text-right whitespace-nowrap font-mono">
+                            <span className={`font-bold ${row.remainingBalance > 0 ? 'text-[#940016]' : 'text-emerald-700'}`}>
+                              {money(row.remainingBalance)}
+                            </span>
+                          </td>
+
+                          {/* Status Badge */}
+                          <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                row.status === 'Paid'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : row.status === 'Partially Paid'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-red-50 text-[#940016] border border-red-200'
+                              }`}
+                            >
+                              <span
+                                className={`size-1.5 rounded-full ${
+                                  row.status === 'Paid'
+                                    ? 'bg-emerald-500'
+                                    : row.status === 'Partially Paid'
+                                    ? 'bg-amber-500'
+                                    : 'bg-[#940016]'
+                                }`}
+                              />
+                              {row.status}
+                            </span>
+                          </td>
+
+                          {/* Pay Period */}
+                          <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2 py-0.5 text-[10px] font-mono font-medium text-slate-600 border border-slate-200">
+                              <Calendar size={10} className="text-slate-400" />
+                              {row.payPeriod}
+                            </span>
+                          </td>
+                        </>
+                      )}
                       {activeTab === 'fees' && (
                         <>
                           {/* Roll No / ID */}

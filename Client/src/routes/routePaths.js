@@ -10,6 +10,7 @@ export const ROUTE_PATHS = Object.freeze({
   LOGIN: '/login',
   SELECT_BRANCH: '/select-branch',
   DASHBOARD: '/dashboard',
+  MY_PROFILE: '/my-profile',
   ADMISSIONS: '/admissions',
   STUDENTS: '/students',
   STUDENT_PROFILE: '/students/:studentId',

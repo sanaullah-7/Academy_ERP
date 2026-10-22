@@ -11,6 +11,7 @@ import { Button } from '../ui/button.jsx'
 import { DialogTrigger } from '../ui/dialog.jsx'
 import DemoSessionControls from '../Auth/DemoSessionControls.jsx'
 import GlobalSearch from './GlobalSearch.jsx'
+import NotificationCenter from './NotificationCenter.jsx'
 
 export default function Header({ isCollapsed, onToggleSidebar, onOpenNavigation }) {
   const [searchOpen,setSearchOpen]=useState(false)
@@ -34,6 +35,7 @@ export default function Header({ isCollapsed, onToggleSidebar, onOpenNavigation 
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        <NotificationCenter />
         <Button variant="ghost" size="icon" className="app-icon-button app-compact-control" onClick={()=>void toggleFullscreen()} aria-label={isFullscreen?'Exit full screen':'Enter full screen'} title={isFullscreen?'Exit full screen':'Enter full screen'}>
           {isFullscreen?<Minimize size={19} aria-hidden="true"/>:<Maximize size={19} aria-hidden="true"/>}
         </Button>

@@ -114,13 +114,36 @@ describe('Admissions Instant Enrollment & Challan Integration', () => {
     await expect(admissionService.completeAdmission(payload, branch)).rejects.toThrow(/Initial payment cannot exceed net payable fee/i)
   })
 
-  it('prevents Receptionist from executing completeAdmission (least-privilege security boundary)', async () => {
+  it('allows Receptionist with full admissions & fees authority to execute completeAdmission', async () => {
     const northBranch = { branchId: 'demo-north' }
     await authService.login({ userId: 'demo-reception' })
     await authService.selectBranch('demo-reception', northBranch.branchId)
 
     const payload = {
-      studentName: 'Receptionist Attempt',
+      studentName: 'Receptionist Instant Student',
+      guardianName: 'Guardian',
+      contact: '03001234567',
+      dob: '2005-08-15',
+      course: 'Demo Course One',
+      courseId: 'course-demo-1',
+      preferredBatchId: 'batch-demo-course-demo-1',
+      configuredFee: 30000,
+    }
+
+    const result = await admissionService.completeAdmission(payload, northBranch)
+    expect(result.admission).toBeDefined()
+    expect(result.admission.status).toBe('Approved')
+    expect(result.student).toBeDefined()
+    expect(result.student.status).toBe('Active')
+  })
+
+  it('prevents Owner from executing completeAdmission (least-privilege security boundary)', async () => {
+    const centralBranch = { branchId: 'demo-central' }
+    await authService.login({ userId: 'demo-owner' })
+    await authService.selectBranch('demo-owner', centralBranch.branchId)
+
+    const payload = {
+      studentName: 'Owner Attempt',
       guardianName: 'Guardian',
       contact: '03001234567',
       dob: '2005-08-15',
@@ -130,7 +153,7 @@ describe('Admissions Instant Enrollment & Challan Integration', () => {
       configuredFee: 30000,
     }
 
-    await expect(admissionService.completeAdmission(payload, northBranch)).rejects.toThrow(/not authorized/i)
+    await expect(admissionService.completeAdmission(payload, centralBranch)).rejects.toThrow(/not authorized for the requested Admissions action/i)
   })
 
   it('enforces batch capacity and prevents enrollment when batch is full', async () => {

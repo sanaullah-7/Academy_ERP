@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Archive, BookOpen, CalendarDays, ClipboardList, GraduationCap, LayoutDashboard, Search, UsersRound } from 'lucide-react'
+import { Archive, BookOpen, Building2, CalendarDays, ChartNoAxesCombined, ClipboardList, CreditCard, GraduationCap, LayoutDashboard, ScrollText, Search, Settings2, Users, UsersRound, Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog.jsx'
 import { Input } from '../ui/input.jsx'
@@ -13,35 +13,19 @@ import { academicService } from '../../services/academicService.js'
 import { facultyService } from '../../services/facultyService.js'
 import { demoClassService } from '../../services/demoClassService.js'
 import { assetService } from '../../services/assetService.js'
+import { MODULE_ACCESS, visibleModules } from '../../constants/moduleAccess.js'
 
-const navigation = [
-  ['Dashboard', ROUTE_PATHS.DASHBOARD, PERMISSIONS.DASHBOARD_VIEW, LayoutDashboard],
-  ['Admissions', ROUTE_PATHS.ADMISSIONS, PERMISSIONS.ADMISSIONS_VIEW, ClipboardList],
-  ['Students', ROUTE_PATHS.STUDENTS, PERMISSIONS.STUDENTS_VIEW, UsersRound],
-  ['Courses & Batches', ROUTE_PATHS.COURSES_BATCHES, PERMISSIONS.COURSES_VIEW, BookOpen],
-  ['Faculty & Classes', ROUTE_PATHS.FACULTY_CLASSES, PERMISSIONS.FACULTY_VIEW, GraduationCap],
-  ['Demo Classes', ROUTE_PATHS.DEMO_CLASSES, PERMISSIONS.DEMO_CLASSES_VIEW, CalendarDays],
-  ['Assets', ROUTE_PATHS.ASSETS, PERMISSIONS.ASSETS_VIEW, Archive],
-]
+const icons = Object.freeze({ dashboard: LayoutDashboard, admissions: ClipboardList, students: UsersRound, courses: BookOpen, faculty: GraduationCap, fees: CreditCard, finance: Wallet, payroll: Wallet, demoClasses: CalendarDays, assets: Archive, reports: ChartNoAxesCombined, audit: ScrollText, branches: Building2, users: Users, settings: Settings2 })
 const item = (group,label,meta,path,Icon,keywords='') => ({ group,label,meta,path,Icon,keywords:`${label} ${meta} ${keywords}`.toLowerCase() })
 
 export default function GlobalSearch({ open, onOpenChange }) {
   const navigate=useNavigate(),{branchId}=useBranch(),{can}=usePermissions()
-  const allowed={
-    [PERMISSIONS.DASHBOARD_VIEW]:can(PERMISSIONS.DASHBOARD_VIEW),
-    [PERMISSIONS.STUDENTS_VIEW]:can(PERMISSIONS.STUDENTS_VIEW),
-    [PERMISSIONS.ADMISSIONS_VIEW]:can(PERMISSIONS.ADMISSIONS_VIEW),
-    [PERMISSIONS.COURSES_VIEW]:can(PERMISSIONS.COURSES_VIEW),
-    [PERMISSIONS.FACULTY_VIEW]:can(PERMISSIONS.FACULTY_VIEW),
-    [PERMISSIONS.DEMO_CLASSES_VIEW]:can(PERMISSIONS.DEMO_CLASSES_VIEW),
-    [PERMISSIONS.ASSETS_VIEW]:can(PERMISSIONS.ASSETS_VIEW),
-  }
-  const permissionKey=Object.entries(allowed).filter(([,value])=>value).map(([key])=>key).join('|')
+  const permissionKey=MODULE_ACCESS.filter(module=>can(module.permission)).map(module=>module.permission).join('|')
   const [query,setQuery]=useState(''),[rows,setRows]=useState([]),[status,setStatus]=useState('idle'),[active,setActive]=useState(0)
   useEffect(()=>{if(!open)return;let live=true
     async function load(){await Promise.resolve();if(!live)return;setQuery('');setActive(0);setStatus('loading');const scope={branchId};const jobs=[]
       const granted=new Set(permissionKey.split('|'))
-      const nav=navigation.filter(([, ,permission])=>granted.has(permission)).map(([label,path,,Icon])=>item('Navigation',label,'Open module',path,Icon))
+      const nav=visibleModules(permission=>granted.has(permission)).map(module=>item('Navigation',module.label,'Open module',module.path,icons[module.id]))
       if(granted.has(PERMISSIONS.STUDENTS_VIEW))jobs.push(studentService.listDirectory(scope).then(values=>values.map(x=>item('Students',x.name,x.studentId??x.admissionDisplayId??x.id,`/students/${x.id}`,UsersRound,`${x.id} ${x.studentNumber??''}`))))
       if(granted.has(PERMISSIONS.ADMISSIONS_VIEW))jobs.push(admissionService.list(scope).then(values=>values.map(x=>item('Admissions',x.studentName,x.displayAdmissionId??x.admissionId??x.id,ROUTE_PATHS.ADMISSIONS,ClipboardList,x.id))))
       if(granted.has(PERMISSIONS.COURSES_VIEW))jobs.push(academicService.overview(scope).then(a=>[...a.courses.map(x=>item('Courses',x.name,'Course',ROUTE_PATHS.COURSES_BATCHES,BookOpen,x.id)),...a.batches.map(x=>item('Batches',x.name,'Batch',ROUTE_PATHS.COURSES_BATCHES,BookOpen,x.id))]))

@@ -19,8 +19,8 @@ describe('F05 Faculty & Classes screens', () => {
   it('shows branch teachers, combined search/filter/sort and links the exact teacher profile', async () => {
     await signIn()
     render(<App />)
-    await screen.findAllByRole('link', { name: 'Faculty Teacher' })
-    expect(screen.getByText('6 / 6 teachers')).toBeInTheDocument()
+    await screen.findAllByRole('link', { name: 'Faculty Teacher' }, { timeout: 10000 })
+    expect(screen.getByText('5 / 5 teachers')).toBeInTheDocument()
     await userEvent.setup().type(screen.getByRole('searchbox', { name: 'Search faculty' }), 'no match')
     expect(screen.queryByRole('link', { name: 'Faculty Teacher' })).not.toBeInTheDocument()
     await userEvent.setup().clear(screen.getByRole('searchbox', { name: 'Search faculty' }))

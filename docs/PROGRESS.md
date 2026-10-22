@@ -9,6 +9,137 @@
 **Project:** Academy Management ERP
 **Current Stage:** F00-011 Login logo motion — IN_REVIEW, owner acceptance pending
 
+## Teacher "My Profile" Navigation, Schedule & Salary Compensation Hub (2026-10-22)
+
+**Status: IN_REVIEW; implementation complete, owner acceptance pending.**
+- **Teacher Navigation & Routing**:
+  - Added "My Profile" (`ROUTE_PATHS.MY_PROFILE = '/my-profile'`) to sidebar navigation exclusively for the Teacher role (`ROLES.TEACHER`) under the "Academics" group with `UserRound` icon.
+  - Implemented secure route `/my-profile` wrapped in `<ProtectedRoute>` allowing authenticated self-read without requiring broad administrative `FACULTY_VIEW` permissions.
+- **Dedicated Teacher Profile & Compensation Hub**:
+  - Enhanced `FacultyProfilePage.jsx` with `isMyProfile` prop support, resolving the logged-in teacher automatically.
+  - Context-aware back navigation: provides `Back to Dashboard` for teacher self-service.
+  - 4 polished horizontal navigation tabs:
+    1. `Overview & Bio` (Bio, credentials, contact, WhatsApp connect, and quick remuneration overview).
+    2. `Class Schedule & Timetable` (Official timetable with printable layout and institutional verification signatures).
+    3. `Academic Assignments` (Saved courses, batches, subjects, and student reach).
+    4. `Salary & Compensation` (Comprehensive remuneration ledger & payslips).
+- **Salary & Compensation Ledger**:
+  - 4 Premium Executive Financial KPI Cards:
+    1. Total Contracted / Agreed Remuneration (PKR)
+    2. Verified Disbursed / Paid (PKR, emerald)
+    3. Remaining Outstanding Balance (PKR, maroon)
+    4. Settlement Completion Rate (%) with dual-gradient progress indicator
+  - Table 1 (Assignment-Wise Remuneration): Shows Course, Batch, Subject, Agreement Type (Fixed / Percentage), Agreed Total, Paid, Remaining, Status (Paid, Partially Paid, Unpaid), and integrated "Payslip" action button.
+  - Table 2 (Payment Disbursement History): Shows Date, Reference #, Method (Cash, Bank Transfer, EasyPaisa, etc.), Amount Disbursed, Verified badge, and "Official Payslip" button.
+  - Integrated `PayslipModal` directly, allowing teachers to view, print, and export official PDF salary payslips.
+- **Automated Salary Disbursal Notifications**:
+  - Extended `notificationService` and `payrollService.recordPayment` to dispatch `salary_payment` notifications to the respective teacher whenever salary is disbursed by Admin/Super Admin.
+  - Added `Wallet` notification icon in `NotificationCenter.jsx`.
+- **Security & Least-Privilege Verification**:
+  - Teacher self-read boundary enforced: teachers can only view their own profile and own compensation records (`payrollOperation('getTeacherCompensation')` and `getPayslip`); attempting to view other faculty members' compensation or administrative overview rejects with `DEMO_ACTION_DENIED`.
+- **Verification Evidence**:
+  - `Client/src/pages/FacultyClasses/TeacherProfile.test.jsx`: 5/5 PASS.
+  - `Client/src/pages/FacultyClasses/FacultyWorkflow.test.jsx`: 10/10 PASS.
+  - `Client/src/pages/FacultyClasses/FacultyClasses.test.jsx`: 4/4 PASS.
+  - `Client/src/pages/Finance/TeacherPayrollPage.test.jsx`: 4/4 PASS.
+  - `Client/src/services/payrollService.test.js`: 19/19 PASS.
+  - `Client/src/services/notificationService.test.js`: 3/3 PASS.
+  - ESLint: 0 errors, 0 warnings.
+  - Vite production build: PASS in 6.18s (0 errors).
+
+## Teacher Profile Deletion — Dr. Irfan (Bio) Removed (2026-10-22)
+
+**Status: IN_REVIEW; implementation complete, owner acceptance pending.**
+- **Complete Teacher Deletion**:
+  - Permanently removed `teacher-irfan` (`Dr. Irfan (Bio)`) from `DEMO_USERS` in `authFixtures.js`.
+  - Removed Dr. Irfan's fixed salary agreement (`agr-irfan`) from `seedData.js`.
+  - Reassigned mock demo inquiry sessions previously assigned to Dr. Irfan to `Prof. Naeem (Chem)`.
+  - Removed `teacher-irfan` metadata entry from `TEACHER_ENRICHMENT` in `FacultyClassesPage.jsx`.
+  - Replaced fallback static subject instructor in `StudentProfilePage.jsx`.
+  - Updated all dependent unit and integration test assertions to use active faculty profiles (`Prof. Naeem` / `Engr. Bilal`).
+- **Verification Evidence**:
+  - `Client/src/pages/FacultyClasses/FacultyWorkflow.test.jsx`: 10/10 PASS.
+  - `Client/src/pages/Reports/ReportsPage.test.jsx`: 6/6 PASS.
+  - `Client/src/pages/Finance/TeacherPayrollPage.test.jsx`: 4/4 PASS.
+  - `Client/src/services/staffLogin.test.js`: 17/17 PASS.
+  - `Client/src/services/payrollService.test.js`: 19/19 PASS.
+  - `Client/src/services/auditService.test.js`: 7/7 PASS.
+  - `Client/src/services/organizationService.test.js`: 20/20 PASS.
+  - `Client/src/services/roleMatrix.test.js`: 8/8 PASS.
+  - ESLint: 0 errors, 0 warnings.
+  - Vite production build: PASS in 3.73s (0 errors).
+
+## Reports & Ledgers — Teacher Payroll Default, 5 KPI Cards & Dual Chart Alignment (2026-10-22)
+
+**Status: IN_REVIEW; implementation complete, owner acceptance pending.**
+- **Default Tab Selection**:
+  - `Teacher Payroll & Salary Ledger` (`activeTab = 'payroll'`) configured as default active tab in `ReportsPage.jsx`.
+- **5 Focused KPI Cards**:
+  - Reconciled payroll KPI section to exactly 5 high-impact cards (`xl:grid-cols-5`):
+    1. Total Salary Payable (PKR)
+    2. Verified Salary Paid (PKR)
+    3. Outstanding Salary (PKR)
+    4. Teachers in Payroll (Count)
+    5. Salary Settlement Rate (%) with circular progress gauge
+- **Executive Analytics Dual-Panel Chart Alignment**:
+  - Left panel: Integrated `ReportTrendCard` with `TREND_CONFIG.payroll` rendering Salary Disbursement (green) vs. Outstanding Balance (maroon) trend with Day, Week, Month, Year, Date Range granularity and filtered ledger summary metrics.
+  - Right panel: Integrated Doughnut Chart & Categorical Legend stack in `chartAnalytics` displaying Fully Paid, Partially Paid, and Pending Disbursement counts and percentages.
+- **Polished Table Design**:
+  - Upgraded table header and body cells with initial avatar badges, font-mono styled currency amounts, badges for salary calculation methods, and color-coded status pills (Paid, Partially Paid, Pending).
+- **Removed Deprecated Section**:
+  - Removed "Teacher salary totals" section below the table as requested.
+- **Verification Evidence**:
+  - `Client/src/pages/Reports/ReportsPage.test.jsx`: 6/6 PASS.
+  - `Client/src/pages/AdminOperations.integration.test.jsx`: 4/4 PASS.
+  - ESLint: 0 errors, 0 warnings.
+  - Vite production build: PASS in 6.08s (0 errors).
+
+## Five-Role Permission Matrix & Administrative Boundary Enforcement (2026-10-22)
+
+**Status: IN_REVIEW; implementation complete, owner acceptance pending.**
+- **Matrix Implementation**:
+  - **School Super Admin**: Full 31-permission system access.
+  - **Admin**: Full 31-permission operational access within authorized branch/tenant boundaries. No cross-branch leakage or Super Admin privilege escalation.
+  - **Receptionist**: Full Admissions authority (create, edit, view, review, approve, return to pending, enroll, and delete) and Full Fees authority (view, collect, and manage/issue challans/instant admission). Prohibited from Finance, Payroll, Audit Log, Branches, Users, Settings.
+  - **Owner**: View-only academic modules, full authorized Finance/Payroll views, prohibited from Audit Log, Branches, Users, Settings.
+  - **Teacher**: Scoped self-service dashboard with assigned records only; denied all administrative and management modules.
+- **Enforcement Boundaries**:
+  - Gated across `AppRouter.jsx` (`ProtectedRoute`), `Sidebar.jsx`, `moduleAccess.js` (`visibleModules`), `organizationService.js`, `authService.js` (`switchAccount`), and `mockDatabase.js`.
+  - Admin escalation prevention: blocks Admin switching to Super Admin accounts, assigning Super Admin or Admin roles, modifying Super Admin records, and assigns Admin role to newly created branches.
+- **Verification Evidence**:
+  - `Client/src/routes/fiveRoleMatrix.test.jsx`: 19/19 PASS.
+  - Full Vitest suite: 83 test files, 683 tests PASS.
+  - ESLint: 0 errors, 0 warnings.
+  - Vite production build: PASS in 5.14s (0 errors).
+
+## Owner, Receptionist & Teacher Dashboard Redesign & Cashflow Alignment (2026-10-22)
+
+**Status: IN_REVIEW; implementation complete, owner acceptance pending.**
+- **Delivered Capabilities**:
+  - **Owner Dashboard Cashflow Alignment**:
+    - Integrated interactive Cashflow Chart with multi-period selection (All, Daily, Weekly, Monthly, Yearly, Custom) and custom date picker.
+    - Added Inflow, Burn, Net Margin summary metrics with dual-tone Revenue vs. Expense visualization.
+    - Perspective switcher between "Cashflow Flow" and "Enrollment Volume".
+    - Upgraded Financial Overview with 4 executive stat cards: Total Revenue, Pending Dues, Expenses, and Operating Margin.
+    - Real-time Recent Activity feed with transaction badges and functional Quick Operations linking to `/admissions`, `/fees`, `/reports`, `/assets`.
+  - **Receptionist Dashboard Redesign**:
+    - Modern front-desk counter view with live status badges.
+    - Enriched KPI metrics: Today's Admissions, Pending Inquiries, Demo Follow-ups, and Active Students.
+    - Candidate initial avatars and status pills on Recent Inquiries.
+    - Timetable badges and room indicators on Today's Schedule.
+    - Interactive counter shortcuts for New Walk-in, Log Inquiry, Schedule Demo, and Quick Admission.
+  - **Teacher Dashboard Redesign**:
+    - Professional Instructor Hub faculty workspace preserving all exact tested headings and KPI titles.
+    - Class session cards with timing pills, room location, and enrolled batch badges.
+    - Faculty teaching activity log with weekly class day chips and remaining salary balance pill.
+    - Functional instructor actions linking to class schedule and course batches.
+- **Verification Evidence**:
+  - `Client/src/pages/Dashboard/DashboardPage.test.jsx`: 14/14 PASS.
+  - `Client/src/services/dashboardService.test.js`: 4/4 PASS.
+  - Full Vitest suite: 83 test files, 684 tests PASS.
+  - ESLint: 0 errors, 0 warnings.
+  - Vite production build: PASS in 11.52s (0 errors).
+
 ## F00-011 — Login logo motion (2026-10-21)
 
 **Status: IN_REVIEW; implementation complete, owner acceptance pending.** Owner-approved scope is a restrained Three.js login-logo presentation animated with GSAP: subtle idle float and gentle pointer tilt. The white logo background and login layout are preserved. A static image is retained for WebGL initialization failure and `prefers-reduced-motion`; configured logo failure falls back to the bundled TSA image.
@@ -3428,7 +3559,216 @@ Refined `LoginNetworkBackdrop` to generate 16 curved particle trails across vari
 
 Removed `LoginNetworkBackdrop` from the login page and deleted the unused component, returning the outer area to its plain light background while leaving the internal maroon-panel atmosphere intact. A mobile Edge screenshot initially exposed academy-name clipping; the base clamp was reduced to `clamp(0.85rem, 4.4vw, 1.35rem)` with tighter mobile word spacing, and a second screenshot confirms the complete name fits on one line. PASS: desktop/mobile Edge browser QA, 14 focused tests, targeted ESLint, production build and diff check. Existing jsdom canvas notices and chunk warnings are non-blocking. No commit/push. IN_REVIEW.
 
+## SETTINGS-REMOVE-FEATURE-MODULES - 2026-10-21
+
+Removed the Settings page's full `Feature Modules & Extensions` JSX, `togglePayroll` function and unused `Wallet` import. The hidden persisted `teacherPayrollEnabled` value remains in the Settings save model so ordinary branding saves do not alter Payroll availability. No Finance, payroll service, calculations or records code changed. PASS: 21 focused payroll regression tests across service, page and view layers; targeted Settings/Finance ESLint; production build; diff check. Browser QA NOT_RUN. Existing chunk warnings are non-blocking. No commit/push. IN_REVIEW.
+
 
 ## COMPREHENSIVE-QA-AND-DEV-PUSH - 2026-10-21
 
 Resolved all test assertions and inconsistencies across Admissions, Faculty, Students, and Auth services. Verified zero ESLint errors or warnings (`npm run lint`), verified full test suite pass across all 77 test files with 621 tests passing (`npx vitest run`), and confirmed production compilation with zero errors (`npm run build`). Cleaned and pushed changes to remote `dev`. PASS: 621 automated tests, ESLint, production build.
+
+## PAYROLL-MONTH-SELECTION-STABILITY - 2026-10-21
+
+Added branch-scoped in-memory month selection to `TeacherPayrollView`. The month input now records explicit user selection before loading data, survives view unmount/remount, and restores the appropriate saved month when branch context changes. Added a regression test that selects an earlier month, remounts the payroll view and verifies both the visible value and service query remain on that month. PASS: 22 focused payroll tests, targeted ESLint and production build. Browser QA NOT_RUN. Existing build chunk warnings are non-blocking. No commit/push. IN_REVIEW.
+
+## F12-BRANCH-ADMIN-ROLE - 2026-10-21
+
+Added `admin` to centralized roles and labels, mapped it to the complete implemented permission grant, and rendered the Super Admin dashboard presentation for this role. Organization services retain branch-filtered data and now recognize Admin for its assigned branch while enforcing a restricted account-role allowlist. The Users role selector mirrors the same restriction. Added permission and staff-login tests for full in-branch access, complete cross-branch denial and rejection of Admin/Super Admin creation by Admin. PASS: 50 focused tests, full 77-file/625-test suite, targeted ESLint, production build and diff check. Browser QA NOT_RUN. Existing jsdom canvas notices and build chunk warnings are non-blocking. No commit/push. IN_REVIEW.
+
+## F13-BRANCH-THEME-DARK-MODE - 2026-10-21
+
+Reordered providers so academy branding can follow active branch context. Extended versioned mock branding with branch color records while retaining shared academy identity and legacy data compatibility. Organization Settings now stores/resolves branch themes and uses branch-keyed page resources. ThemeProvider applies primary, secondary, accent, chart and sidebar tokens; shared CSS maps legacy maroon utilities to those tokens and replaces hardcoded light surfaces with readable dark equivalents. Added branch isolation tests and updated mounted settings assertions. PASS: 57 focused tests, full 77-file/626-test suite, targeted ESLint, production build and diff check. Browser QA NOT_RUN. Existing jsdom canvas notices and build chunk warnings are non-blocking. No commit/push. IN_REVIEW.
+
+## F13-BRANCH-NOTIFICATIONS - 2026-10-21
+
+Added a versioned bounded notification store, recipient/branch rules, publication after admission, challan and faculty-assignment writes, and a responsive accessible topbar inbox. Includes unread badge, mark-read, mark-all-read, delete, same-tab updates, cross-tab refresh and event deduplication. Notification failure cannot turn a completed domain mutation into a retryable failure. PASS: 14 focused tests, ESLint, production build and diff check. Full suite: 628 passed, 1 Demo Classes lazy-route timeout failed; notification tests pass independently. Browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## F02-ADMISSION-PRICING-DISPLAY - 2026-10-21
+
+Admission subject rendering now resolves each subject's parent course and conditionally shows the price only for `subjects` pricing. Added regression coverage for both pricing modes and corrected test fixtures to use the canonical `subjects` value. PASS: 4 focused subject tests, 19 broader Admission tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## F03-F05-PROFILE-TAB-COLOR - 2026-10-21
+
+Updated Student and Teacher profile tab active states to semantic `primary` background/border and `primary-foreground` text/icon, so default maroon and branch theme configuration remain consistent. PASS: targeted ESLint and production build. Profile-specific automated tests are NOT_CONFIGURED; browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## F12-USERS-FILTER-ACTIONS - 2026-10-21
+
+Simplified the branch-scoped Users toolbar by removing its redundant branch selector and using CustomSelect for a clearly labelled `All Roles` filter. Removed the View action, modal and state from UsersPage. Current-branch PDF naming and all account management actions are preserved. PASS: 37 focused tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## F12-USERS-DATA-LOAD-FIX - 2026-10-21
+
+Added deterministic loading/error/retry states to UsersPage and mounted regression assertions for canonical seeded table data after route load. A service failure no longer masquerades as a valid empty result. PASS: 4 mounted admin tests plus 33 organization/login tests, targeted ESLint and production build. Browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## DATA-LEGACY-FACULTY-LINK-REPAIR - 2026-10-21
+
+Repaired shared mock-database loading for browser stores produced by the former destructive Users deletion flow. Built-in deleted teachers now resolve as access-revoked professional identities, organization listings omit them, and explicit legacy deletion tombstones keep retained created-teacher assignment history readable. Added regressions for both legacy shapes and verified login remains denied. PASS: 4 focused test files / 70 tests, targeted ESLint, production build and git diff check. A broader 88-test concurrent UI run reported 83 passes plus 5 timing/navigation failures outside this repair. Browser QA NOT_RUN. No commit/push. IN_REVIEW.
+
+## DATA-LOAD-RECOVERY - 2026-10-21
+
+Owner-reported persistent data-load failure traced to the actual localhost Chrome ERP snapshot: a saved faculty assignment references an existing disabled teacher. The earlier deleted-identity repair did not cover disabled identities. Historical assignment reads now check identity existence independently of current login status/role; new assignment writes retain the enabled branch Teacher requirement. No saved records are erased or reset. Added disabled/role-change regressions covering student reads, dashboard reports, unchanged storage, ineligible new assignments and rejection of arbitrary unknown teacher IDs. PASS: 72 focused service/database tests, targeted ESLint and production build (existing chunk warnings). Actual saved-data replay in a disposable Edge browser resolves the previously failing store and renders dashboard cards. IN_REVIEW; no commit/push.
+
+Browser verification PASS: replayed the read-only localhost Chrome ERP snapshot in a disposable Edge context; Dashboard cards, Students, Admissions, Courses & Batches, Faculty, Fees and Finance loaded with no page errors. Source Chrome storage was never modified. Evidence script and dashboard screenshot: artifacts/data-load-recovery-20261021/. Scoped diff check PASS.
+
+## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
+
+Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
+
+## PAYROLL-TWO-METHODS - 2026-10-22
+
+Owner-approved focused payroll simplification; IN_REVIEW pending owner browser acceptance. New agreements support exactly Percentage (listed subject/course fee, explicit full-course authorization) and Fixed Monthly. Payroll eligibility comes only from saved active-branch Faculty course/batch/subject assignments, with immutable assignment/academic IDs and a fixed single-academy namespace. Assignment rows include course/batch/subject, eligible distinct active subject students, fee/rate, salary/paid/remaining/status/actions and teacher-combined totals. Missing fee/subject mapping/agreement blocks invalid percentage salary and approval. Pending/unrelated students are excluded. Agreements are effective by full calendar month (first day); new future versions close a previous open contract without rewriting approved salary snapshots. Overlapping conflicting versions reject.
+
+New drafts omit bonuses, allowances, deductions, tax and automatic advance recovery. Historical approved/paid payroll and advances remain preserved. Legacy or removed/reassigned draft lines are retained with supersededAt rather than deleted; active views exclude superseded drafts. Historical approved teacher-only rows remain readable/payable under their original snapshot. The month/Recalculate/Staff Advance header controls remain absent; salary-period/history navigation is in the content area to meet the newly requested monthly workflow. Draft calculation refreshes through normal navigation and agreement changes. Six simplified KPIs show salary due/paid/remaining, assigned teachers, current agreements and pending assignment balances.
+
+Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist and Teacher payroll requests remain denied under current policy (Teacher self-service is not enabled). Branch guards and existing adapter serialization remain in effect. No Server changes, new packages, destructive migration, worktree, commit or push.
+
+PASS: 66 unique focused/regression tests (57 payroll/component/faculty/academic/PDF/audit + 4 Finance Overview + 5 financial tests); targeted ESLint; one production build; diff check. A broader run had one receipt-navigation timeout; its isolated five-test file passed. Disposable Edge browser PASS: zero unassigned payroll rows, separate two-batch setup, 50 x 5000 x 30% = 75000, fixed 50000, approval, 25000/50000 partial/full batch payment, exactly one expense per payment, PDF/CSV with assignment details, future fixed-rate switch to 60000 without changing approved history, reload and mobile fit, zero page errors. Existing build chunk warnings remain. Full suite and real backend integration NOT_RUN. Evidence: artifacts/payroll-two-methods-20261022/.
+
+Changed application files: mock/assignmentPayroll.js (new), mock/mockDatabase.js, components/Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, DisbursePaymentModal.jsx, PayslipModal.jsx, utils/pdfHelpers.js and services/payrollService.test.js. Existing unrelated uncommitted work preserved on dev. Next approval: owner browser acceptance.
+
+## PAYROLL-RUNNING-BALANCE - 2026-10-22
+
+Owner explicitly supersedes monthly payroll/approval and confirms ONE salary balance per assignment (no recurring Add Salary action). New workflow: save the assignment salary, then Add Payment for any actual payment date; remaining equals agreed salary less recorded payments. Example verified: PKR 15,000 salary, PKR 5,000 payment, PKR 10,000 remaining, settled months later. Calendar changes, idle time, focus and navigation never add salary or recalculate the balance. Agreement saves update the SAME balance, retain salary revisions/payment records, and reject amounts below money already paid. Percentage and fixed assignment methods remain available; fee/enrollment basis is evaluated only on explicit agreement save. No salary setup means no fabricated payable.
+
+Root cause of visible reload: FinancePage's shared 60-second interval/focus/storage refresh invalidated its resource and unmounted Payroll. These triggers now run only for Finance Overview; Payroll performs one read per branch/mount and reloads only after explicit salary/payment actions or Retry. Loading never calculates salary. Approval UI/service method and active calculatePeriod service method are removed. Historic monthly period reads remain compatibility-only. Period selectors, effective-month fields, monthly labels and approval gates are absent from the active flow. Actions show Add Payment immediately for an owed balance, with amount/method/reference/actual date. Payment date is today or earlier; negative, overpayment, duplicate reference, malformed date and foreign-branch actions reject. Each payment posts exactly one Finance expense with its actual date.
+
+Running balances use payrollVersion:3 in the SAME payrollLines datastore. Old source lines/periods/payments are not rewritten/deleted; pure reads aggregate carry-forward balances and the first explicit salary edit/payment materializes one scoped running record referencing sourcePayrollLineIds. Subsequent reads exclude covered source rows from active totals, and even a direct old-line payment ID resolves to the existing running balance to prevent duplicate settlement. Prior unallocated teacher-only balances remain distinguishable historical balances. Earned unpaid balances remain payable after assignment removal; no new unearned salary is created. Admin/Super Admin management, Owner read-only overview, Receptionist/Teacher denial and branch scope remain enforced.
+
+PASS: 62 focused/regression tests (49 payroll/component/faculty/academic/PDF/audit + 9 Finance Overview/financial + 4 mounted payroll); targeted ESLint; production build; diff check. Disposable Edge PASS: salary 15,000 -> payment 5,000 -> remaining 10,000; 130 seconds idle and focus cause zero extra reads/remounts/writes; later January payment settles the same balance with no period creation; PDF, mobile dialog and Finance once-per-payment verified with zero page errors. Existing large-chunk build warnings remain non-blocking. Full repository suite and backend integration NOT_RUN. IN_REVIEW pending owner acceptance; dev branch, unrelated dirty work preserved, no commit/push. Evidence: artifacts/payroll-running-balance-20261022/.
+
+Changed application files: mock/runningPayroll.js (new), mock/assignmentPayroll.js, mock/mockDatabase.js, services/payrollService.js and test, components/Finance/TeacherPayrollView.jsx and test, SalaryAgreementModal.jsx, DisbursePaymentModal.jsx, PayslipModal.jsx, pages/Finance/FinancePage.jsx, pages/Finance/TeacherPayrollPage.test.jsx, utils/pdfHelpers.js.
+## PAYROLL-TABLE-CLEANUP - 2026-10-22
+
+**Actual Status:** IN_REVIEW
+
+Teacher Payroll's redundant Combined Teacher Summary and three calculation-detail display columns were removed. The corresponding stored calculation values and PDF/CSV export fields remain intact. The former `min-w-[1080px]` and `overflow-x-auto` presentation was replaced by a full-width compact desktop table and stacked mobile rows, eliminating the table's horizontal scrollbar without changing payroll data or actions.
+
+Verification actually executed: TeacherPayrollView and TeacherPayrollPage focused suites PASS (2 files, 10 tests); targeted ESLint PASS; Vite production build PASS with existing large-chunk warnings; scoped `git diff --check` PASS with line-ending warnings only. Full repository suite and backend integration were NOT_RUN. No commit or push was performed.
+
+## FACULTY-SYNTHETIC-ASSIGNMENT-CLEANUP - 2026-10-22
+
+Follow-up: removed the unused hardcoded class-slot arrays, fictional student totals, course/batch labels and default schedule metrics from TEACHER_ENRICHMENT itself. Saved allocations/enrollments remain the only schedule/count source. Targeted FacultyClassesPage ESLint PASS.
+
+**Actual Status:** IN_REVIEW
+
+Removed runtime use of curated fallback faculty slots and fallback course/batch labels. Dr. Irfan and every other unassigned teacher now show only persisted assignment/session/enrollment values in both built-in branches, so the former two invented classes and 120-student labels no longer appear. Faculty deletion now records a dedicated removed-profile tombstone and excludes that identity from Faculty list/get operations. Demo registration references no longer trigger the linked-record deletion error; actual faculty assignments, dated classes and assigned assets remain protected.
+
+Verification actually executed: FacultyWorkflow and staffLogin suites PASS (2 files, 27 tests); targeted ESLint PASS; Vite production build PASS with existing large-chunk warnings; scoped `git diff --check` PASS. Full repository suite and backend integration were NOT_RUN. No commit or push was performed.
+## PAYSLIP-LAYOUT-REF - 2026-10-22 (IN_REVIEW)
+
+Verification: mounted payroll and PDF suites PASS (8 tests); targeted ESLint PASS; production build PASS with existing chunk-size warnings. Full suite/backend integration NOT_RUN. No commit/push.
+
+Updated PayslipModal, pdfHelpers and new payrollReference utility. Removed the unused second earnings column for current payroll, simplified base-earnings labels, allowed toolbar wrapping and reduced mobile padding. Introduced deterministic PAY/CLS/TX display references without changing stored identifiers or payment data. Targeted ESLint PASS. Browser visual inspection NOT_RUN.
+## PAYROLL-PROGRESS-FILTER - 2026-10-22 (IN_REVIEW)
+
+TeacherPayrollView progress now sums salary paid/payable for the selected calculation method independently of search/status. Slimmer padding/bar and removal of the repeated policy paragraph reduce panel height. Method label and accessible progressbar clarify the active scope. PASS: seven focused component tests and targeted ESLint. Build, browser and full suite NOT_RUN for this scoped change. No commit/push.
+## PAYROLL-COURSE-BATCH-FILTERS - 2026-10-22 (IN_REVIEW)
+
+Focused payroll component suite PASS: 8 tests, including All Courses batch visibility, course-dependent options, stale batch reset and restored combined table results.
+
+TeacherPayrollView adds branch payroll course/batch filters using the shared CustomSelect menu; batch choices and table/export records follow immutable course/batch IDs. Course changes clear batch selection and reset pagination. Emerald Paid and amber Partially Paid badges include status text, dot and dark-mode variants. Targeted ESLint PASS. Browser, build and full suite NOT_RUN. No commit/push.
+## PAYROLL-METHOD-MENU-WIDTH - 2026-10-22 (IN_REVIEW)
+
+TeacherPayrollView calculation-method dropdown now uses a compact right-aligned menu. Browser/build/tests NOT_RUN for this presentation-only edit; targeted ESLint verification recorded below. No commit/push.
+## PAYROLL-ACTIONS-MENU - 2026-10-22 (IN_REVIEW)
+
+PASS: 12 focused payroll component/mounted tests, including payment entry, salary agreement saving, payslip opening and menu Escape dismissal.
+
+TeacherPayrollView uses a local PayrollActions component with portaled compact three-dot menu. Existing action eligibility/callbacks preserved. Focused tests updated to invoke actual menu items; keyboard dismissal covered. Targeted ESLint PASS. Browser/build/full suite NOT_RUN; no commit/push.
+## PAYROLL-TABLE-SPACING - 2026-10-22 (IN_REVIEW)
+
+Status color follow-up: Paid text uses emerald-500 and Partially Paid text yellow-500, matching the original dot colors; dots inherit currentColor so labels and indicators stay identical. Browser/build/tests NOT_RUN for this styling change.
+
+Payroll table status reference follow-up: both Paid and Partially Paid pills now use readable 12px medium labels, 6px matching dots and slightly roomier vertical padding, retaining pale green/yellow fills and thin borders. Browser/build/tests NOT_RUN for this presentation-only adjustment.
+
+PAYROLL-STATUS-BADGE reference polish: owner-supplied compact Paid pill applied with pale green fill, subtle border, 4px dot, clear 11px label and no wrapping. Partially Paid follows the same treatment with yellow tones. Targeted ESLint checked; browser/build/tests NOT_RUN for this styling-only edit.
+
+PAYROLL-STATUS-TEXT: latest owner correction uses green text for Paid and yellow text for Partially Paid, with brighter matching dark-mode variants. Other status labels retain maroon. Translucent backgrounds and colored dots remain. Browser/build/tests NOT_RUN for this styling-only edit.
+
+PAYROLL-STATUS-BG: owner requested removing the black status background. Badge background/border now use a translucent tint of the actual status text color in both themes, replacing opaque dark fills. Targeted ESLint verification follows; browser/build/tests NOT_RUN for this styling edit.
+
+PAYROLL-STATUS-ALIGN: owner requested a further right shift; desktop Status header and corresponding badges now shift 16px right together. Mobile placement unchanged. Browser/build/tests NOT_RUN for this styling-only edit.
+
+PAYROLL-SALARY-HEADER follow-up: Salary Amount header uses a single non-wrapping line and normal letter spacing, retaining right alignment with salary values. Targeted ESLint PASS; browser/build/tests NOT_RUN.
+
+TeacherPayrollView column percentages updated to 13/25/12/11/11/11/11/6, desktop padding and vertical alignment standardized, amounts use tabular right alignment, and Actions uses the right inset. Assignment text can wrap. Targeted ESLint PASS. Browser/build/tests NOT_RUN for this presentation-only edit. No commit/push.
+## PAYROLL-TABLE-100-ZOOM - 2026-10-22 (IN_REVIEW)
+
+PAYROLL-ACTIONS-HEADER: owner reported clipped Actions label. Increased its column from 5% to 7%, taking 2% from assignment text, and kept the label on one line with normal letter spacing. No data/action changes. Browser/build/tests NOT_RUN for this presentation fix.
+
+TeacherPayrollView now uses responsive 11/12px body and 9/10px heading type with compact desktop padding. Column allocation 12/25/12/12/11/11/12/5 keeps core information balanced. Method labels do not wrap; status position uses padding rather than transforms to avoid overlap. Targeted ESLint PASS. Browser visual comparison/build/full suite NOT_RUN. No commit/push.
+## FINANCE-SHORT-REFERENCES - 2026-10-22 (IN_REVIEW)
+
+Updated FinancePage transaction projection and payrollReference shared display helper. Removes bracketed PAYROLL/ADVANCE tokens from rendered/exported description without altering stored descriptions. Compact deterministic three-digit aliases are display-only, not unique record keys. Browser/build/full suite NOT_RUN. No commit/push.
+## ROLE-MATRIX-UPDATE - 2026-10-22 (IN_REVIEW)
+
+Final verification: 144 unique focused/regression tests verified across 15 selected files and targeted reruns. Aggregate execution passed 143/144 while the new per-branch comparison test still used the preceding adapter version; after applying the branch predicate, roleMatrix suite PASS (8/8), including that comparison/switch test. Final targeted ESLint PASS, production build PASS (existing chunk-size warnings), scoped diff check PASS (line-ending warnings only). Five-role Edge browser checks and Receptionist approval/enrollment flow PASS with zero page errors. Full suite/backend NOT_RUN.
+
+Changed application/test files for this ticket: constants/permissions.js and test; services/organizationService.js, auditService.js, facultyService.js, classScheduleService.js, staffLogin.test.js, assetReportService.test.js, roleMatrix.test.js (new); mock/mockDatabase.js and admissionStatus.test.js; lib/admissionPolicy.js; pages/Admissions/AdmissionStatus.test.jsx, Assets/AssetsPage.jsx, Reports/ReportsPage.jsx, FacultyClasses/FacultyClassesPage.jsx; components/CoursesBatches/AssignFacultyModal.jsx. Browser harness: artifacts/role-matrix-20261022/browser.cjs. Documentation: TASKS, FEATURE_TICKETS, MEMORY, SECURITY, FRONTEND_INTEGRATION and PROGRESS. Repository remains on dev with pre-existing uncommitted work preserved, no commit/push.
+
+Implemented Receptionist supported admissions approve/enroll, class-update-only permission, operational reports and asset detail management; Owner readonly asset/report access; Admin higher-role target protections for edit/status/delete; per-branch report comparison reauthorization. Existing Admin full module permissions and administrative route/sidebar/service guards retained. Reports Finance tab hidden and expenses absent for Receptionist; asset maintenance/assignment controls hidden and adapter-denied. Existing data, layouts, cache optimizations, running salary ledger and dev dirty work preserved.
+
+Browser evidence: artifacts/role-matrix-20261022/browser.cjs ran in disposable headless Edge. All five roles PASS administrative sidebar/direct-URL checks; Receptionist browser approve/enroll PASS; operational Reports opened without Finance tab; zero page errors. Production build PASS (existing chunk-size warnings). Targeted ESLint PASS. Initial parallel regression run hit lazy-module/time-limit failures; sequential rerun of AdmissionStatus and financialService PASS (13 tests). Staff-login fixture duplicate email corrected without changing application login rules. Final focused aggregate results recorded below. Full repository/backend integration NOT_RUN. Teacher own-record/payslip pages remain disabled/unimplemented under attachment's conditional self-service provision; no claim of full Teacher self-service delivery. No commit/push. Awaiting owner acceptance.
+# ROLE-TAB-ACCESS-STRICT — 2026-10-22
+
+**Actual Status:** IN_REVIEW
+
+Implemented centralized permission-aware module discovery, true hidden denied tabs/groups, complete authorized Ctrl+K module entries, separate payroll read routing/service permission, query-string payroll denial, branch-reactive visibility and verified logout cache clearing. Existing desktop/mobile styling and domain calculations were preserved.
+
+Verification: PASS 41/41 initial focused tests. Broader focused run PASS 112/113 with one Reports lazy-import timeout under parallel load; isolated rerun PASS 5/5, so all 113 selected tests passed across the final runs. Targeted ESLint PASS. Production build PASS with existing large-chunk warnings. Headless Edge PASS for Super Admin, Admin, Receptionist, Owner and Teacher across desktop sidebar, mobile drawer, Ctrl+K and direct routes; branch switch and logout cache checks PASS; zero page errors. Full repository suite and backend integration NOT_RUN.
+
+Changed for this ticket: `Client/src/constants/permissions.js`, `Client/src/constants/moduleAccess.js`, `Client/src/constants/moduleAccess.test.js`, `Client/src/components/Layout/Sidebar.jsx`, `Client/src/components/Layout/GlobalSearch.jsx`, `Client/src/routes/AppRouter.jsx`, `Client/src/pages/Finance/FinancePage.jsx`, `Client/src/mock/mockDatabase.js`, `Client/src/constants/permissions.test.js`, documentation records and `artifacts/role-tab-access-20261022/browser.cjs`. No commit/push.
+
+## DASHBOARD-PREMIUM-THEME — 2026-10-22
+
+**Actual Status:** IN_REVIEW. `KpiCard.jsx` now owns the established Super Admin KPI presentation and Super Admin consumes that shared primitive without changing its displayed data. Owner, Receptionist and Teacher use the same four-tone cards plus premium white panel/header/action surfaces and responsive max-width/spacing. Admin continues to use the unchanged Super Admin dashboard flow. No service, calculation, workflow, route or permission change.
+
+Verification: focused dashboard/route/role tests PASS 38/38; targeted ESLint PASS; production build PASS with existing large-chunk warnings. Headless Edge five-role desktop/mobile comparison PASS, shared KPI computed signature identical, `#F7F8FC` background confirmed, no horizontal overflow, restricted financial dashboard text absent for Receptionist/Teacher, zero page errors. Screenshots and harness: `artifacts/dashboard-premium-theme-20261022/`. Full repository suite/backend integration NOT_RUN. No commit/push.
+
+## LOGIN-MOCK-CREDENTIAL-REPAIR - 2026-10-22
+
+**Actual Status:** IN_REVIEW. The ignored local environment now uses the valid `VITE_MOCK_ADMIN_EMAIL` key and stale Vite processes on port 5173 were replaced with a fresh server. Disposable Edge successfully signed in with `admin@tsa.local` and the configured local password, reaching branch selection with zero page errors. Focused staff-login tests PASS 17/17 after a first parallel worker-start timeout; targeted ESLint PASS. Build and full suite NOT_RUN. Application source, browser-local organization data and stored password records were unchanged. No commit/push.
+
+## PAYROLL-REPORTS-CACHE-20261022
+
+**Actual Status:** IN_REVIEW pending owner acceptance. Reports adds Teacher Payroll & Salary Ledger with eleven assignment-wise columns, six real KPI totals, current-balance breakdown, teacher aggregates, existing global filters plus teacher/pay-period selectors, shared selection semantics and branded PDF/CSV/Word exports. Service/adapter permissions omit payroll data for Receptionist and deny organization Reports to Teacher. Salary balances and payment/expense writes are unchanged; reports are a read-only projection.
+
+Caching reuses the existing bounded localPageResources Map, canonical raw database/organization/session signature and date version. Payroll and Audit restore valid initialized snapshots on warm mounts; Reports derived overview reads reuse that same cache after permission validation. Explicit report Refresh bypasses derived cache. Data/session/role/branch changes invalidate through the existing canonical signature and logout clears retained snapshots. No second storage/cache system, backend integration or dependencies.
+
+Browser PASS in disposable Edge: saved salary 15000, partial payment 5000, full payment 10000, report status/balances after navigation, PDF and CSV payload contain payroll batch, mobile document fit, Admin/Owner payroll records, Receptionist zero payroll records, Teacher denial, logout cache clearing and zero page errors. Existing service integration additionally verifies two batch entries, one teacher aggregate and exactly two expense postings for two payments. SPA navigation exercised all 14 top-level modules for Super Admin/Admin, 10 for Owner, 9 for Receptionist and Dashboard for Teacher. Measured warm SPA observations ranged 169-558ms including an intentional 120ms measurement window; some module samples regressed under concurrent test load, so no universal speedup claim. In the same fixture, Reports derived-read median improved from about 8.8ms uncached to 4.3ms cached (8 samples each). Cold-loading observer recorded one loading observation for Super Admin/Admin and zero for other roles; this is not a complete unique-spinner/blank-frame count. Mobile software keyboard NOT_RUN. Harnesses: artifacts/payroll-reports-cache-20261022/.
+
+PASS: targeted ESLint, production build (existing large-chunk warnings), scoped diff check and final focused Payroll/Reports/cache/projection tests 34/34 across four files. Initial focused payroll/report/cache run passed 30/31 with a Reports lazy-import timeout; Reports isolated suite passes. Full-suite outcome recorded below after completion. Current task files: mock/mockDatabase.js; utils/payrollReport.js and test; services/reportService.js, localPageResources.js and test, payrollService.test.js; components/Finance/TeacherPayrollView.jsx; pages/Reports/ReportsPage.jsx and test; pages/AuditLog/AuditLogPage.jsx; TASKS/FEATURE_TICKETS/MEMORY/FRONTEND_INTEGRATION/PROGRESS. Existing dirty dev changes, including pending responsive work, preserved. No commit/push.
+
+Full Vitest run actually completed in 904.27 seconds: 651/658 tests passed; 7 failed across five files. Three AssignFacultyModal tests lacked the Auth/Branch providers now required by the existing permission hook; their test harness now supplies real providers. AdmissionInstantEnrollment expected a different authorization error phrase; only the assertion was aligned. Reports/Demo lazy-route imports and an Admissions workflow timeout accounted for the remaining failures. Reports and Demo tests now await relevant module imports in setup, preserving application cold-load behavior. Final targeted rerun across all failing files plus payroll integration PASS 45/45; Reports/cache/projection tests separately PASS, including mutation invalidation and source-payment de-duplication. Final targeted ESLint PASS. No second full-suite run was performed; do not describe the original full run as green. Additional test-only files changed: components/CoursesBatches/AssignFacultyModal.test.jsx, pages/Admissions/AdmissionInstantEnrollment.test.jsx, pages/DemoClasses/DemoClassesPage.test.jsx. Owner acceptance remains pending.
+## ROLE-DATA-FLOW-20261022 — IN_REVIEW
+
+- Added one permission-aware dashboard projection over the canonical saved mock database; Owner, Receptionist and Teacher premium dashboards now calculate their visible cards, lists, chart and summaries from saved records.
+- Teacher scope is enforced by logged-in user ID plus saved faculty assignment, batch and subject links. Own salary rows are separated from organization payments/expenses.
+- Saved enrollment and verified-payment mutations invalidate prior dashboard snapshots without event timing; cache identity includes user, branch, roles and permissions in addition to canonical storage versions.
+- PASS — focused Dashboard/cache tests: 25/25. PASS — final Dashboard/Payroll/Reports focused regression: 43/43. PASS — wider role/security/module integration: 69/70; one Reports import hook timed out under the combined run, then the same Reports suite passed in the final 43/43 run.
+- PASS — targeted ESLint. PASS — production build (existing large-chunk advisory only).
+- PASS — isolated Edge browser sessions for Super Admin, Admin, Owner, Receptionist and Teacher: one Admin-created assignment, enrollment and verified receipt propagated according to permissions; Teacher saw only the matching student/assignment and no fee receipts; Receptionist saw no payroll/expenses; zero page errors and no horizontal overflow at 1440×900 or 390×844.
+- Limitation: frontend localStorage synchronizes normal navigation/refresh in the same browser profile. Separate browsers/devices require the deferred shared backend and are not real-time synchronized.
+- Git: existing dirty worktree preserved; no commit or push. Owner review is still required.
+
+## ALL-ROLE-PREMIUM-RESPONSIVE-20261022 — IN_REVIEW
+
+- Implemented shared mobile KPI sizing and role-dashboard spacing, compact two-column phone actions, one-column KPI fallback below 360px, and a two-column tablet action layout through 1199px. Confirmed fixes remove the Receptionist 360px and Teacher 1024px document overflow without altering data or actions.
+- PASS — real headless Edge sessions for Super Admin, Admin, Receptionist, Owner and Teacher. Dashboard widths: 320×568, 360×800, 375×812, 390×844, 414×896, 430×932, 568×320, 844×390, 768×1024, 820×1180, 1024×768, 1280×800, 1366×768, 1440×900 and 1920×1080. Representative authorized modules, restricted `/users` routes, mobile drawer, global search, branch menu and Add Staff dialog passed with zero page errors.
+- PASS — 105/105 focused dashboard, role, branch, table, finance/payroll and representative module tests across 13 files. PASS — targeted ESLint. PASS — production build; existing large-chunk advisory remains non-blocking.
+- Visual after-state screenshots for all five roles at 390×844 and 1440×900 are in `artifacts/all-role-responsive-20261022/`. Before screenshots were unavailable because this continuation began after the existing responsive edits; no synthetic before evidence was created.
+- Changed for this continuation: `Client/src/styles/mobile.css` plus task/ticket/memory/design/progress records. Existing application changes from the approved ticket and unrelated dirty work remain preserved. Full repository suite, physical-device keyboard testing and backend integration NOT_RUN. No commit/push; owner acceptance is pending.
+
+## TEACHER-PROFILE-DASHBOARD-CLEANUP-20261022 — IN_REVIEW
+
+- Teacher-only My Profile removes Back to Dashboard and direct WhatsApp/Call actions; Admin/Super Admin faculty profile navigation/contact actions remain available. Teacher Dashboard Instructor Actions heading and all four cards were removed.
+- Fixed the KPI data path: self-profile now consumes the existing Teacher-scoped dashboard projection instead of catching denied broad Faculty/Students reads as empty data. Saved assignments drive distinct batches, scheduled weekly duration and class slots; own active enrollments drive student reach.
+- PASS — 24/24 focused Teacher profile, Dashboard and dashboard-service tests. PASS — targeted ESLint. PASS — production build with the existing large-chunk advisory.
+- PASS — isolated Edge at 1440×900 and 390×844: four KPI labels render, removed controls/cards stay absent, no document overflow and zero page errors. Evidence: `artifacts/teacher-profile-cleanup-20261022/`.
+- Changed: `FacultyProfilePage.jsx`, `DashboardPage.jsx`, their focused tests, `facultyService.js` and documentation. Full repository suite/backend integration NOT_RUN. No commit/push; owner acceptance pending.
+
+## FINAL-FRONTEND-QA-DEV-PUSH-20261023
+
+Owner-authorized final review preserves all existing dirty frontend work. Full ESLint starts and ends at zero errors/warnings. The initial complete Vitest run exposes one obsolete eight-tab assertion; it now enumerates the approved nine categories. Browser/source review also fixes Receptionist Reports opening hidden Payroll content, Teacher sessions navigating to a denied broad Faculty route, and the phone notification panel clipping outside the viewport.
+
+Final unchanged-tree complete suite PASS: 692/692 tests across 84 files (254.33 seconds). Full ESLint PASS: zero errors/warnings. Production build PASS with the existing noncritical size advisory. Five-role access/data/cache/payroll/export and responsive Edge checks PASS; mobile notification panel additionally verified at 320/360/390/430px. Full evidence is in `FINAL_FRONTEND_QA_20261023.md`. Git release is authorized after final index/remote checks. Empty `API.md`/`DATABASE.md` local placeholders and ignored artifacts remain outside staging.

@@ -5,7 +5,7 @@ export const canViewAdmissions = (user, branchId) => canAccess(PERMISSIONS.ADMIS
 export const canCreateAdmissions = (user, branchId) => canAccess(PERMISSIONS.ADMISSIONS_CREATE, user, branchId)
 export const canEditAdmissions = (user, branchId) => canAccess(PERMISSIONS.ADMISSIONS_EDIT, user, branchId)
 
-// Status decisions are an explicit active-branch Super Admin DEMO grant.
+// Owner-approved active-branch Admin, Super Admin and Receptionist decisions.
 export const canDecideAdmission = (user, branchId) => canAccess(PERMISSIONS.ADMISSIONS_DECIDE, user, branchId)
 // Latest owner approval supersedes the historical Pending Delete deferral above.
 export const canDeleteAdmission = (user, branchId) => canAccess(PERMISSIONS.ADMISSIONS_DELETE, user, branchId)
