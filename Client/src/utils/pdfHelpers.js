@@ -1,4 +1,5 @@
 import { formatTimestamp } from './timeFormat.js'
+import { payrollReference, paymentReference } from './payrollReference.js'
 /**
  * Purpose: Universal PDF Document Generator for The Scholar Coaching Academy (TSA) ERP.
  * Implements:
@@ -707,6 +708,19 @@ export function exportPayslipPdf({
   branchName = 'Main Campus',
   filename = null,
 }) {
+  if (payslip.line?.payrollVersion >= 2) {
+    const { line, payments = [] } = payslip
+    return exportTablePdf({ filename: filename || `payslip-${payrollReference(line.id)}.pdf`, title: 'Faculty Salary Balance & Payments', branchName,
+      headers: ['Salary / Payment Detail', 'Amount / Reference'],
+      rows: [
+        ['Teacher', line.teacherName], ['Course', line.courseName], ['Batch', line.batchName], ['Subject', line.subjectName],
+        ['Payslip ref', payrollReference(line.id)], ['Class ref', payrollReference(line.facultyAssignmentId, 'CLS')], ['Salary method', line.calculationMethod],
+        ['Calculation (listed fees, not cash receipts)', line.calculationDetails?.description],
+        ['Salary due (PKR)', line.netPayable], ['Verified salary paid (PKR)', line.totalPaid], ['Remaining (PKR)', line.outstanding],
+        ...payments.map(p => [`Payment ${p.paidAt.slice(0,10)} / ${p.method} / ${paymentReference(p)}`, p.amount]),
+      ],
+    })
+  }
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

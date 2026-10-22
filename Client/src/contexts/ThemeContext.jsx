@@ -25,6 +25,10 @@ export function ThemeProvider({ children }) {
     const darker = (activeColor === '#940016' || activeColor === '#008378')
       ? '#72000E'
       : '#' + activeColor.slice(1).match(/../g).map((hex) => Math.floor(parseInt(hex, 16) * 0.8).toString(16).padStart(2, '0')).join('')
+    const themedTint = `color-mix(in srgb, ${activeColor} ${colorMode === 'dark' ? '18%' : '9%'}, ${colorMode === 'dark' ? '#111827' : '#ffffff'})`
+    const sidebarBackground = colorMode === 'dark' && branding.sidebarBackground === '#FFFFFF' ? '#101827' : branding.sidebarBackground
+    const sidebarText = colorMode === 'dark' && branding.sidebarText === '#111827' ? '#FFFFFF' : branding.sidebarText
+    const sidebarIcon = colorMode === 'dark' && branding.sidebarIcon === '#111827' ? '#FFFFFF' : branding.sidebarIcon
     const tokens = {
       '--app-accent': activeColor,
       '--app-focus': darker,
@@ -38,9 +42,9 @@ export function ThemeProvider({ children }) {
       '--app-muted': colorMode === 'dark' ? '#e5e7eb' : '#565e74',
       '--app-border': colorMode === 'dark' ? '#293548' : '#f0d5d9',
       '--app-hover': colorMode === 'dark' ? '#1f2937' : '#F9EBEE',
-      '--app-sidebar-background': colorMode === 'dark' ? '#101827' : branding.sidebarBackground,
-      '--app-sidebar-text': colorMode === 'dark' ? '#ffffff' : branding.sidebarText,
-      '--app-sidebar-icon': colorMode === 'dark' ? '#ffffff' : branding.sidebarIcon,
+      '--app-sidebar-background': sidebarBackground,
+      '--app-sidebar-text': sidebarText,
+      '--app-sidebar-icon': sidebarIcon,
       '--background': colorMode === 'dark' ? '#0b1220' : '#F7F8FC',
       '--foreground': colorMode === 'dark' ? '#ffffff' : '#0b1c30',
       '--card': colorMode === 'dark' ? '#111827' : '#ffffff',
@@ -49,6 +53,19 @@ export function ThemeProvider({ children }) {
       '--muted-foreground': colorMode === 'dark' ? '#e5e7eb' : '#565e74',
       '--border': colorMode === 'dark' ? '#293548' : '#f0d5d9',
       '--input': colorMode === 'dark' ? '#374151' : '#e2e8f0',
+      '--secondary': themedTint,
+      '--secondary-foreground': colorMode === 'dark' ? '#ffffff' : activeColor,
+      '--accent': themedTint,
+      '--accent-foreground': colorMode === 'dark' ? '#ffffff' : activeColor,
+      '--chart-1': activeColor,
+      '--dashboard-revenue': activeColor,
+      '--sidebar-background': sidebarBackground,
+      '--sidebar-foreground': sidebarText,
+      '--sidebar-primary': branding.sidebarActive,
+      '--sidebar-accent': `color-mix(in srgb, ${branding.sidebarActive} 14%, transparent)`,
+      '--sidebar-accent-foreground': sidebarText,
+      '--sidebar-border': colorMode === 'dark' ? '#293548' : '#f0d5d9',
+      '--sidebar-ring': branding.sidebarActive,
     }
     const hadDarkClass = root.classList.contains('dark')
     const previousColorScheme = root.style.colorScheme

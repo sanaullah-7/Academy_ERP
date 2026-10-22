@@ -42,7 +42,7 @@ export const BranchesPage = lazy(() => load('BranchesPage'))
 export const UsersPage = lazy(() => load('UsersPage'))
 export const SettingsPage = lazy(() => load('SettingsPage'))
 
-const routeModules = { '/audit-log': 'AuditLogPage', '/dashboard': 'DashboardPage', '/admissions': 'AdmissionsPage', '/students': 'StudentsPage', '/courses-batches': 'CoursesBatchesPage', '/faculty': 'FacultyClassesPage', '/fees': 'FeesPage', '/finance': 'FinancePage', '/demo-classes': 'DemoClassesPage', '/assets': 'AssetsPage', '/reports': 'ReportsPage', '/branches': 'BranchesPage', '/users': 'UsersPage', '/settings': 'SettingsPage' }
+const routeModules = { '/my-profile': 'FacultyProfilePage', '/audit-log': 'AuditLogPage', '/dashboard': 'DashboardPage', '/admissions': 'AdmissionsPage', '/students': 'StudentsPage', '/courses-batches': 'CoursesBatchesPage', '/faculty': 'FacultyClassesPage', '/fees': 'FeesPage', '/finance': 'FinancePage', '/demo-classes': 'DemoClassesPage', '/assets': 'AssetsPage', '/reports': 'ReportsPage', '/branches': 'BranchesPage', '/users': 'UsersPage', '/settings': 'SettingsPage' }
 export function preloadRoute(path) {
   const name = routeModules[path]
   if (name) void load(name).catch(() => {}) // Navigation owns visible import errors.

@@ -15,6 +15,15 @@ import { createCollectionService, mockApi } from '../mock/mockApi.js'
 import { authService } from './authService.js'
 import { MockDataError } from '../mock/mockDatabase.js'
 import { canAccess, PERMISSIONS } from '../constants/permissions.js'
+import { notificationService } from './notificationService.js'
+
+async function notifyAdmission(result, query) {
+  try {
+    const admission = result?.admission ?? result
+    await notificationService.publish({ type: 'student_added', branchId: query?.branchId, entityId: admission?.id, title: 'New student admission', message: `${admission?.studentName ?? result?.student?.name ?? 'A student'} was added by staff.` })
+  } catch { /* A notification failure must not roll back a completed admission. */ }
+  return result
+}
 
 async function scopeCheck(query, permission) {
   const startedSession = await authService.getSession()
@@ -29,11 +38,11 @@ export const admissionService = {
   ...createCollectionService('admissions'),
   list: async (query) => mockApi.admissionOperation('list', { query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_VIEW)),
   getById: async (id, query) => mockApi.admissionOperation('getById', { id, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_VIEW)),
-  create: async (record, query) => mockApi.createAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_CREATE)),
-  createWithStudent: async (record, query) => mockApi.createAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_CREATE)),
+  create: async (record, query) => notifyAdmission(await mockApi.createAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_CREATE)), query),
+  createWithStudent: async (record, query) => notifyAdmission(await mockApi.createAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_CREATE)), query),
   update: async (id, record, query) => mockApi.admissionOperation('update', { id, record, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_EDIT)),
   delete: async (id, query) => mockApi.admissionOperation('delete', { id, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DELETE)),
   changeStatus: async (id, record, query) => mockApi.admissionOperation('changeStatus', { id, record, query }, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
   enroll: async (id, record, query) => mockApi.enrollAdmission(id, record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
-  completeAdmission: async (record, query) => mockApi.completeAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)),
+  completeAdmission: async (record, query) => notifyAdmission(await mockApi.completeAdmission(record, query, await scopeCheck(query, PERMISSIONS.ADMISSIONS_DECIDE)), query),
 }

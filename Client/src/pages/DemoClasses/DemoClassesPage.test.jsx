@@ -1,12 +1,15 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
 import { authService } from '../../services/authService.js'
 
-beforeEach(() => {
+beforeEach(async () => {
+  await import('../Admissions/AdmissionsPage.jsx')
   localStorage.clear()
   history.replaceState(null, '', '/demo-classes')
+})
+afterEach(() => { cleanup()
 })
 
 async function signIn(userId = 'demo-admin', branchId = 'demo-central') {

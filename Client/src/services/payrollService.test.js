@@ -1,375 +1,395 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { authService } from './authService.js'
 import { payrollService } from './payrollService.js'
+import { academicService } from './academicService.js'
+import { facultyService } from './facultyService.js'
+import { organizationService } from './organizationService.js'
+import { studentService } from './studentService.js'
 import { financialService } from './financialService.js'
-import { classScheduleService } from './classScheduleService.js'
-import { createMockDatabase } from '../mock/mockDatabase.js'
+import { MOCK_DATABASE_KEY } from '../constants/storageKeys.js'
+import { reportService } from './reportService.js'
+import { payrollReportTotals } from '../utils/payrollReport.js'
 
-const query = { branchId: 'demo-central' }
-
-beforeEach(() => {
-  localStorage.clear()
-})
-
-async function loginAdmin() {
-  await authService.login({ userId: 'demo-admin' })
-  await authService.selectBranch('demo-admin', query.branchId)
+const q = { branchId: 'demo-central' }
+let fixture
+const read = () => JSON.parse(localStorage.getItem(MOCK_DATABASE_KEY))
+const write = (data) => localStorage.setItem(MOCK_DATABASE_KEY, JSON.stringify(data))
+async function login(userId = 'demo-admin') {
+  await authService.login({ userId })
+  await authService.selectBranch(userId, q.branchId)
 }
-
-describe('payrollService', () => {
-  it('manages teacher payroll module setting toggle with default false', async () => {
-    await loginAdmin()
-    const settings = await payrollService.getSettings(query)
-    expect(settings.enabled).toBe(false)
-
-    const updated = await payrollService.updateSettings({ enabled: true }, query)
-    expect(updated.enabled).toBe(true)
-
-    const checked = await payrollService.getSettings(query)
-    expect(checked.enabled).toBe(true)
-
-    const reverted = await payrollService.updateSettings({ enabled: false }, query)
-    expect(reverted.enabled).toBe(false)
+async function setup() {
+  const stream = await academicService.saveStream(null, { name: 'Payroll Stream', active: true }, q)
+  const course = await academicService.saveCourse(
+    null,
+    {
+      name: 'Science Payroll',
+      streamId: stream.id,
+      active: true,
+      pricingMode: 'course',
+      feeAmount: 20000,
+    },
+    q
+  )
+  const subject = await academicService.saveSubject(
+    null,
+    { name: 'Biology', courseId: course.id, active: true, feeAmount: 5000 },
+    q
+  )
+  const other = await academicService.saveSubject(
+    null,
+    { name: 'Other Subject', courseId: course.id, active: true, feeAmount: 1000 },
+    q
+  )
+  const b1 = await academicService.saveBatch(
+    null,
+    { name: 'Batch 1', courseId: course.id, active: true },
+    q
+  )
+  const b2 = await academicService.saveBatch(
+    null,
+    { name: 'Batch 2', courseId: course.id, active: true },
+    q
+  )
+  const make = (batch) =>
+    facultyService.assignFaculty(
+      {
+        teacherId: 'teacher-naeem',
+        courseId: course.id,
+        batchId: batch.id,
+        subjectId: subject.id,
+        days: ['Mon'],
+        startTime: batch === b1 ? '10:00' : '12:00',
+        endTime: batch === b1 ? '11:00' : '13:00',
+        room: batch.name,
+      },
+      q
+    )
+  const a1 = await make(b1),
+    a2 = await make(b2)
+  return { course, subject, other, b1, b2, a1, a2 }
+}
+const agreement = (a, extra = {}) => ({
+  teacherId: a.teacherId,
+  courseId: a.courseId,
+  batchId: a.batchId,
+  subjectId: a.subjectId,
+  facultyAssignmentId: a.id,
+  calculationMethod: 'fixed',
+  monthlySalary: 50000,
+  effectiveFrom: '2026-10-01',
+  ...extra,
+})
+async function contract(a, extra = {}) {
+  return payrollService.saveAgreement(agreement(a, extra), q)
+}
+async function contracts() {
+  await contract(fixture.a1, {
+    calculationMethod: 'percentage',
+    feeBasis: 'subject',
+    feePercentage: 30,
   })
-
-  it('lists default agreements and allows updating agreements', async () => {
-    await loginAdmin()
-    const { agreements, teachers } = await payrollService.getAgreements(query)
-    expect(agreements.length).toBeGreaterThanOrEqual(4)
-    expect(teachers.length).toBeGreaterThanOrEqual(4)
-
-    const irfan = teachers.find(t => t.teacherId === 'teacher-irfan')
-    expect(irfan).toBeDefined()
-    expect(irfan.agreement.calculationMethod).toBe('fixed')
-    expect(irfan.agreement.monthlySalary).toBe(85000)
-
-    const saved = await payrollService.saveAgreement({
-      teacherId: 'teacher-irfan',
-      calculationMethod: 'fixed',
-      monthlySalary: 90000,
-      allowances: 6000,
-      standardDeductions: 3000,
-    }, query)
-    expect(saved.monthlySalary).toBe(90000)
-    expect(saved.allowances).toBe(6000)
-  })
-
-  it('calculates payroll period supporting Method A (Fixed Monthly)', async () => {
-    await loginAdmin()
-    const result = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    expect(result.period).toBeDefined()
-    expect(result.lines.length).toBeGreaterThan(0)
-
-    const irfanLine = result.lines.find(l => l.teacherId === 'teacher-irfan')
-    expect(irfanLine).toBeDefined()
-    expect(irfanLine.calculationMethod).toBe('fixed')
-    expect(irfanLine.baseEarnings).toBe(85000)
-    expect(irfanLine.allowances).toBe(5000)
-    expect(irfanLine.deductions).toBe(2500)
-    expect(irfanLine.netPayable).toBe(87500)
-    expect(irfanLine.outstanding).toBe(87500)
-  })
-
-  it('calculates Method B (Per Completed Lecture) from verified scheduled classes', async () => {
-    await loginAdmin()
-    // Schedule 2 classes for teacher-naeem in October 2026
-    await classScheduleService.create({
-      subject: 'Chemistry',
-      batchId: 'batch-demo-course-demo-2',
-      teacherId: 'teacher-naeem',
-      classDate: '2026-10-05',
-      startTime: '10:00',
-      endTime: '11:00',
-      location: 'Lab 1',
-    }, query)
-
-    await classScheduleService.create({
-      subject: 'Chemistry',
-      batchId: 'batch-demo-course-demo-2',
-      teacherId: 'teacher-naeem',
-      classDate: '2026-10-12',
-      startTime: '10:00',
-      endTime: '11:00',
-      location: 'Lab 1',
-    }, query)
-
-    const result = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const naeemLine = result.lines.find(l => l.teacherId === 'teacher-naeem')
-    expect(naeemLine).toBeDefined()
-    expect(naeemLine.calculationMethod).toBe('per_lecture')
-    // 2 verified lectures @ 2500 = 5000 base
-    expect(naeemLine.baseEarnings).toBe(5000)
-    expect(naeemLine.calculationDetails.verifiedLecturesCount).toBe(2)
-    expect(naeemLine.allowances).toBe(2000)
-    expect(naeemLine.deductions).toBe(1000)
-    // 5000 + 2000 - 1000 = 6000
-    expect(naeemLine.netPayable).toBe(6000)
-  })
-
-  it('supports staff advance disbursement, posts Finance expense, and auto-recovers in payroll', async () => {
-    await loginAdmin()
-    // 1. Disburse advance of PKR 10,000 to teacher-irfan
-    const advanceResult = await payrollService.requestAdvance({
-      teacherId: 'teacher-irfan',
-      amount: 10000,
-      method: 'Cash',
-      reason: 'Urgent medical requirement',
-    }, query)
-
-    expect(advanceResult.advance.amount).toBe(10000)
-    expect(advanceResult.advance.balance).toBe(10000)
-
-    // Finance must show exactly 1 expense for the advance
-    const financeAfterAdvance = await financialService.financeOverview(query)
-    const advanceExpense = financeAfterAdvance.expenses.find(e => e.id === advanceResult.expense.id)
-    expect(advanceExpense).toBeDefined()
-    expect(advanceExpense.amount).toBe(10000)
-    expect(advanceExpense.category).toBe('Faculty')
-
-    // 2. Calculate October 2026 payroll: advance must be deducted automatically
-    const calcResult = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const irfanLine = calcResult.lines.find(l => l.teacherId === 'teacher-irfan')
-    // Gross: 85,000 + 5,000 - 2,500 = 87,500
-    // Advance deducted: 10,000
-    // Net payable: 77,500
-    expect(irfanLine.advancesDeducted).toBe(10000)
-    expect(irfanLine.netPayable).toBe(77500)
-  })
-
-  it('approves period, records partial and full disbursements, and automatically posts Finance expenses', async () => {
-    await loginAdmin()
-    const calcResult = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const period = await payrollService.approvePeriod(calcResult.period.id, query)
-    expect(period.status).toBe('Approved')
-
-    const irfanLine = calcResult.lines.find(l => l.teacherId === 'teacher-irfan')
-
-    // Partial payment: PKR 30,000
-    const payment1 = await payrollService.recordPayment({
-      payrollLineId: irfanLine.id,
-      amount: 30000,
-      method: 'Bank Transfer',
-      transactionReference: 'TXN-BANK-001',
-      notes: 'First installment',
-    }, query)
-
-    expect(payment1.line.totalPaid).toBe(30000)
-    expect(payment1.line.outstanding).toBe(57500)
-    expect(payment1.line.status).toBe('Partially Paid')
-
-    // Verify 1 expense was created in Finance
-    let finance = await financialService.financeOverview(query)
-    expect(finance.expenses.some(e => e.id === payment1.expense.id && e.amount === 30000)).toBe(true)
-
-    // Remaining payment: PKR 57,500
-    const payment2 = await payrollService.recordPayment({
-      payrollLineId: irfanLine.id,
-      amount: 57500,
-      method: 'Bank Transfer',
-      transactionReference: 'TXN-BANK-002',
-      notes: 'Final settlement',
-    }, query)
-
-    expect(payment2.line.totalPaid).toBe(87500)
-    expect(payment2.line.outstanding).toBe(0)
-    expect(payment2.line.status).toBe('Paid')
-
-    // Verify second expense in Finance
-    finance = await financialService.financeOverview(query)
-    expect(finance.expenses.some(e => e.id === payment2.expense.id && e.amount === 57500)).toBe(true)
-  })
-
-  it('generates itemized payslip with teacher, branch and deduction details', async () => {
-    await loginAdmin()
-    const calcResult = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const irfanLine = calcResult.lines.find(l => l.teacherId === 'teacher-irfan')
-
-    const payslip = await payrollService.getPayslip(irfanLine.id, query)
-    expect(payslip).toBeDefined()
-    expect(payslip.teacher.name).toContain('Irfan')
-    expect(payslip.line.netPayable).toBe(87500)
-    expect(payslip.branch.id).toBe(query.branchId)
-    expect(payslip.agreement.calculationMethod).toBe('fixed')
-  })
-
-  it('calculates Method C (Per Student / Batch) from unique active enrolled students in assigned batches', async () => {
-    await loginAdmin()
-    const db = createMockDatabase()
-    const admission = db.createAdmission({
-      studentName: 'Student For Bilal',
-      guardianName: 'Guardian',
+  await contract(fixture.a2)
+}
+function enroll(count = 50, subjectId = fixture.subject.id, batchId = fixture.b1.id) {
+  const d = read()
+  for (let i = 0; i < count; i++) {
+    const id = 'payroll-student-' + d.students.length,
+      aid = 'payroll-admission-' + d.admissions.length
+    d.students.push({
+      id,
+      branchId: q.branchId,
+      name: 'Payroll Student ' + i,
+      status: 'Active',
+      createdByAdmissionFlow: true,
+      admissionId: aid,
+    })
+    d.admissions.push({
+      id: aid,
+      branchId: q.branchId,
+      studentName: 'Payroll Student ' + i,
+      guardianName: 'QA Guardian',
       contact: '03001234567',
       dob: '2010-01-01',
-      course: 'Demo Course Two',
-      courseId: 'course-demo-2'
-    }, query)
-    const { admissionService } = await import('./admissionService.js')
-    await admissionService.changeStatus(admission.id, { status: 'Approved', expectedStatus: 'Pending' }, query)
-    await admissionService.enroll(admission.id, { batchId: 'batch-demo-course-demo-2' }, query)
-
-    const { academicService } = await import('./academicService.js')
-    const { mockApi } = await import('../mock/mockApi.js')
-    const subject = await academicService.saveSubject(undefined, { courseId: 'course-demo-2', name: 'Bilal Physics', active: true }, query)
-    const subjectId = subject.id
-
-    await mockApi.facultyAssignmentOperation('create', {
-      record: {
-        teacherId: 'teacher-bilal',
-        courseId: 'course-demo-2',
-        batchId: 'batch-demo-course-demo-2',
-        subjectId,
-        days: ['Mon'],
-        startTime: '14:00',
-        endTime: '15:00',
-        room: 'Room 2',
-      },
-      query
+      course: fixture.course.name,
+      courseId: fixture.course.id,
+      status: 'Approved',
+      createdAt: '2026-10-01T08:00:00Z',
+      studentId: id,
+      createdByAdmissionFlow: true,
     })
-
-    const result = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const bilalLine = result.lines.find(l => l.teacherId === 'teacher-bilal')
-    expect(bilalLine).toBeDefined()
-    expect(bilalLine.calculationMethod).toBe('per_student')
-    expect(bilalLine.calculationDetails.uniqueEnrolledStudentsCount).toBeGreaterThanOrEqual(1)
-    expect(bilalLine.baseEarnings).toBe(bilalLine.calculationDetails.uniqueEnrolledStudentsCount * 1800)
-  })
-
-  it('calculates Method D (Verified Fee Collection %) from eligible payments in the payroll month', async () => {
-    await loginAdmin()
-    const db = createMockDatabase()
-    const admission = db.createAdmission({
-      studentName: 'Student For Tariq',
-      guardianName: 'Guardian',
-      contact: '03009876543',
-      dob: '2010-01-01',
-      course: 'Demo Course Two',
-      courseId: 'course-demo-2'
-    }, query)
-    const { admissionService } = await import('./admissionService.js')
-    await admissionService.changeStatus(admission.id, { status: 'Approved', expectedStatus: 'Pending' }, query)
-    const { enrollment } = await admissionService.enroll(admission.id, { batchId: 'batch-demo-course-demo-2' }, query)
-
-    const { academicService } = await import('./academicService.js')
-    const { mockApi } = await import('../mock/mockApi.js')
-    const subject = await academicService.saveSubject(undefined, { courseId: 'course-demo-2', name: 'Tariq Math', active: true }, query)
-    const subjectId = subject.id
-
-    await mockApi.facultyAssignmentOperation('create', {
-      record: {
-        teacherId: 'teacher-tariq',
-        courseId: 'course-demo-2',
-        batchId: 'batch-demo-course-demo-2',
-        subjectId,
-        days: ['Tue'],
-        startTime: '11:00',
-        endTime: '12:00',
-        room: 'Room 3',
-      },
-      query
+    d.enrollments.push({
+      id: 'payroll-enr-' + d.enrollments.length,
+      branchId: q.branchId,
+      admissionId: aid,
+      studentId: id,
+      courseId: fixture.course.id,
+      batchId,
+      subjectIds: [subjectId],
+      status: 'Active',
+      enrolledAt: '2026-10-01T08:00:00Z',
     })
-
-    const challan = await financialService.createChallan({
-      enrollmentId: enrollment.id,
-      description: 'October Tuition',
-      amount: 20000,
-      issueDate: '2026-10-01',
-      dueDate: '2026-10-31',
-    }, query)
-
-    await financialService.recordPayment({
-      challanId: challan.id,
-      amount: 20000,
-      method: 'Cash',
-    }, query)
-
-    // Another batch in this course must not contribute to this teacher's share.
-    const otherBatch=await academicService.saveBatch(null,{name:'Other fee batch',courseId:'course-demo-2',active:true},query)
-    const otherAdmission=await admissionService.createWithStudent({studentName:'Other Batch Student',guardianName:'Guardian',contact:'03001112222',dob:'2010-01-01',course:'Demo Course Two',courseId:'course-demo-2'},query)
-    await admissionService.changeStatus(otherAdmission.id,{status:'Approved',expectedStatus:'Pending'},query)
-    const other=await admissionService.enroll(otherAdmission.id,{batchId:otherBatch.id},query)
-    const unrelated=await financialService.createChallan({enrollmentId:other.enrollment.id,description:'Other batch fees',amount:30000,issueDate:'2026-10-01',dueDate:'2026-10-31'},query)
-    await financialService.recordPayment({challanId:unrelated.id,amount:30000,method:'Cash'},query)
-    const result = await payrollService.calculatePeriod({ yearMonth: '2026-10' }, query)
-    const tariqLine = result.lines.find(l => l.teacherId === 'teacher-tariq')
-    expect(tariqLine).toBeDefined()
-    expect(tariqLine.calculationMethod).toBe('fee_percentage')
-    expect(tariqLine.baseEarnings).toBe(7000)
-    expect(tariqLine.calculationDetails.totalVerifiedTuitionCollected).toBe(20000)
-    expect(tariqLine.calculationDetails.feePercentage).toBe(35)
-  })
-
-})
-
-describe('payroll payment safety and historical snapshots',()=>{
- it('requires approval, prevents duplicate references and keeps expense amounts consistent',async()=>{
-  await loginAdmin()
-  const calc=await payrollService.calculatePeriod({yearMonth:'2026-10'},query),line=calc.lines.find(l=>l.teacherId==='teacher-irfan')
-  const record={payrollLineId:line.id,amount:1000,method:'Bank Transfer',transactionReference:'QA-ONCE'}
-  await expect(payrollService.recordPayment(record,query)).rejects.toThrow('Approve payroll')
-  await payrollService.approvePeriod(calc.period.id,query)
-  await expect(payrollService.recordPayment({...record,amount:1000.5},query)).rejects.toThrow()
-  const saved=await payrollService.recordPayment(record,query)
-  expect(saved.expense.amount).toBe(saved.payment.amount)
-  await expect(payrollService.recordPayment({...record,transactionReference:' QA-ONCE '},query)).rejects.toThrow('already been posted')
-  expect((await financialService.financeOverview(query)).expenses.filter(e=>e.id===saved.expense.id)).toHaveLength(1)
- })
- it('recovers an advance once across partial payments and leaves later advances for future payroll',async()=>{
-  await loginAdmin()
-  const first=await payrollService.requestAdvance({teacherId:'teacher-irfan',amount:10000,method:'Bank Transfer'},query)
-  expect(first.expense.method).toBe('Bank Transfer')
-  const calc=await payrollService.calculatePeriod({yearMonth:'2026-10'},query),line=calc.lines.find(l=>l.teacherId==='teacher-irfan')
-  await payrollService.approvePeriod(calc.period.id,query)
-  await payrollService.recordPayment({payrollLineId:line.id,amount:1000,method:'Cash'},query)
-  const next=await payrollService.requestAdvance({teacherId:'teacher-irfan',amount:5000,method:'Cash'},query)
-  await payrollService.recordPayment({payrollLineId:line.id,amount:line.netPayable-1000,method:'Cash'},query)
-  const advances=await payrollService.getAdvances(query)
-  expect(advances.find(a=>a.id===first.advance.id).balance).toBe(0)
-  expect(advances.find(a=>a.id===next.advance.id).balance).toBe(5000)
-  const history=await payrollService.getPeriodDetails(calc.period.id,query)
-  expect(history.lines.find(l=>l.id===line.id)).toMatchObject({netPayable:77500,totalPaid:77500,outstanding:0,advancesRecovered:10000})
-  await expect(payrollService.calculatePeriod({yearMonth:'2026-10'},query)).rejects.toThrow('locked')
-  await expect(payrollService.addAdjustment({teacherId:'teacher-irfan',yearMonth:'2026-10',type:'bonus',amount:1000},query)).rejects.toThrow('locked')
- })
- it('keeps approved salary immutable when contract changes and uses new rate in draft months',async()=>{
-  await loginAdmin()
-  const calc=await payrollService.calculatePeriod({yearMonth:'2026-10'},query)
-  await payrollService.approvePeriod(calc.period.id,query)
-  await payrollService.saveAgreement({teacherId:'teacher-irfan',calculationMethod:'fixed',monthlySalary:95000},query)
-  expect((await payrollService.getPeriodDetails(calc.period.id,query)).lines.find(l=>l.teacherId==='teacher-irfan').baseEarnings).toBe(85000)
-  const next=await payrollService.calculatePeriod({yearMonth:'2026-11'},query)
-  expect(next.lines.find(l=>l.teacherId==='teacher-irfan').baseEarnings).toBe(95000)
- })
- it('settles zero-cash advance recovery on approval and does not reserve one advance twice',async()=>{
-  await loginAdmin()
-  const advance=await payrollService.requestAdvance({teacherId:'teacher-irfan',amount:87500,method:'Cash'},query)
-  const october=await payrollService.calculatePeriod({yearMonth:'2026-10'},query)
-  const november=await payrollService.calculatePeriod({yearMonth:'2026-11'},query)
-  await payrollService.approvePeriod(october.period.id,query)
-  expect((await payrollService.getAdvances(query)).find(a=>a.id===advance.advance.id).balance).toBe(0)
-  expect((await payrollService.getPeriodDetails(october.period.id,query)).lines.find(l=>l.teacherId==='teacher-irfan')).toMatchObject({status:'Paid',netPayable:0,advancesRecovered:87500})
-  await expect(payrollService.approvePeriod(november.period.id,query)).rejects.toThrow('Advance balances changed')
-  const refreshed=await payrollService.calculatePeriod({yearMonth:'2026-11'},query)
-  expect(refreshed.lines.find(l=>l.teacherId==='teacher-irfan').advancesDeducted).toBe(0)
- })
- it('rejects invalid months, foreign/non-teacher references and unsafe salary amounts',async()=>{
-  await loginAdmin()
-  for(const yearMonth of ['2026-13','bad','2026-00'])await expect(payrollService.calculatePeriod({yearMonth},query)).rejects.toThrow('valid payroll month')
-  for(const teacherId of ['demo-admin','demo-reception','missing']){
-   await expect(payrollService.saveAgreement({teacherId,calculationMethod:'fixed',monthlySalary:50000},query)).rejects.toThrow()
-   await expect(payrollService.requestAdvance({teacherId,amount:1000,method:'Cash'},query)).rejects.toThrow()
-   await expect(payrollService.addAdjustment({teacherId,yearMonth:'2026-10',type:'bonus',amount:1000},query)).rejects.toThrow()
   }
-  for(const monthlySalary of [-1,Infinity,1.5])await expect(payrollService.saveAgreement({teacherId:'teacher-irfan',calculationMethod:'fixed',monthlySalary},query)).rejects.toThrow()
-  await expect(payrollService.saveAgreement({id:'agr-naeem',teacherId:'teacher-irfan',calculationMethod:'fixed',monthlySalary:1000},query)).rejects.toThrow('not found in this branch')
- })
+  write(d)
+}
+const pay = (line, amount, ref = 'PAY-001', paymentDate) =>
+  payrollService.recordPayment(
+    { payrollLineId: line.id, amount, method: 'Cash', transactionReference: ref, paymentDate },
+    q
+  )
+const overview = () => payrollService.getRunningOverview(q)
+beforeEach(async () => {
+  localStorage.clear()
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-22T07:00:00Z'))
+  await login()
+  fixture = await setup()
 })
+afterEach(() => vi.useRealTimers())
 
-it('does not pay future dated lectures as completed work',async()=>{
- vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-10-21T07:00:00Z'))
- try{
-  await loginAdmin()
-  for(const classDate of ['2026-10-12','2026-10-30'])await classScheduleService.create({subject:'Chemistry',batchId:'batch-demo-course-demo-2',teacherId:'teacher-naeem',classDate,startTime:'10:00',endTime:'11:00',location:'QA Lecture Lab'},query)
-  const calc=await payrollService.calculatePeriod({yearMonth:'2026-10'},query)
-  expect(calc.lines.find(l=>l.teacherId==='teacher-naeem')).toMatchObject({baseEarnings:2500,calculationDetails:{verifiedLecturesCount:1}})
- }finally{vi.useRealTimers()}
+describe('one running salary balance', () => {
+  it('reconciles cached reports after partial and full payments without duplicate expenses', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    await contract(fixture.a2, { monthlySalary: 20000 })
+    const first = await reportService.overview(q)
+    expect(payrollReportTotals(first.payroll)).toMatchObject({ payable: 35000, paid: 0, outstanding: 35000, teachers: 1, pendingEntries: 2 })
+    const line = (await overview()).lines.find(item => item.facultyAssignmentId === fixture.a1.id)
+    const expensesBefore = read().expenses.length
+    await pay(line, 5000, 'REPORT-PART', '2026-10-10')
+    const partial = await reportService.overview(q)
+    expect(payrollReportTotals(partial.payroll)).toMatchObject({ payable: 35000, paid: 5000, outstanding: 30000 })
+    await pay(line, 10000, 'REPORT-FULL', '2026-10-11')
+    expect(payrollReportTotals((await reportService.overview(q)).payroll)).toMatchObject({ paid: 15000, outstanding: 20000, paidEntries: 1 })
+    expect(read().expenses.length).toBe(expensesBefore + 2)
+    await authService.selectBranch('demo-admin', 'demo-north')
+    expect((await reportService.overview({ branchId: 'demo-north' })).payroll).toEqual([])
+    await authService.selectBranch('demo-admin', q.branchId)
+    expect((await reportService.overview(q)).payroll).toHaveLength(2)
+    await login('demo-owner')
+    expect((await reportService.overview(q)).payroll).toHaveLength(2)
+    await authService.login({ userId: 'demo-reception' })
+    await authService.selectBranch('demo-reception', 'demo-north')
+    expect((await reportService.overview({ branchId: 'demo-north' })).payroll).toEqual([])
+    await expect(reportService.overview(q)).rejects.toThrow()
+  })
+  it('has no salary rows without assignments and never writes a new monthly salary on read', async () => {
+    const d = read()
+    d.facultyAssignments = []
+    write(d)
+    const before = localStorage.getItem(MOCK_DATABASE_KEY)
+    expect((await overview()).lines).toEqual([])
+    expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+  })
+  it('records 15000 salary, accepts 5000 immediately, and keeps 10000 until any later date', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    let line = (await overview()).lines.find((l) => l.facultyAssignmentId === fixture.a1.id)
+    const posted = await pay(line, 5000, 'PART-1', '2026-10-10')
+    expect(posted.line).toMatchObject({
+      netPayable: 15000,
+      totalPaid: 5000,
+      outstanding: 10000,
+      status: 'Partially Paid',
+    })
+    expect(posted.expense.entryDate).toBe('2026-10-10')
+    const before = localStorage.getItem(MOCK_DATABASE_KEY)
+    for (const date of ['2026-11-22', '2027-01-01', '2027-05-06']) {
+      vi.setSystemTime(new Date(date + 'T07:00:00Z'))
+      line = (await overview()).lines.find((l) => l.facultyAssignmentId === fixture.a1.id)
+      expect(line).toMatchObject({ netPayable: 15000, totalPaid: 5000, outstanding: 10000 })
+      expect(localStorage.getItem(MOCK_DATABASE_KEY)).toBe(before)
+    }
+    await pay(line, 10000, 'PART-2', '2027-05-06')
+    expect((await overview()).lines.find((l) => l.id === line.id)).toMatchObject({
+      netPayable: 15000,
+      totalPaid: 15000,
+      outstanding: 0,
+      status: 'Paid',
+    })
+    expect(read().payrollPeriods).toHaveLength(0)
+  })
+  it('keeps a single balance when the same salary agreement is saved repeatedly', async () => {
+    for (let i = 0; i < 3; i++) await contract(fixture.a1, { monthlySalary: 15000 })
+    const lines = (await overview()).lines.filter((l) => l.facultyAssignmentId === fixture.a1.id)
+    expect(lines).toHaveLength(1)
+    expect(lines[0].netPayable).toBe(15000)
+    expect(lines[0].salaryRevisions.length).toBe(2)
+  })
+  it('preserves payments when salary changes and rejects salary below the amount already paid', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    let line = (await overview()).lines[0]
+    await pay(line, 5000)
+    const history = read().payrollPayments
+    await contract(fixture.a1, { monthlySalary: 20000 })
+    line = (await overview()).lines[0]
+    expect(line).toMatchObject({ netPayable: 20000, totalPaid: 5000, outstanding: 15000 })
+    await expect(contract(fixture.a1, { monthlySalary: 4000 })).rejects.toThrow(
+      'lower than payments'
+    )
+    expect(read().payrollPayments).toEqual(history)
+  })
+  it('keeps percentage and fixed salaries separate by assignment, using actual listed fees and enrolled students', async () => {
+    enroll()
+    await contracts()
+    const lines = (await overview()).lines
+    expect(lines[0]).toMatchObject({
+      netPayable: 75000,
+      calculationDetails: { eligibleStudents: 50, feeSourceId: fixture.subject.id },
+    })
+    expect(lines[1]).toMatchObject({ netPayable: 50000 })
+    await pay(lines[0], 5000)
+    expect((await overview()).lines[1].totalPaid).toBe(0)
+  })
+  it('freezes a saved percentage salary on navigation and recomputes only on explicit agreement save', async () => {
+    enroll(2)
+    await contracts()
+    const before = (await overview()).lines[0].netPayable
+    await academicService.saveSubject(
+      fixture.subject.id,
+      { name: 'Biology', courseId: fixture.course.id, active: true, feeAmount: 6000 },
+      q
+    )
+    expect((await overview()).lines[0].netPayable).toBe(before)
+    await contract(fixture.a1, {
+      calculationMethod: 'percentage',
+      feeBasis: 'subject',
+      feePercentage: 30,
+    })
+    expect((await overview()).lines[0].netPayable).toBe(3600)
+  })
+  it('requires actual subject mapping and fee instead of fabricating salary', async () => {
+    enroll(2)
+    let d = read()
+    delete d.enrollments.find((e) => e.courseId === fixture.course.id).subjectIds
+    write(d)
+    const percentage = { calculationMethod: 'percentage', feeBasis: 'subject', feePercentage: 30 }
+    await expect(contract(fixture.a1, percentage)).rejects.toThrow('mapping is missing')
+    d = read()
+    d.enrollments
+      .filter((e) => e.courseId === fixture.course.id)
+      .forEach((e) => (e.subjectIds = [fixture.subject.id]))
+    delete d.subjects.find((s) => s.id === fixture.subject.id).feeAmount
+    write(d)
+    await expect(contract(fixture.a1, percentage)).rejects.toThrow('fee is missing')
+  })
+  it('requires explicit full-course fee authorization', async () => {
+    const options = { calculationMethod: 'percentage', feeBasis: 'course', feePercentage: 30 }
+    await expect(contract(fixture.a1, options)).rejects.toThrow('Explicitly authorize')
+    enroll(2)
+    await contract(fixture.a1, { ...options, fullCourseFeeAuthorized: true })
+    expect((await overview()).lines[0].netPayable).toBe(12000)
+  })
+  it.each([0, -1, 101, Infinity, NaN])('rejects invalid percentages %s', async (feePercentage) => {
+    await expect(
+      contract(fixture.a1, { calculationMethod: 'percentage', feeBasis: 'subject', feePercentage })
+    ).rejects.toThrow()
+  })
+  it('rejects duplicate, negative, invalid-date and excessive payments with one Finance posting per payment', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    await contract(fixture.a2)
+    const lines = (await overview()).lines,
+      before = (await financialService.financeOverview(q)).expenses.length
+    await pay(lines[0], 5000)
+    await expect(pay(lines[0], 5000)).rejects.toThrow('already been posted')
+    await expect(pay(lines[1], 100, 'PAY-001')).rejects.toThrow('already been posted')
+    await expect(pay(lines[0], 10001, 'OVER')).rejects.toThrow('exceeds')
+    await expect(pay(lines[0], -1, 'NEG')).rejects.toThrow('positive')
+    await expect(pay(lines[0], 1, 'BAD-DATE', '2026-02-30')).rejects.toThrow('payment date')
+    expect((await financialService.financeOverview(q)).expenses).toHaveLength(before + 1)
+    expect((await payrollService.getPayslip(lines[0].id, q)).payments).toHaveLength(1)
+  })
+  it('carries legacy paid/unpaid salaries without editing their periods or source lines', async () => {
+    const d = read(),
+      legacy = {
+        id: 'old-line',
+        branchId: q.branchId,
+        payrollPeriodId: 'old-period',
+        teacherId: fixture.a1.teacherId,
+        courseId: fixture.a1.courseId,
+        batchId: fixture.a1.batchId,
+        subjectId: fixture.a1.subjectId,
+        facultyAssignmentId: fixture.a1.id,
+        teacherName: 'Prof. Naeem',
+        netPayable: 15000,
+        totalPaid: 5000,
+        outstanding: 10000,
+        status: 'Partially Paid',
+        payrollVersion: 2,
+        yearMonth: '2026-09',
+      }
+    d.payrollPeriods.push({
+      id: 'old-period',
+      branchId: q.branchId,
+      yearMonth: '2026-09',
+      status: 'Approved',
+    })
+    d.payrollLines.push(legacy)
+    d.payrollPayments.push({
+      id: 'old-pay',
+      branchId: q.branchId,
+      payrollLineId: 'old-line',
+      amount: 5000,
+      paidAt: '2026-09-03T07:00:00Z',
+      transactionReference: 'OLD',
+    })
+    write(d)
+    const periods = read().payrollPeriods
+    const line = (await overview()).lines.find((l) => l.sourcePayrollLineIds.includes('old-line'))
+    await pay(line, 10000, 'SETTLE')
+    const updated = (await overview()).lines.find((l) =>
+      l.sourcePayrollLineIds.includes('old-line')
+    )
+    expect(updated).toMatchObject({ totalPaid: 15000, outstanding: 0 })
+    expect(
+      (await overview()).lines.filter((l) => l.facultyAssignmentId === fixture.a1.id)
+    ).toHaveLength(1)
+    expect(read().payrollLines.find((l) => l.id === 'old-line')).toEqual(legacy)
+    expect(read().payrollPeriods).toEqual(periods)
+    await expect(pay(legacy, 1, 'OLD-ID')).rejects.toThrow('exceeds')
+    expect((await payrollService.getPayslip(updated.id, q)).payments).toHaveLength(2)
+  })
+  it('preserves earned balances after assignment removal but creates no new unearned salary', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    await facultyService.removeAssignment(fixture.a1.id, q)
+    const line = (await overview()).lines.find((l) => l.facultyAssignmentId === fixture.a1.id)
+    expect(line.outstanding).toBe(15000)
+    await pay(line, 5000)
+    await expect(contract(fixture.a1)).rejects.toThrow('valid saved teaching assignment')
+  })
+  it('enforces role and branch access while allowing Owner read-only payroll', async () => {
+    const receptionist = await organizationService.saveUser({
+      name: 'Pay Reception',
+      login: 'pay-rec@example.test',
+      assignments: [{ branchId: q.branchId, roles: ['receptionist'] }],
+    })
+    const admin = await organizationService.saveUser({
+      name: 'Pay Admin',
+      login: 'pay-adm@example.test',
+      assignments: [{ branchId: q.branchId, roles: ['admin'] }],
+    })
+    await login(admin.id)
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    const line = (await overview()).lines[0]
+    await expect(
+      payrollService.recordPayment(
+        { payrollLineId: line.id, amount: 1, method: 'Cash', transactionReference: 'CROSS' },
+        { branchId: 'demo-north' }
+      )
+    ).rejects.toThrow()
+    await login('demo-owner')
+    await expect(overview()).resolves.toBeDefined()
+    await expect(pay(line, 1)).rejects.toThrow('Only Admin')
+    for (const id of ['demo-teacher', receptionist.id]) {
+      await login(id)
+      await expect(overview()).rejects.toThrow()
+    }
+  })
+  it('keeps academic/student/Finance data readable and disables old approval/cycle entry points', async () => {
+    await contract(fixture.a1, { monthlySalary: 15000 })
+    expect((await studentService.list(q)).length).toBeGreaterThanOrEqual(0)
+    expect(
+      (await academicService.overview(q)).courses.some((c) => c.id === fixture.course.id)
+    ).toBe(true)
+    expect(payrollService.approvePeriod).toBeUndefined()
+    expect(payrollService.calculatePeriod).toBeUndefined()
+  })
 })

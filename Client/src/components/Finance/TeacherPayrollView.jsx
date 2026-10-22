@@ -1,742 +1,547 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { createPortal } from 'react-dom'
 import { Card } from '../ui/card.jsx'
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
+import CustomSelect from '../ui/CustomSelect.jsx'
+import Pagination from '../Shared/Pagination.jsx'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
 import { payrollService } from '../../services/payrollService.js'
 import { exportTablePdf } from '../../utils/pdfHelpers.js'
 import { downloadCsv } from '../../utils/exportHelpers.js'
-import { getAcademyDateOnly } from '../../utils/formatDate.js'
-import Pagination from '../Shared/Pagination.jsx'
-import CustomSelect from '../ui/CustomSelect.jsx'
-
 import SalaryAgreementModal from './SalaryAgreementModal.jsx'
 import DisbursePaymentModal from './DisbursePaymentModal.jsx'
-import StaffAdvanceModal from './StaffAdvanceModal.jsx'
-import ManualAdjustmentModal from './ManualAdjustmentModal.jsx'
 import PayslipModal from './PayslipModal.jsx'
+import { Banknote, FileSpreadsheet, FileText, Loader2, Search, Sliders, MoreHorizontal } from 'lucide-react'
 
-import {
-  Banknote,
-  Calculator,
-  Calendar,
-  CheckCircle2,
-  DollarSign,
-  FileSpreadsheet,
-  FileText,
-  GraduationCap,
-  HandCoins,
-  Loader2,
-  Percent,
-  Plus,
-  RefreshCw,
-  Search,
-  Sliders,
-} from 'lucide-react'
-
-export default function TeacherPayrollView({ branchId, branchName = 'Main Campus', initialTeacherId = null, exportTarget = null, actionsTarget = null }) {
-  const { can } = usePermissions()
-  const canManage = can(PERMISSIONS.EXPENSES_MANAGE) // Super Admin
-
-  const [selectedMonth, setSelectedMonth] = useState(()=>getAcademyDateOnly().slice(0,7))
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState({ period: null, lines: [], payments: [], advances: [] })
-  const [teachersWithAgreements, setTeachersWithAgreements] = useState([])
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
-
-  // Search & Filter state
-  const [search, setSearch] = useState('')
-  const [methodFilter, setMethodFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [page, setPage] = useState(1)
-  const [pageSize,setPageSize] = useState(10)
-  const initialOpened=useRef(null)
-
-  // Modals state
-  const [agreementModal, setAgreementModal] = useState({ open: false, teacher: null, agreement: null })
-  const [disburseModal, setDisburseModal] = useState({ open: false, line: null })
-  const [advanceModal, setAdvanceModal] = useState({ open: false })
-  const [adjustmentModal, setAdjustmentModal] = useState({ open: false, line: null })
-  const [payslipModal, setPayslipModal] = useState({ open: false, data: null })
-
-  // Load payroll data
-  async function loadPayroll() {
-    setLoading(true)
-    setError('')
-    try {
-      const agreementsResult = await payrollService.getAgreements({ branchId })
-      setTeachersWithAgreements(agreementsResult.teachers || [])
-
-      let periodDetails = await payrollService.getPeriodDetails(null, { branchId, yearMonth: selectedMonth })
-      if (canManage && !periodDetails.period) {
-        periodDetails = await payrollService.calculatePeriod({ yearMonth: selectedMonth }, { branchId })
-      }
-      setData(periodDetails)
-
-      if (initialTeacherId && initialOpened.current !== initialTeacherId) {
-        const match = (agreementsResult.teachers || []).find(t => t.teacherId === initialTeacherId)
-        if (match) {
-          initialOpened.current=initialTeacherId
-          setAgreementModal({
-            open: true,
-            teacher: match,
-            agreement: match.agreement,
-          })
-        }
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+function PayrollActions({ line, canManage, meta, busy, onPay, onSlip, onAgreement }) {
+  const [position, setPosition] = useState(null)
+  const trigger = useRef(null)
+  const menu = useRef(null)
+  useEffect(() => {
+    if (!position) return
+    menu.current?.querySelector('button:not(:disabled)')?.focus()
+    const close = () => setPosition(null)
+    const outside = (event) => {
+      if (!menu.current?.contains(event.target) && !trigger.current?.contains(event.target)) close()
     }
-  }
+    document.addEventListener('pointerdown', outside)
+    window.addEventListener('resize', close)
+    window.addEventListener('scroll', close, true)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      window.removeEventListener('resize', close)
+      window.removeEventListener('scroll', close, true)
+    }
+  }, [position])
+  const choose = (action) => { setPosition(null); trigger.current?.focus(); action() }
+  const itemClass = 'flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-foreground hover:bg-primary/5 focus:bg-primary/5 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed'
+  return <>
+    <button ref={trigger} type="button" aria-label={`Payroll actions for ${line.teacherName}`} aria-haspopup="menu" aria-expanded={Boolean(position)}
+      className="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-xs hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+      onClick={() => {
+        if (position) return setPosition(null)
+        const rect = trigger.current.getBoundingClientRect()
+        setPosition({ left: Math.max(8, Math.min(rect.right - 192, window.innerWidth - 200)), top: rect.bottom + 6, above: window.innerHeight - rect.bottom < 170, bottom: window.innerHeight - rect.top + 6 })
+      }}><MoreHorizontal size={18} /></button>
+    {position && createPortal(<div ref={menu} role="menu" aria-label="Payroll actions"
+      style={{ position: 'fixed', left: position.left, ...(position.above ? { bottom: position.bottom } : { top: position.top }), width: 192, zIndex: 100 }}
+      className="rounded-xl border border-border bg-card p-1.5 shadow-xl"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') { event.preventDefault(); setPosition(null); trigger.current?.focus() }
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault()
+          const items = [...menu.current.querySelectorAll('button:not(:disabled)')]
+          const index = items.indexOf(document.activeElement)
+          items[event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowUp' ? -1 : 1) + items.length) % items.length]?.focus()
+        }
+        if (event.key === 'Tab') setPosition(null)
+      }}>
+      {canManage && line.outstanding > 0 && <button role="menuitem" className={itemClass} disabled={busy} onClick={() => choose(onPay)}><Banknote size={15} className="text-emerald-600" />Add Payment</button>}
+      <button role="menuitem" className={itemClass} disabled={Boolean(line.calculationError)} onClick={() => choose(onSlip)}><FileText size={15} className="text-primary" />Payslip</button>
+      {canManage && meta && <button role="menuitem" className={itemClass} title="Configure teacher salary agreement" onClick={() => choose(onAgreement)}><Sliders size={15} className="text-muted-foreground" />Salary Agreement</button>}
+    </div>, document.body)}
+  </>
+}
 
+const money = (value) =>
+  'PKR ' + Number(value || 0).toLocaleString('en-PK', { maximumFractionDigits: 2 })
+const palette = [
+  'border-emerald-200 bg-emerald-50/60',
+  'border-amber-200 bg-amber-50/60',
+  'border-blue-200 bg-blue-50/60',
+]
+const labelMethod = (method) =>
+  method === 'fixed'
+    ? 'Fixed Salary'
+    : method === 'percentage'
+      ? 'Percentage'
+      : method
+        ? 'Historical: ' + method.replaceAll('_', ' ')
+        : 'Not configured'
+
+export default function TeacherPayrollView({
+  branchId,
+  branchName = 'Main Campus',
+  initialTeacherId = null,
+  exportTarget = null,
+}) {
+  const { can, roles = [] } = usePermissions()
+  const canManage =
+    can(PERMISSIONS.EXPENSES_MANAGE) && roles.some((r) => ['admin', 'super_admin'].includes(r))
+  const [resource, setResource] = useState(() => peekPageResource(`payroll:${branchId}`, { key: branchId + ':0' })),
+    [request, setRequest] = useState(0),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState('')
+  const [search, setSearch] = useState(''),
+    [methodFilter, setMethodFilter] = useState('all'),
+    [statusFilter, setStatusFilter] = useState('all'),
+    [courseFilter, setCourseFilter] = useState('all'),
+    [batchFilter, setBatchFilter] = useState('all')
+  const [page, setPage] = useState(1),
+    [pageSize, setPageSize] = useState(10)
+  const [agreement, setAgreement] = useState(null),
+    [payLine, setPayLine] = useState(null),
+    [slip, setSlip] = useState(null)
+  const initialOpened = useRef(null)
+  const key = branchId + ':' + request
+  const current = resource?.key === key ? resource : null
+  const loading = !current && !error
+  const data = current?.data || { period: null, lines: [], payments: [] },
+    eligible = current?.eligible || []
   useEffect(() => {
     let active = true
-    const run = async () => {
+    const loadVersion = capturePageVersion()
+    async function load() {
+      setError('')
       try {
-        const agreementsResult = await payrollService.getAgreements({ branchId })
+        const details = await payrollService.getRunningOverview({ branchId })
         if (!active) return
-        setTeachersWithAgreements(agreementsResult.teachers || [])
-
-        let periodDetails = await payrollService.getPeriodDetails(null, { branchId, yearMonth: selectedMonth })
-        if (canManage && !periodDetails.period) {
-          periodDetails = await payrollService.calculatePeriod({ yearMonth: selectedMonth }, { branchId })
-        }
-        if (!active) return
-        setData(periodDetails)
-
-        if (initialTeacherId && initialOpened.current !== initialTeacherId) {
-          const match = (agreementsResult.teachers || []).find(t => t.teacherId === initialTeacherId)
-          if (match) {
-            initialOpened.current=initialTeacherId
-            setAgreementModal({
-              open: true,
-              teacher: match,
-              agreement: match.agreement,
-            })
-          }
+        setResource(rememberPageResource(`payroll:${branchId}`, { key, data: details, eligible: details.teachers || [] }, loadVersion))
+        const target = (details.teachers || []).find((a) => a.teacherId === initialTeacherId)
+        if (canManage && target && initialOpened.current !== initialTeacherId) {
+          initialOpened.current = initialTeacherId
+          setAgreement(target)
         }
       } catch (err) {
         if (active) setError(err.message)
-      } finally {
-        if (active) setLoading(false)
       }
     }
-    run()
-    return () => { active = false }
-  }, [branchId, selectedMonth, initialTeacherId, canManage])
-
-  // Recalculate
-  async function handleRecalculate() {
-    setLoading(true)
+    load()
+    return () => {
+      active = false
+    }
+  }, [branchId, request, key, canManage, initialTeacherId])
+  async function mutate(action) {
+    setBusy(true)
     setError('')
     try {
-      const res = await payrollService.calculatePeriod({ yearMonth: selectedMonth }, { branchId })
-      setData(res)
-      setMessage(`Payroll for ${selectedMonth} recalculated successfully.`)
+      await action()
+      setRequest((v) => v + 1)
     } catch (err) {
       setError(err.message)
+      throw err
     } finally {
-      setLoading(false)
+      setBusy(false)
     }
   }
-
-  // Approve Period
-  async function handleApprovePeriod() {
-    if (!data.period) return
-    setLoading(true)
-    setError('')
-    try {
-      await payrollService.approvePeriod(data.period.id, { branchId })
-      await loadPayroll()
-      setMessage(`Payroll period ${selectedMonth} approved successfully.`)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function loadPayrollAfterChange(){
-    if(data.period?.approvedAt || ['Approved','Partially Paid','Paid'].includes(data.period?.status))return loadPayroll()
-    let refreshError=''
-    try{await payrollService.calculatePeriod({yearMonth:selectedMonth},{branchId})}catch(error){refreshError=error.message}
-    await loadPayroll()
-    if(refreshError)setError('Change saved. '+refreshError)
-  }
-
-  // Handle Save Agreement
-  async function handleSaveAgreement(record) {
-    await payrollService.saveAgreement(record, { branchId })
-    await loadPayrollAfterChange()
-    setMessage(data.period?.approvedAt?'Salary agreement saved. Approved payroll is unchanged; select an unapproved month to apply it.':'Salary agreement saved.')
-  }
-
-  // Handle Disburse Payment
-  async function handleDisburse(record) {
-    await payrollService.recordPayment(record, { branchId })
-    await loadPayroll()
-    setMessage(`Disbursement of PKR ${Number(record.amount).toLocaleString()} posted to Finance expenses.`)
-  }
-
-  // Handle Advance
-  async function handleRequestAdvance(record) {
-    await payrollService.requestAdvance(record, { branchId })
-    await loadPayrollAfterChange()
-    setMessage(`Advance of PKR ${Number(record.amount).toLocaleString()} disbursed and queued for recovery.`)
-  }
-
-  // Handle Manual Adjustment
-  async function handleAddAdjustment(record) {
-    await payrollService.addAdjustment(record, { branchId })
-    await loadPayrollAfterChange()
-    setMessage('Manual salary adjustment applied.')
-  }
-
-  // Handle View Payslip
-  async function handleViewPayslip(line) {
-    try {
-      const slip = await payrollService.getPayslip(line.id, { branchId })
-      setPayslipModal({ open: true, data: slip })
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  // Filtered rows
-  const filteredLines = useMemo(() => {
-    return (data.lines || []).filter(line => {
-      const matchSearch = !search || line.teacherName.toLowerCase().includes(search.toLowerCase()) || (line.designation || '').toLowerCase().includes(search.toLowerCase())
-      const matchMethod = methodFilter === 'all' || line.calculationMethod === methodFilter
-      const matchStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'paid' && line.status === 'Paid') ||
-        (statusFilter === 'partial' && line.status === 'Partially Paid') ||
-        (statusFilter === 'pending' && line.status !== 'Paid' && line.status !== 'Partially Paid')
-      return matchSearch && matchMethod && matchStatus
-    })
-  }, [data.lines, search, methodFilter, statusFilter])
-
-  // Pagination
-  const totalPages = Math.ceil(filteredLines.length / pageSize) || 1
-  const paginatedLines = useMemo(() => {
-    const start = (Math.min(page,totalPages) - 1) * pageSize
-    return filteredLines.slice(start, start + pageSize)
-  }, [filteredLines, page, pageSize, totalPages])
-
-  // Exports
-  function exportPdf() {
-    const headers = ['Teacher', 'Method', 'Base (PKR)', 'Allowances', 'Deductions', 'Advances', 'Net Payable', 'Disbursed', 'Balance', 'Status']
-    const rows = filteredLines.map(l => [
-      l.teacherName,
-      l.calculationMethod.replace('_', ' ').toUpperCase(),
-      Number(l.baseEarnings).toLocaleString(),
-      Number(l.allowances).toLocaleString(),
-      Number(l.deductions).toLocaleString(),
-      Number(l.advancesDeducted).toLocaleString(),
-      Number(l.netPayable).toLocaleString(),
-      Number(l.totalPaid).toLocaleString(),
-      Number(l.outstanding).toLocaleString(),
-      l.status,
-    ])
-    exportTablePdf({
-      filename: `teacher-payroll-${selectedMonth}.pdf`,
-      title: `Teacher Payroll & Salary Report — ${selectedMonth}`,
-      branchName,
-      headers,
-      rows,
-    })
-  }
-
-  function exportCsv() {
-    const headers = ['Teacher ID', 'Teacher Name', 'Method', 'Base Earnings', 'Allowances', 'Deductions', 'Advances Recovered', 'Net Payable', 'Total Paid', 'Outstanding Balance', 'Status']
-    const rows = filteredLines.map(l => [
-      l.teacherId,
-      l.teacherName,
-      l.calculationMethod,
-      l.baseEarnings,
-      l.allowances,
-      l.deductions,
-      l.advancesDeducted,
-      l.netPayable,
-      l.totalPaid,
-      l.outstanding,
-      l.status,
-    ])
-    downloadCsv(`teacher-payroll-${selectedMonth}.csv`, headers, rows)
-  }
-
-  const exportButtons = (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={exportPdf}
-              disabled={loading || !filteredLines.length}
-              className="h-9 gap-1.5 rounded-xl bg-[#940016] text-xs font-semibold text-white shadow-xs hover:bg-[#7a0012] cursor-pointer"
-            >
-              <FileText size={15} aria-hidden="true" />
-              Export PDF
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={exportCsv}
-              disabled={loading || !filteredLines.length}
-              className="h-9 gap-1.5 rounded-xl bg-[#940016] text-xs font-semibold text-white shadow-xs hover:bg-[#7a0012] cursor-pointer"
-            >
-              <FileSpreadsheet size={15} aria-hidden="true" />
-              Export CSV
-            </Button>
-          </div>
+  const lines = useMemo(() => data.lines.filter((l) => !l.supersededAt), [data.lines])
+  const courseOptions = [...new Map(lines.filter((l) => l.courseId).map((l) => [l.courseId, { value: l.courseId, label: l.courseName || 'Unnamed course' }])).values()]
+    .sort((a, b) => a.label.localeCompare(b.label))
+  const batchOptions = [...new Map(lines.filter((l) => l.batchId && (courseFilter === 'all' || l.courseId === courseFilter)).map((l) => [l.batchId, {
+    value: l.batchId,
+    label: courseFilter === 'all' && l.courseName ? `${l.batchName || 'Unnamed batch'} · ${l.courseName}` : l.batchName || 'Unnamed batch',
+  }])).values()].sort((a, b) => a.label.localeCompare(b.label))
+  const filtered = useMemo(
+    () =>
+      lines.filter(
+        (l) =>
+          (!search ||
+            [l.teacherName, l.courseName, l.batchName, l.subjectName].some((v) =>
+              (v || '').toLowerCase().includes(search.toLowerCase())
+            )) &&
+          (methodFilter === 'all' || l.calculationMethod === methodFilter) &&
+          (courseFilter === 'all' || l.courseId === courseFilter) &&
+          (batchFilter === 'all' || l.batchId === batchFilter) &&
+          (statusFilter === 'all' ||
+            (statusFilter === 'paid'
+              ? l.status === 'Paid'
+              : statusFilter === 'partial'
+                ? l.status === 'Partially Paid'
+                : l.status !== 'Paid' && l.status !== 'Partially Paid'))
+      ),
+    [lines, search, methodFilter, statusFilter, courseFilter, batchFilter]
   )
-
-  const period = data.period || {}
-  const isPeriodApproved = ['Approved', 'Partially Paid', 'Paid'].includes(period.status)
-
-  const actionControls = (
-      <div className="flex flex-wrap justify-end gap-2">
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Month Selector */}
-          <div className="flex items-center gap-1.5 bg-white border-0 rounded-xl px-2 py-0 text-xs h-8">
-            <Calendar size={14} className="text-primary" />
-            <Input aria-label="Payroll month" type="month" disabled={loading} value={selectedMonth} onChange={e=>{if(e.target.value){setSelectedMonth(e.target.value);setPage(1);setLoading(true);setError('');setMessage('');setData({period:null,lines:[],payments:[],advances:[]})}}} className="h-7 w-32 border-0 bg-transparent px-1 shadow-none text-xs font-semibold focus:border-0 focus:ring-0 focus:outline-none focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"/>
-
-          </div>
-
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize)),
+    visible = filtered.slice(
+      (Math.min(page, pages) - 1) * pageSize,
+      Math.min(page, pages) * pageSize
+    )
+  const totals = lines.reduce(
+    (a, l) => ({
+      due: a.due + l.netPayable,
+      paid: a.paid + l.totalPaid,
+      remaining: a.remaining + l.outstanding,
+    }),
+    { due: 0, paid: 0, remaining: 0 }
+  )
+  const progressTotals = lines
+    .filter((line) => methodFilter === 'all' || line.calculationMethod === methodFilter)
+    .reduce((sum, line) => ({ due: sum.due + line.netPayable, paid: sum.paid + line.totalPaid }), { due: 0, paid: 0 })
+  const progressPercent = progressTotals.due > 0
+    ? Math.max(0, Math.min(100, (progressTotals.paid / progressTotals.due) * 100))
+    : 0
+  const progressLabel = methodFilter === 'all' ? 'All Methods' : labelMethod(methodFilter)
+  const reportHeaders = [
+    'Teacher',
+    'Course',
+    'Batch',
+    'Subject',
+    'Assignment ID',
+    'Method',
+    'Eligible Students',
+    'Fee Basis',
+    'Listed Fee',
+    'Percentage / Fixed Rate',
+    'Salary Due',
+    'Salary Paid',
+    'Salary Remaining',
+    'Status',
+    'Calculation / Issue',
+  ]
+  const reportRows = filtered.map((l) => [
+    l.teacherName,
+    l.courseName || 'Historical',
+    l.batchName || 'Historical',
+    l.subjectName || 'Historical',
+    l.facultyAssignmentId || 'Historical',
+    labelMethod(l.calculationMethod),
+    l.calculationDetails?.eligibleStudents ?? '',
+    l.calculationDetails?.feeBasis || '',
+    l.calculationDetails?.applicableFee ?? '',
+    l.calculationMethod === 'percentage'
+      ? l.calculationDetails?.feePercentage + '%'
+      : (l.calculationDetails?.fixedRate ?? l.baseEarnings),
+    l.netPayable,
+    l.totalPaid,
+    l.outstanding,
+    l.status,
+    l.calculationError || l.calculationDetails?.description || '',
+  ])
+  const exports = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        size="sm"
+        disabled={loading || !filtered.length}
+        onClick={() =>
+          exportTablePdf({
+            filename: 'teacher-salary-balances.pdf',
+            title: 'Teacher Salary Balances',
+            branchName,
+            headers: reportHeaders,
+            rows: reportRows,
+          })
+        }
+      >
+        <FileText size={15} />
+        Export PDF
+      </Button>
+      <Button
+        size="sm"
+        disabled={loading || !filtered.length}
+        onClick={() => downloadCsv('teacher-salary-balances.csv', reportHeaders, reportRows)}
+      >
+        <FileSpreadsheet size={15} />
+        Export CSV
+      </Button>
+    </div>
+  )
+  async function openSlip(line) {
+    setError('')
+    try {
+      setSlip(await payrollService.getPayslip(line.id, { branchId }))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+  const kpis = [
+    ['Total Salary Payable', money(totals.due), 'Assignment salary due'],
+    ['Total Salary Paid', money(totals.paid), 'Verified salary payments'],
+    ['Total Salary Remaining', money(totals.remaining), 'Outstanding salary'],
+    [
+      'Teachers with Assignments',
+      new Set(eligible.map((a) => a.teacherId)).size,
+      'Current eligible faculty',
+    ],
+    [
+      'Active Salary Agreements',
+      eligible.filter((a) => a.agreement).length,
+      'Current assignment agreements',
+    ],
+    [
+      'Pending Salary Payments',
+      lines.filter((l) => l.outstanding > 0).length,
+      'Assignment balances due',
+    ],
+  ]
+  return (
+    <div className="space-y-3">
+      {exportTarget ? createPortal(exports, exportTarget) : exports}
+      {error && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
+          {error}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRecalculate}
-            disabled={loading || !canManage || isPeriodApproved}
-            className="h-8 gap-1 text-xs cursor-pointer bg-white"
-            title="Recalculate formulas and sync lectures/admissions"
+            onClick={() => {
+              setError('')
+              setRequest((v) => v + 1)
+            }}
           >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            Recalculate
+            Retry
           </Button>
-
-          {canManage && !isPeriodApproved && (
-            <Button
-              size="sm"
-              onClick={handleApprovePeriod}
-              disabled={loading || !data.lines.length}
-              className="h-8 gap-1 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs cursor-pointer"
-            >
-              <CheckCircle2 size={13} />
-              Approve Payroll
-            </Button>
-          )}
-
-          {canManage && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={loading}
-              onClick={() => setAdvanceModal({ open: true })}
-              className="h-8 gap-1 text-xs cursor-pointer bg-white border-amber-300 text-amber-900 hover:bg-amber-50"
-            >
-              <HandCoins size={13} className="text-amber-700" />
-              Staff Advance
-            </Button>
-          )}
-
-          {!exportTarget && exportButtons}
-        </div>
-      </div>
-
-  )
-
-  return (
-    <div className="space-y-3">
-      {exportTarget && createPortal(exportButtons, exportTarget)}
-      {actionsTarget ? createPortal(actionControls, actionsTarget) : actionControls}
-
-      {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-medium text-emerald-800 flex items-center justify-between">
-          <span>{message}</span>
-          <button onClick={() => setMessage('')} className="text-emerald-700 hover:text-emerald-900 font-bold ml-2">&times;</button>
         </div>
       )}
-
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium text-red-800 flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-700 hover:text-red-900 font-bold ml-2">&times;</button>
-        </div>
-      )}
-
-      {isPeriodApproved&&<p className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">Approved payroll is locked to preserve salary and payment history. Agreement changes apply when you calculate an unapproved month.</p>}
-      {/* 6 KPI Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-        <Card className="rounded-2xl border border-[#c9eed6] bg-linear-145 from-white via-[#f4fbf7] to-[#e6f6ee] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Gross Earnings</span>
-          <div className="text-xl break-words font-bold text-foreground">
-            PKR {(period.totalGross || 0).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Base calculations</span>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#f7e2c2] bg-linear-145 from-white via-[#fffbf2] to-[#fdf2de] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Allowances</span>
-          <div className="text-xl break-words font-bold text-foreground">
-            +PKR {(period.totalAllowances || 0).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Medical &amp; Conveyance</span>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#cde0fc] bg-linear-145 from-white via-[#f4f8fe] to-[#e7f1fe] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Deductions</span>
-          <div className="text-xl break-words font-bold text-foreground">
-            -PKR {((period.totalDeductions || 0) + (period.totalAdvancesDeducted || 0)).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Tax &amp; Advance Recovery</span>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#f7e2c2] bg-linear-145 from-white via-[#fffbf2] to-[#fdf2de] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Net Payable</span>
-          <div className="text-xl break-words font-extrabold text-foreground">
-            PKR {(period.totalNetPayable || 0).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Monthly Obligation</span>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#c9eed6] bg-linear-145 from-white via-[#f4fbf7] to-[#e6f6ee] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Disbursed (Paid)</span>
-          <div className="text-xl break-words font-bold text-foreground">
-            PKR {(period.totalPaid || 0).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Posted to Finance</span>
-        </Card>
-
-        <Card className="rounded-2xl border border-[#cde0fc] bg-linear-145 from-white via-[#f4f8fe] to-[#e7f1fe] shadow-xs min-h-[120px] min-w-0 px-4 py-1.5 flex flex-col justify-between gap-3.5">
-          <span className="text-[11px] font-bold uppercase tracking-normal text-muted-foreground block">Balance Due</span>
-          <div className="text-xl break-words font-bold text-foreground">
-            PKR {(period.totalOutstanding || 0).toLocaleString()}
-          </div>
-          <span className="text-[11px] text-muted-foreground block">Remaining Outflow</span>
-        </Card>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+        {kpis.map(([title, value, note], i) => (
+          <Card
+            key={title}
+            className={`flex min-h-[120px] min-w-0 flex-col justify-between gap-3 rounded-2xl border px-4 py-3 shadow-xs ${palette[i % 3]}`}
+          >
+            <span className="text-[11px] font-bold uppercase text-muted-foreground">{title}</span>
+            <strong className="break-words text-xl text-foreground">{value}</strong>
+            <span className="text-[11px] text-muted-foreground">{note}</span>
+          </Card>
+        ))}
       </div>
-
-      {/* Visual Comparison & Method Breakdown Bar */}
-      <Card className="rounded-2xl border border-border/80 bg-white shadow-xs px-4 py-2">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Progress / Cashflow representation */}
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-foreground">Disbursement Progress</span>
-              <span className="text-muted-foreground font-mono">
-                {period.totalNetPayable > 0
-                  ? `${Math.round(((period.totalPaid || 0) / period.totalNetPayable) * 100)}% Paid`
-                  : '0% Paid'}
-              </span>
+      <Card className="rounded-xl border border-border/80 bg-card px-4 py-2.5 shadow-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="min-w-0 basis-48 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+              <p className="font-semibold">Salary Payment Progress <span className="font-normal text-muted-foreground">· {progressLabel}</span></p>
+              <span className="font-semibold tabular-nums text-emerald-700">{Math.round(progressPercent)}% paid</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden flex">
+            <div role="progressbar" aria-label={`${progressLabel} salary payments`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressPercent)} aria-valuetext={`${money(progressTotals.paid)} paid of ${money(progressTotals.due)}`} className="h-1.5 overflow-hidden rounded-full bg-primary/10">
               <div
-                className="bg-emerald-600 transition-all duration-300"
-                style={{ width: `${period.totalNetPayable > 0 ? ((period.totalPaid || 0) / period.totalNetPayable) * 100 : 0}%` }}
-              />
-              <div
-                className="bg-[#940016] transition-all duration-300"
-                style={{ width: `${period.totalNetPayable > 0 ? ((period.totalOutstanding || 0) / period.totalNetPayable) * 100 : 0}%` }}
+                className="h-full bg-emerald-600"
+                style={{
+                  width: `${progressPercent}%`,
+                }}
               />
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground pt-0">
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-emerald-600" /> Disbursed (PKR {(period.totalPaid || 0).toLocaleString()})
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-[#940016]" /> Remaining Due (PKR {(period.totalOutstanding || 0).toLocaleString()})
-              </span>
-            </div>
           </div>
-
-          <div className="w-full md:w-56 shrink-0 space-y-1 border-t border-border/60 pt-2 md:border-t-0 md:border-l md:pl-5 md:pt-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Calculation Method</span>
-            <CustomSelect
-              aria-label="Calculation method"
-              value={methodFilter}
-              onChange={value => { setMethodFilter(value); setPage(1) }}
-              options={[
-                { value: 'all', label: 'All Methods', icon: Calculator },
-                { value: 'fixed', label: 'Fixed Monthly', icon: DollarSign },
-                { value: 'per_lecture', label: 'Per Lecture', icon: Calculator },
-                { value: 'per_student', label: 'Per Student', icon: GraduationCap },
-                { value: 'fee_percentage', label: 'Fee %', icon: Percent },
-              ]}
-              containerClassName="block w-full"
-              className="w-full h-9 rounded-xl border-primary/15 bg-[#fcf5f7] hover:bg-[#F9EBEE]"
-              menuWidthClass="w-full min-w-[180px]"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Table Toolbar & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative w-full flex-1 sm:max-w-md">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search faculty name, subject, or role..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="pl-9 h-10 rounded-xl bg-white text-xs"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
           <CustomSelect
-            aria-label="Payment status"
-            value={statusFilter}
-            onChange={value => { setStatusFilter(value); setPage(1) }}
+            aria-label="Calculation method"
+            menuAlign="right"
+            menuWidthClass="min-w-[140px] max-w-[150px]"
+            value={methodFilter}
+            onChange={(v) => {
+              setMethodFilter(v)
+              setPage(1)
+            }}
             options={[
-              { value: 'all', label: 'All Payment Statuses' },
-              { value: 'paid', label: 'Fully Paid', dot: 'bg-emerald-600' },
-              { value: 'partial', label: 'Partially Paid', dot: 'bg-amber-500' },
-              { value: 'pending', label: 'Pending / Unpaid', dot: 'bg-[#940016]' },
+              { value: 'all', label: 'All Methods' },
+              { value: 'percentage', label: 'Percentage' },
+              { value: 'fixed', label: 'Fixed Salary' },
             ]}
-            containerClassName="relative min-w-0 flex-1 sm:flex-none"
-            className="w-full sm:w-52 h-10 rounded-xl border-primary/15 bg-white hover:bg-[#fcf5f7]"
-            menuWidthClass="w-full min-w-[180px]"
           />
-
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            Showing <strong>{filteredLines.length}</strong> teachers
-          </span>
         </div>
-      </div>
-
-      {/* Payroll Table */}
-      <Card className="rounded-2xl border border-border/80 bg-white overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap [&_th]:px-1.5 [&_td]:px-1.5 2xl:[&_th]:px-3 2xl:[&_td]:px-3">
-            <thead className="bg-[#fcf5f7] border-b border-primary/10 text-[10px] uppercase font-bold text-primary tracking-wider">
-              <tr>
-                <th className="p-3.5 pl-4">Teacher &amp; Role</th>
-                <th className="p-3.5">Method</th>
-                <th className="p-3.5">Calculation Details</th>
-                <th className="p-3.5 text-right">Base (PKR)</th>
-                <th className="p-3.5 text-right">Allow. / Deduct.</th>
-                <th className="p-3.5 text-right">Net Payable</th>
-                <th className="p-3.5 text-right">Disbursed</th>
-                <th className="p-3.5 text-right">Balance Due</th>
-                <th className="p-3.5 text-center">Status</th>
-                <th className="p-3.5 pr-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/60">
-              {loading ? (
-                <tr>
-                  <td colSpan="10" className="p-8 text-center text-muted-foreground">
-                    <Loader2 size={20} className="animate-spin inline mr-2 text-primary" />
-                    Calculating payroll records...
-                  </td>
-                </tr>
-              ) : paginatedLines.length === 0 ? (
-                <tr>
-                  <td colSpan="10" className="p-8 text-center text-muted-foreground">
-                    No payroll lines match the selected filters for {selectedMonth}.
-                  </td>
-                </tr>
-              ) : (
-                paginatedLines.map(line => {
-                  const isPaid = line.status === 'Paid'
-                  const isPartial = line.status === 'Partially Paid'
-                  const teacherMeta = teachersWithAgreements.find(t => t.teacherId === line.teacherId)
-
-                  return (
-                    <tr key={line.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="p-3.5 pl-4">
-                        <strong className="text-foreground block">{line.teacherName}</strong>
-                        <span className="text-[10px] text-muted-foreground">{line.designation}</span>
-                      </td>
-
-                      <td className="p-3.5">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-primary/5 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/10">
-                          {line.calculationMethod === 'fixed' && <DollarSign size={10} />}
-                          {line.calculationMethod === 'per_lecture' && <Calculator size={10} />}
-                          {line.calculationMethod === 'per_student' && <GraduationCap size={10} />}
-                          {line.calculationMethod === 'fee_percentage' && <Percent size={10} />}
-                          {line.calculationMethod.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </td>
-
-                      <td className="p-3.5">
-                        <span className="text-[11px] text-foreground block font-medium">
-                          {line.calculationDetails?.description || 'Standard calculation'}
-                        </span>
-                        {line.advancesDeducted > 0 && (
-                          <span className="text-[10px] text-amber-700 block mt-0.5">
-                            Advance recovered: PKR {line.advancesDeducted.toLocaleString()}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="p-3.5 text-right font-semibold text-foreground">
-                        PKR {Number(line.baseEarnings).toLocaleString()}
-                      </td>
-
-                      <td className="p-3.5 text-right">
-                        <div className="text-[11px]">
-                          {line.allowances > 0 && <span className="text-emerald-700 block">+{line.allowances.toLocaleString()}</span>}
-                          {line.deductions > 0 && <span className="text-red-700 block">-{line.deductions.toLocaleString()}</span>}
-                          {line.allowances === 0 && line.deductions === 0 && <span className="text-muted-foreground">0</span>}
-                        </div>
-                      </td>
-
-                      <td className="p-3.5 text-right font-bold text-foreground">
-                        PKR {Number(line.netPayable).toLocaleString()}
-                      </td>
-
-                      <td className="p-3.5 text-right font-bold text-emerald-700">
-                        PKR {Number(line.totalPaid).toLocaleString()}
-                      </td>
-
-                      <td className="p-3.5 text-right font-bold text-primary">
-                        PKR {Number(line.outstanding).toLocaleString()}
-                      </td>
-
-                      <td className="p-3.5 text-center">
-                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                          isPaid
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : isPartial
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {line.status}
-                        </span>
-                      </td>
-
-                      <td className="p-3.5 pr-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Disburse Payment Button (Super Admin only) */}
-                          {canManage && line.outstanding > 0 && isPeriodApproved && (
-                            <Button
-                              size="sm"
-                              disabled={loading}
-                              onClick={() => setDisburseModal({ open: true, line })}
-                              className="h-7 px-2 text-[10px] font-bold bg-[#940016] hover:bg-[#7a0012] text-white shadow-xs cursor-pointer"
-                            >
-                              <Banknote size={12} className="mr-1" />
-                              Pay
-                            </Button>
-                          )}
-
-
-                          {/* View Payslip */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewPayslip(line)}
-                            className="h-7 px-2 text-[10px] cursor-pointer bg-white"
-                            title="View and print official payslip"
-                          >
-                            <FileText size={12} className="mr-1 text-primary" />
-                            Payslip
-                          </Button>
-
-                          {/* Edit Agreement */}
-                          {canManage && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={loading}
-                              onClick={() => setAgreementModal({
-                                open: true,
-                                teacher: teacherMeta || { id: line.teacherId, name: line.teacherName },
-                                agreement: teacherMeta?.agreement || null,
-                              })}
-                              className="h-7 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Configure teacher salary agreement"
-                            >
-                              <Sliders size={12} />
-                            </Button>
-                          )}
-
-                          {/* Manual Adjustment */}
-                          {canManage && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={loading || isPeriodApproved}
-                              onClick={() => setAdjustmentModal({ open: true, line })}
-                              className="h-7 px-1.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Add bonus or deduction"
-                            >
-                              <Plus size={12} />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <Pagination label="Teacher payroll" page={Math.min(page,totalPages)} rows={pageSize} total={filteredLines.length} onPage={setPage} onRows={value=>{setPageSize(value);setPage(1)}}/>
-
       </Card>
-
-
-      {/* Salary Agreement Modal */}
-      {agreementModal.open && (
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-48 flex-1">
+          <Search size={16} className="absolute left-3 top-3 text-muted-foreground" />
+          <Input
+            aria-label="Search payroll"
+            placeholder="Search faculty name, course, batch or subject..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            className="pl-9"
+          />
+        </div>
+        <CustomSelect
+          aria-label="Payroll course"
+          value={courseFilter}
+          onChange={(value) => { setCourseFilter(value); setBatchFilter('all'); setPage(1) }}
+          className="max-w-full border-primary/15 bg-primary/[0.025]"
+          containerClassName="relative min-w-0 max-w-full"
+          options={[{ value: 'all', label: 'All Courses' }, ...courseOptions]}
+        />
+        <CustomSelect
+          aria-label="Payroll batch"
+          value={batchFilter}
+          onChange={(value) => { setBatchFilter(value); setPage(1) }}
+          className="max-w-full border-primary/15 bg-primary/[0.025]"
+          containerClassName="relative min-w-0 max-w-full"
+          options={[{ value: 'all', label: 'All Batches' }, ...batchOptions]}
+        />
+        <CustomSelect
+          aria-label="Payment status"
+          value={statusFilter}
+          onChange={(v) => {
+            setStatusFilter(v)
+            setPage(1)
+          }}
+          options={[
+            { value: 'all', label: 'All Payment Statuses' },
+            { value: 'paid', label: 'Paid' },
+            { value: 'partial', label: 'Partially Paid' },
+            { value: 'pending', label: 'Pending' },
+          ]}
+        />
+        <span className="text-xs text-muted-foreground">{filtered.length} assignments</span>
+      </div>
+      {loading ? (
+        <p role="status" className="flex items-center gap-2 p-4 text-sm">
+          <Loader2 className="animate-spin" size={16} />
+          Loading payroll...
+        </p>
+      ) : (
+        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs">
+          <div>
+            <table className="w-full table-fixed text-left text-[11px] xl:text-xs md:[&_td]:px-2 md:[&_td]:align-middle md:[&_td:first-child]:pl-3 xl:[&_td]:px-3 xl:[&_td:first-child]:pl-4 max-md:block">
+              <colgroup>
+                {[12, 23, 12, 12, 11, 11, 12, 7].map((width, index) => (
+                  <col key={index} style={{ width: width + '%' }} />
+                ))}
+              </colgroup>
+              <thead className="border-b bg-primary/5 text-[9px] xl:text-[10px] uppercase text-primary max-md:hidden">
+                <tr>
+                  {[
+                    'Teacher',
+                    'Course / Batch / Subject',
+                    'Method',
+                    'Salary Amount',
+                    'Already Paid',
+                    'Remaining',
+                    'Status',
+                    'Actions',
+                  ].map((h) => (
+                    <th key={h} scope="col" className={`px-2 xl:px-3 py-3 leading-4 first:pl-3 xl:first:pl-4 ${h === 'Status' ? 'md:pl-4 xl:pl-5' : ''} ${['Salary Amount', 'Actions'].includes(h) ? 'whitespace-nowrap tracking-normal' : 'whitespace-normal tracking-wide'} ${h === 'Actions' ? 'text-right pr-3 xl:pr-4' : ['Salary Amount', 'Already Paid', 'Remaining'].includes(h) ? 'text-right' : ''}`}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="max-md:block">
+                {visible.length ? (
+                  visible.map((line) => {
+                    const meta = eligible.find(
+                      (a) =>
+                        a.facultyAssignmentId === line.facultyAssignmentId &&
+                        a.teacherId === line.teacherId
+                    )
+                    return (
+                      <tr
+                        key={line.id}
+                        className="border-b border-border/50 max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:px-4 max-md:py-3"
+                      >
+                        <td
+                          data-label="Teacher"
+                          title={line.teacherName}
+                          className="truncate px-2 py-4 font-semibold max-md:col-span-2 max-md:px-0 max-md:pb-2 max-md:pt-0 max-md:text-sm"
+                        >
+                          {line.teacherName}
+                        </td>
+                        <td
+                          data-label="Assignment"
+                          className="px-2 py-4 max-md:col-span-2 max-md:px-0 max-md:py-2"
+                        >
+                          <p className="font-semibold break-words">
+                            {line.courseName || 'Historical teacher salary'}
+                          </p>
+                          <p className="mt-1 text-muted-foreground break-words">
+                            {line.batchName} {line.subjectName && ' - ' + line.subjectName}
+                          </p>
+                          <p className="mt-1 max-w-72 whitespace-normal text-[10px] text-muted-foreground">
+                            {line.calculationError || line.calculationDetails?.description}
+                          </p>
+                        </td>
+                        <td data-label="Method" className="px-2 py-4 max-md:px-0 max-md:py-2">
+                          <span className="inline-flex whitespace-nowrap rounded-lg bg-primary/5 px-2 py-1 font-semibold text-primary">
+                            {labelMethod(line.calculationMethod)}
+                          </span>
+                        </td>
+                        <td data-label="Salary" className="px-2 py-4 font-bold tabular-nums md:text-right max-md:px-0 max-md:py-2">
+                          {money(line.netPayable)}
+                        </td>
+                        <td data-label="Paid" className="px-2 py-4 font-bold tabular-nums md:text-right text-emerald-700 max-md:px-0 max-md:py-2">
+                          {money(line.totalPaid)}
+                        </td>
+                        <td data-label="Remaining" className="px-2 py-4 font-bold tabular-nums md:text-right text-primary max-md:px-0 max-md:py-2">
+                          {money(line.outstanding)}
+                        </td>
+                        <td data-label="Status" className="px-2 py-4 md:!pl-4 xl:!pl-5 max-md:px-0 max-md:py-2 [&>span]:text-[10px] xl:[&>span]:text-xs">
+                          <span style={{ backgroundColor: line.status === 'Paid' ? 'rgb(16 185 129 / 7%)' : line.status === 'Partially Paid' ? 'rgb(234 179 8 / 8%)' : 'rgb(148 163 184 / 8%)', borderColor: line.status === 'Paid' ? 'rgb(16 185 129 / 28%)' : line.status === 'Partially Paid' ? 'rgb(234 179 8 / 30%)' : 'rgb(148 163 184 / 25%)' }} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-xs font-medium leading-none ${line.status === 'Paid' ? 'text-emerald-500' : line.status === 'Partially Paid' ? 'text-yellow-500' : 'text-[#940016] dark:text-[#f5a3b3]'}`}>
+                            <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${line.status === 'Paid'
+                            ? 'bg-current'
+                            : line.status === 'Partially Paid'
+                              ? 'bg-current'
+                              : 'bg-slate-400'}`} />
+                            {line.status}
+                          </span>
+                        </td>
+                        <td data-label="Actions" className="px-2 py-4 text-right md:!pr-4 max-md:col-span-2 max-md:px-0 max-md:pb-0 max-md:pt-2">
+                          <PayrollActions line={line} canManage={canManage} meta={meta} busy={busy}
+                            onPay={() => setPayLine(line)} onSlip={() => openSlip(line)} onAgreement={() => setAgreement(meta)} />
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                      No eligible assignment salary balances. Save a Faculty course, batch and
+                      subject assignment first.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            label="Teacher payroll"
+            page={Math.min(page, pages)}
+            rows={pageSize}
+            total={filtered.length}
+            onPage={setPage}
+            onRows={(v) => {
+              setPageSize(v)
+              setPage(1)
+            }}
+          />
+        </Card>
+      )}
+      {agreement && (
         <SalaryAgreementModal
-          open={agreementModal.open}
-          onClose={() => setAgreementModal({ open: false, teacher: null, agreement: null })}
-          teacher={agreementModal.teacher}
-          initialAgreement={agreementModal.agreement}
-          onSaved={handleSaveAgreement}
-          branchId={branchId}
+          open
+          teacher={agreement}
+          initialAgreement={agreement.agreement}
+          onClose={() => setAgreement(null)}
+          onSaved={(record) => mutate(() => payrollService.saveAgreement(record, { branchId }))}
         />
       )}
-
-      {/* Disburse Payment Modal */}
-      {disburseModal.open && (
+      {payLine && (
         <DisbursePaymentModal
-          open={disburseModal.open}
-          onClose={() => setDisburseModal({ open: false, line: null })}
-          line={disburseModal.line}
-          onDisburse={handleDisburse}
+          open
+          line={payLine}
+          onClose={() => setPayLine(null)}
+          onDisburse={(record) => mutate(() => payrollService.recordPayment(record, { branchId }))}
         />
       )}
-
-      {/* Staff Advance Modal */}
-      {advanceModal.open && (
-        <StaffAdvanceModal
-          open={advanceModal.open}
-          onClose={() => setAdvanceModal({ open: false })}
-          teachers={teachersWithAgreements}
-          onRequestAdvance={handleRequestAdvance}
-        />
-      )}
-
-      {/* Manual Adjustment Modal */}
-      {adjustmentModal.open && (
-        <ManualAdjustmentModal
-          open={adjustmentModal.open}
-          onClose={() => setAdjustmentModal({ open: false, line: null })}
-          line={adjustmentModal.line}
-          onAddAdjustment={handleAddAdjustment}
-        />
-      )}
-
-      {/* Payslip Modal */}
-      {payslipModal.open && (
+      {slip && (
         <PayslipModal
-          open={payslipModal.open}
-          onClose={() => setPayslipModal({ open: false, data: null })}
-          payslipData={payslipModal.data}
+          open
+          payslipData={slip}
           branchName={branchName}
+          onClose={() => setSlip(null)}
         />
       )}
     </div>

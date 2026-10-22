@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '../ui/button.jsx'
 import { Input } from '../ui/input.jsx'
 import { facultyService } from '../../services/facultyService.js'
+import { usePermissions } from '../../hooks/usePermissions.js'
+import { PERMISSIONS } from '../../constants/permissions.js'
 
 const DAYS_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const PRESET_PATTERNS = [
@@ -31,6 +33,8 @@ export default function AssignFacultyModal({
   branchId,
   onAssigned,
 }) {
+  const { can } = usePermissions()
+  const canCreate = can(PERMISSIONS.CLASSES_MANAGE)
   const [teacherId, setTeacherId] = useState(initialAssignment?.teacherId || initialTeacherId || '')
   const [courseId,setCourseId] = useState(initialAssignment?.courseId || course?.id || '')
   const [streamId,setStreamId] = useState(courses.find(c=>c.id===(initialAssignment?.courseId || course?.id))?.streamId || '')
@@ -60,6 +64,8 @@ export default function AssignFacultyModal({
   const handleSubmit = async event => {
     event.preventDefault()
     setError('')
+
+    if (!editingId && !canCreate) return setError('Select an existing saved assignment to edit.')
 
     if (!teacherId) return setError('Please select a teacher.')
     if (!batchId) return setError('Please select a batch.')

@@ -5,6 +5,7 @@ import { Button } from '../ui/button.jsx'
 import { exportPayslipPdf } from '../../utils/pdfHelpers.js'
 import AcademyLogo from '../Layout/AcademyLogo.jsx'
 import { Download, Printer } from 'lucide-react'
+import { payrollReference, paymentReference } from '../../utils/payrollReference.js'
 
 export default function PayslipModal({
   open,
@@ -20,13 +21,13 @@ export default function PayslipModal({
   const academyName = organization?.academyName || 'The Scholar Coaching Academy'
 
   const earnItems = [
-    { label: `Base Earnings (${line.calculationDetails?.description || line.calculationMethod})`, amount: line.baseEarnings || 0 },
-    { label: 'Allowances (Conveyance & Medical)', amount: line.allowances || 0 },
+    { label: 'Base Earnings', amount: line.baseEarnings || 0 },
+    ...(line.payrollVersion >= 2 ? [] : [{ label: 'Allowances (Conveyance & Medical)', amount: line.allowances || 0 }]),
   ]
-  if (line.adjustments > 0) {
+  if ((line.payrollVersion || 1) < 2 && line.adjustments > 0) {
     earnItems.push({ label: 'Performance / Merit Bonus', amount: line.adjustments })
   }
-  const grossEarnings = (line.baseEarnings || 0) + (line.allowances || 0) + (line.adjustments > 0 ? line.adjustments : 0)
+  const grossEarnings = line.payrollVersion >= 2 ? (line.baseEarnings || 0) : (line.baseEarnings || 0) + (line.allowances || 0) + (line.adjustments > 0 ? line.adjustments : 0)
 
   const dedItems = [
     { label: 'Standard Taxes & Deductions', amount: line.deductions || 0 },
@@ -64,7 +65,7 @@ export default function PayslipModal({
     <Dialog open={open} onOpenChange={isOpen => { if (!isOpen) onClose() }}>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 shadow-2xl print:max-w-none print:max-h-none print:overflow-visible print:border-none print:shadow-none print:p-0 print:m-0 print:bg-white">
         <DialogHeader className="print:hidden">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 pr-5">
             <DialogTitle className="text-lg font-bold text-gray-900">Official Faculty Payslip</DialogTitle>
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={handlePrint} className="h-8 gap-1.5 text-xs">
@@ -83,7 +84,7 @@ export default function PayslipModal({
         </DialogHeader>
 
         {/* Printable Payslip Document Container */}
-        <div id="printable-payslip" className="mt-4 rounded-xl border border-border/80 bg-card p-6 shadow-xs space-y-6 text-foreground print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:space-y-4 print:w-full">
+        <div id="printable-payslip" className="mt-4 min-w-0 rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs space-y-5 text-foreground print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:space-y-4 print:w-full">
           {/* Branded Official Institutional Header */}
           <div className="border-b-2 border-[#940016] pb-3 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -106,10 +107,17 @@ export default function PayslipModal({
               }`}>
                 {line.status}
               </span>
-              <p className="text-[11px] text-slate-500 font-mono mt-1 font-semibold">Ref: {line.id}</p>
+              <p className="text-[11px] text-slate-500 mt-1 font-semibold">Ref: {payrollReference(line.id)}</p>
             </div>
           </div>
 
+          {line.payrollVersion >= 2 && (
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 text-xs space-y-2">
+              <p className="font-semibold text-foreground break-words">{[line.courseName, line.batchName, line.subjectName].filter(Boolean).join(' / ')}</p>
+              <p className="text-[11px] text-muted-foreground">Class ref: {payrollReference(line.facultyAssignmentId, 'CLS')}</p>
+              <p className="leading-5 text-muted-foreground break-words">{line.calculationDetails?.description}</p>
+            </div>
+          )}
           {/* Teacher and Period Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs print:grid-cols-4 print:bg-slate-50/80">
             <div>
@@ -121,17 +129,17 @@ export default function PayslipModal({
               <span className="text-slate-700">{teacher?.qualification || line.designation || 'Faculty Member'}</span>
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Period</span>
-              <strong className="text-slate-900">{line.yearMonth}</strong>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Salary Date</span>
+              <strong className="text-slate-900">{line.salaryDate || line.yearMonth}</strong>
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Method</span>
-              <span className="capitalize font-semibold text-[#940016]">{line.calculationMethod.replace('_', ' ')}</span>
+              <span className="capitalize font-semibold text-[#940016]">{String(line.calculationMethod || 'Salary').replaceAll('_', ' ')}</span>
             </div>
           </div>
 
           {/* Earnings & Deductions Tables (Side by side on print and desktop) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2">
+          <div className={`grid gap-4 ${(line.payrollVersion || 1) < 2 ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2' : 'grid-cols-1'}`}>
             {/* Earnings */}
             <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
               <div className="bg-[#940016] text-white px-3.5 py-2 text-xs font-bold flex justify-between">
@@ -152,8 +160,8 @@ export default function PayslipModal({
               </div>
             </div>
 
-            {/* Deductions */}
-            <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+            {/* Deductions: legacy history only */}
+            {(line.payrollVersion || 1) < 2 && <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
               <div className="bg-[#1e293b] text-white px-3.5 py-2 text-xs font-bold flex justify-between">
                 <span>Deductions &amp; Advances</span>
                 <span>Amount</span>
@@ -170,7 +178,7 @@ export default function PayslipModal({
                   <span>PKR {totalDeductions.toLocaleString()}</span>
                 </div>
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Net Salary Highlight Box */}
@@ -199,7 +207,7 @@ export default function PayslipModal({
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-slate-900">Verified Disbursement History</h3>
               <div className="rounded-xl border border-slate-200 overflow-hidden text-xs">
-                <table className="w-full text-left">
+                <table className="w-full table-fixed text-left text-[11px]">
                   <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase text-slate-600 font-semibold">
                     <tr>
                       <th className="p-2.5">Date</th>
@@ -212,8 +220,8 @@ export default function PayslipModal({
                     {payments.map(p => (
                       <tr key={p.id}>
                         <td className="p-2.5 text-slate-600">{p.paidAt ? getAcademyDateOnly(new Date(p.paidAt)) : 'N/A'}</td>
-                        <td className="p-2.5 font-medium">{p.method}</td>
-                        <td className="p-2.5 font-mono text-[11px] text-slate-600">{p.transactionReference}</td>
+                        <td className="p-2.5 font-medium break-words">{p.method}</td>
+                        <td className="p-2.5 text-[10px] text-slate-600 break-words">{paymentReference(p)}</td>
                         <td className="p-2.5 text-right font-bold text-emerald-700">PKR {Number(p.amount).toLocaleString()}</td>
                       </tr>
                     ))}

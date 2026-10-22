@@ -2,7 +2,7 @@ import './DashboardPage.jsx'
 import '../../components/Dashboard/SuperAdminDashboard.jsx'
 import { studentService } from '../../services/studentService.js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
 import { authService } from '../../services/authService.js'
@@ -10,7 +10,7 @@ import { classScheduleService } from '../../services/classScheduleService.js'
 import { demoWorkflowService } from '../../services/demoWorkflowService.js'
 
 
-beforeEach(() => window.history.replaceState(null, '', '/dashboard'))
+beforeEach(() => { localStorage.clear(); window.history.replaceState(null, '', '/dashboard') })
 afterEach(() => vi.useRealTimers())
 
 describe('approved shared dashboard skeleton', () => {
@@ -92,12 +92,15 @@ describe('approved shared dashboard skeleton', () => {
     window.history.replaceState(null, '', '/dashboard')
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Access unavailable' })).toBeInTheDocument()
+    cleanup()
   })
   it.each(['demo-teacher'])('renders the teacher dashboard for %s with mock courses', async (userId) => {
     await authService.login({ userId })
     render(<App />)
     expect(await screen.findByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Dashboard')
-    for (const title of ['Instructor Hub', 'Today\'s Schedule', 'Upcoming Sessions', 'Recent Teaching Activity', 'Instructor Actions']) expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+    for (const title of ['Instructor Hub', 'Today\'s Schedule', 'Upcoming Sessions', 'Recent Teaching Activity']) expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Instructor Actions' })).not.toBeInTheDocument()
+    for (const action of ['Mark Attendance', 'Grade Assignment', 'Upload Resource', 'View Syllabus']) expect(screen.queryByText(action)).not.toBeInTheDocument()
     for (const title of ['Today\'s Classes', 'Pending Assignments', 'Average Attendance', 'Assigned Batches']) expect(await screen.findByText(title)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
   })

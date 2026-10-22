@@ -9,6 +9,7 @@ export function reportDay(value) {
 }
 
 export const TREND_CONFIG = {
+  payroll: { title: 'Salary Disbursement Trend', description: 'Verified salary disbursements and accrued payouts by date', unit: 'PKR', series: [{ key: 'value', label: 'Disbursed / Paid', color: '#10b981' }, { key: 'secondary', label: 'Outstanding Balance', color: '#940016' }] },
   fees: { title: 'Collection Trend', description: 'Verified payments by receipt date', unit: 'PKR', series: [{ key: 'value', label: 'Collected', color: '#940016' }] },
   students: { title: 'Enrollment Trend', description: 'Directory students by saved enrollment date', series: [{ key: 'value', label: 'Students', color: '#940016' }] },
   admissions: { title: 'Intake Trend', description: 'Applications by submission date', series: [{ key: 'value', label: 'Applications', color: '#940016' }] },
@@ -25,6 +26,7 @@ export function reportTrendSummary(tab, rows = []) {
   const count = predicate => rows.filter(predicate).length
   const metric = (label, value, unit = 'count') => ({ label, value, unit })
   const rate = (part, total) => total > 0 ? Math.round(part / total * 1000) / 10 : null
+  if (tab === 'payroll') return [metric('Settlement rate', rate(sum('paid'), sum('salaryAmount')), 'percent'), metric('Verified paid', sum('paid'), 'PKR'), metric('Outstanding balance', sum('remainingBalance'), 'PKR')]
   if (tab === 'fees') return [metric('Collection rate', rate(sum('paid'), sum('totalFee')), 'percent'), metric('Total fees', sum('totalFee'), 'PKR'), metric('Remaining balance', sum('remainingBalance'), 'PKR')]
   if (tab === 'students') return [metric('Matching students', rows.length), metric('Active students', count(r => r.status === 'Active')), metric('Provisional students', count(r => r.status === 'Provisional'))]
   if (tab === 'admissions') return [metric('Applications', rows.length), metric('Approved applications', count(r => r.status === 'Approved')), metric('Pending applications', count(r => r.status === 'Pending'))]
@@ -59,6 +61,11 @@ export function reportTrendEvents({ tab, rows, data, branchId, filters = {} }) {
   }
   if (tab === 'fees') {
     scoped(data.payments).filter(p => eligibleIds.has(p.challanId) && p.status === 'Verified').forEach(p => add(p.paidAt, 'Verified payment', p.amount))
+  } else if (tab === 'payroll') {
+    eligibleRows.filter(row => ids.has(row.id)).forEach(row => {
+      const rowDate = row.date || (row.payPeriod && /^\d{4}-\d{2}$/.test(row.payPeriod) ? `${row.payPeriod}-01` : null)
+      add(rowDate, row.status, row.paid ?? 0, row.remainingBalance ?? 0)
+    })
   } else if (tab === 'faculty') {
     scoped(data.classes).filter(c => eligibleRows.some(row => row.teacherId === c.teacherId && row.batchId === c.batchId)).forEach(c => add(c.classDate, 'Scheduled class'))
   } else if (tab === 'courses') {

@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
 import { admissionService } from '../../services/admissionService.js'
@@ -8,7 +8,8 @@ import { MOCK_DATABASE_KEY } from '../../constants/storageKeys.js'
 import { createMockDatabase } from '../../mock/mockDatabase.js'
 
 const input = { studentName: 'DEMO Decision Student', guardianName: 'Guardian', contact: '000', dob: '2010-01-01', course: 'Demo Course Two', courseId: 'course-demo-2' }
-beforeEach(() => history.replaceState(null, '', '/admissions'))
+beforeEach(() => { localStorage.clear(); history.replaceState(null, '', '/admissions') })
+afterEach(() => cleanup())
 
 async function setupFor(userId) {
   const branchId = userId === 'demo-reception' ? 'demo-north' : 'demo-central'
@@ -31,18 +32,18 @@ describe('unresolved DEMO status authority', () => {
       expect(screen.getByRole('button', { name: 'New Admission' })).toBeInTheDocument()
       expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeInTheDocument()
     }
-    if (userId === 'demo-admin') {
+    if (['demo-admin', 'demo-reception'].includes(userId)) {
       expect(screen.getByRole('menuitem', { name: 'Approve' })).toBeInTheDocument()
       expect(screen.queryByRole('menuitem', { name: 'Reject' })).not.toBeInTheDocument()
     } else {
       expect(screen.queryByRole('menuitem', { name: 'Approve' })).not.toBeInTheDocument()
       expect(screen.queryByRole('menuitem', { name: 'Reject' })).not.toBeInTheDocument()
     }
-    if (userId === 'demo-admin') expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+    if (['demo-admin', 'demo-reception'].includes(userId)) expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
     else expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
   })
 
-  it.each(['demo-owner', 'demo-reception'])('denies direct status and delete service calls for %s without mutation', async userId => {
+  it.each(['demo-owner'])('denies direct status and delete service calls for %s without mutation', async userId => {
     const { record, branchId } = await setupFor(userId)
     const before = localStorage.getItem(MOCK_DATABASE_KEY)
     await expect(admissionService.changeStatus(record.id, { status: 'Approved', expectedStatus: 'Pending' }, { branchId })).rejects.toMatchObject({ code: 'DEMO_ACTION_DENIED' })

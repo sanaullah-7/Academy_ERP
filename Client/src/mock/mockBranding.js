@@ -33,7 +33,7 @@ export function validateBranding(value) {
 }
 
 export const mockBranding = {
-  read() {
+  read(branchId) {
     let raw
     try { raw = window.localStorage.getItem(MOCK_BRANDING_KEY) }
     catch { throw new BrandingError('STORAGE_READ_FAILED', 'Branding storage is unavailable.') }
@@ -52,11 +52,32 @@ export const mockBranding = {
     }
     normalized.sidebarText = stored.branding.sidebarText ?? stored.branding.sidebarForeground ?? DEFAULT_BRANDING.sidebarText
     normalized.sidebarIcon = stored.branding.sidebarIcon ?? stored.branding.sidebarForeground ?? DEFAULT_BRANDING.sidebarIcon
-    return validateBranding(normalized)
+    const globalBranding = validateBranding(normalized)
+    if (!branchId || !stored.branches?.[branchId]) return globalBranding
+    return validateBranding({ ...globalBranding, ...stored.branches[branchId] })
   },
-  write(value) {
+  write(value, branchId) {
     const branding = validateBranding({ ...DEFAULT_BRANDING, ...value })
-    try { window.localStorage.setItem(MOCK_BRANDING_KEY, JSON.stringify({ version: 1, branding })) }
+    let envelope = { version: 1, branding: { ...DEFAULT_BRANDING }, branches: {} }
+    try {
+      const raw = window.localStorage.getItem(MOCK_BRANDING_KEY)
+      if (raw) {
+        const stored = JSON.parse(raw)
+        if (stored?.version !== 1 || !stored.branding) throw new Error('invalid')
+        envelope = { version: 1, branding: validateBranding({ ...DEFAULT_BRANDING, ...stored.branding }), branches: stored.branches && typeof stored.branches === 'object' && !Array.isArray(stored.branches) ? stored.branches : {} }
+      }
+      if (branchId) {
+        envelope.branding = { ...envelope.branding, name: branding.name, logo: branding.logo }
+        envelope.branches = { ...envelope.branches, [branchId]: {
+          primaryColor: branding.primaryColor,
+          sidebarBackground: branding.sidebarBackground,
+          sidebarText: branding.sidebarText,
+          sidebarIcon: branding.sidebarIcon,
+          sidebarActive: branding.sidebarActive,
+        } }
+      } else envelope.branding = branding
+      window.localStorage.setItem(MOCK_BRANDING_KEY, JSON.stringify(envelope))
+    }
     catch { throw new BrandingError('STORAGE_WRITE_FAILED', 'Branding could not be saved.') }
     return branding
   },

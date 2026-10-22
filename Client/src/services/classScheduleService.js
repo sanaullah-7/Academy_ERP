@@ -16,7 +16,7 @@ export const classScheduleService = {
   list: async query => mockApi.classScheduleOperation('list', { query }, await scope(query, PERMISSIONS.CLASSES_VIEW)),
   getById: async (id, query) => mockApi.classScheduleOperation('get', { id, query }, await scope(query, PERMISSIONS.CLASSES_VIEW)),
   create: async (record, query) => mockApi.classScheduleOperation('create', { record, query }, await scope(query, PERMISSIONS.CLASSES_MANAGE)),
-  update: async (id, record, query) => mockApi.classScheduleOperation('update', { id, record, query }, await scope(query, PERMISSIONS.CLASSES_MANAGE)),
+  update: async (id, record, query) => mockApi.classScheduleOperation('update', { id, record, query }, await scope(query, PERMISSIONS.CLASSES_EDIT)),
   delete: async (id, query) => mockApi.classScheduleOperation('delete', { id, query }, await scope(query, PERMISSIONS.CLASSES_MANAGE)),
 }
 

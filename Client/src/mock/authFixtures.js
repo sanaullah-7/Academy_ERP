@@ -14,8 +14,7 @@ export const DEMO_USERS = Object.freeze([
   user('demo-owner', 'Academy Owner', [assignment('demo-central', [ROLES.OWNER])]),
   user('demo-reception', 'Receptionist', [assignment('demo-north', [ROLES.RECEPTIONIST])]),
   user('demo-teacher', 'Faculty Teacher', [assignment('demo-central', [ROLES.TEACHER])]),
-  user('teacher-irfan', 'Dr. Irfan (Bio)', [assignment('demo-central', [ROLES.TEACHER]), assignment('demo-north', [ROLES.TEACHER])]),
-  user('teacher-naeem', 'Prof. Naeem (Chem)', [assignment('demo-central', [ROLES.TEACHER])]),
+  user('teacher-naeem', 'Prof. Naeem (Chem)', [assignment('demo-central', [ROLES.TEACHER]), assignment('demo-north', [ROLES.TEACHER])]),
   user('teacher-bilal', 'Engr. Bilal (Phys)', [assignment('demo-central', [ROLES.TEACHER])]),
   user('teacher-danyal', 'Sir Danyal (CS)', [assignment('demo-central', [ROLES.TEACHER])]),
   user('teacher-tariq', 'Sir Tariq (Math)', [assignment('demo-central', [ROLES.TEACHER])]),
@@ -30,8 +29,16 @@ export const getDemoBranches = () => {
 }
 export const getDemoUsers = () => {
   const store = readOrganization()
-  const base = DEMO_USERS.map(user => ({ ...user, ...(store.profileOverrides?.[user.id] ?? {}), assignments: store.assignmentOverrides[user.id]?.length ? [...user.assignments, ...store.assignmentOverrides[user.id]] : user.assignments }))
-  return [...base, ...store.users].filter(user => !store.deletedUserIds.includes(user.id)).map(user => ({ ...user, assignments: user.assignments.filter(assignment => !(store.deletedBranchIds || []).includes(assignment.branchId)) }))
+  // Legacy deletion removed built-in login identities even when Faculty records
+  // still referenced them. Retain the professional identity and revoke access.
+  const base = DEMO_USERS.map(user => ({
+    ...user,
+    ...(store.profileOverrides?.[user.id] ?? {}),
+    ...(store.deletedUserIds.includes(user.id) ? { accessRevoked: true } : {}),
+    assignments: store.assignmentOverrides[user.id]?.length ? [...user.assignments, ...store.assignmentOverrides[user.id]] : user.assignments,
+  }))
+  const created = store.users.filter(user => !store.deletedUserIds.includes(user.id))
+  return [...base, ...created].map(user => ({ ...user, assignments: user.assignments.filter(assignment => !(store.deletedBranchIds || []).includes(assignment.branchId)) }))
 }
 export const findDemoUser = id => getDemoUsers().find(user => user.id === id && !user.accessRevoked)
 

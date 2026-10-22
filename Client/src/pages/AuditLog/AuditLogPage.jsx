@@ -1,4 +1,5 @@
 import { AUDIT_MODULES, AUDIT_IMPORTANCE } from '../../constants/audit.js'
+import { capturePageVersion, peekPageResource, rememberPageResource } from '../../services/localPageResources.js'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertCircle, Eye, RotateCw, ScrollText, Search } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
@@ -17,9 +18,9 @@ const defaults={search:'',module:'All',importance:'All',period:'All',from:'',to:
 const valueLabel=value=>value==null?'Not set':typeof value==='object'?JSON.stringify(value):String(value)
 export default function AuditLogPage(){
  const {branchId,branch}=useBranch()
- const [logs,setLogs]=useState([]),[filters,setFilters]=useState(defaults),[loading,setLoading]=useState(true),[error,setError]=useState(''),[page,setPage]=useState(1),[rows,setRows]=useState(10),[detail,setDetail]=useState(null)
+ const [logs,setLogs]=useState(() => peekPageResource(`audit:${branchId}`) ?? []),[filters,setFilters]=useState(defaults),[loading,setLoading]=useState(() => !peekPageResource(`audit:${branchId}`)),[error,setError]=useState(''),[page,setPage]=useState(1),[rows,setRows]=useState(10),[detail,setDetail]=useState(null)
  const load=useCallback(async()=>{await Promise.resolve();setLoading(true);setError('');try{setLogs(await auditService.list({branchId}))}catch(e){setLogs([]);setError(e.message)}finally{setLoading(false)}},[branchId])
- useEffect(()=>{let active=true;auditService.list({branchId}).then(values=>{if(active)setLogs(values)},failure=>{if(active)setError(failure.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[branchId])
+ useEffect(()=>{let active=true;const version=capturePageVersion();auditService.list({branchId}).then(values=>{if(active)setLogs(rememberPageResource(`audit:${branchId}`,values,version))},failure=>{if(active)setError(failure.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[branchId])
  const invalid=filters.period==='Custom'&&filters.from&&filters.to&&filters.from>filters.to
  const filtered=useMemo(()=>invalid?[]:filterAuditLogs(logs,filters),[logs,filters,invalid])
  const safePage=Math.min(page,Math.max(1,Math.ceil(filtered.length/rows))),visible=filtered.slice((safePage-1)*rows,safePage*rows)

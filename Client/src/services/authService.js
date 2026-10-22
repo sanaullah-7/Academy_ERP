@@ -1,5 +1,6 @@
 import { loginEmail, normalizeEmail, verifyPassword, makePasswordRecord, storePassword } from '../mock/mockCredentials.js'
 import { canAccess, PERMISSIONS } from '../constants/permissions.js'
+import { getBranchRoles, ROLES } from '../constants/roles.js'
 /**
  * Purpose: Will define auth Service for the services area of the Academy frontend.
  * Module: services
@@ -29,6 +30,10 @@ export const authService = {
     const current = readMockSession()
     if (!current?.branchId || !canAccess(PERMISSIONS.USERS_MANAGE, current.user, current.branchId)) throw new Error('Only a Super Admin can switch staff accounts.')
     const user = findDemoUser(userId)
+    const currentRoles = getBranchRoles(current.user, current.branchId)
+    if (currentRoles.includes(ROLES.ADMIN) && !currentRoles.includes(ROLES.SUPER_ADMIN) && user?.assignments?.some(a => a.roles?.includes(ROLES.SUPER_ADMIN))) {
+      throw new Error('Admin cannot switch to or escalate to a Super Admin account.')
+    }
     const branches = getAuthorizedBranches(user)
     if (!user?.enabled || !branches.length) throw new Error('Choose an active staff account with an authorized branch.')
     const branchId = branches.some(branch => branch.id === current.branchId) ? current.branchId : branches.length === 1 ? branches[0].id : null

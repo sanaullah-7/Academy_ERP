@@ -45,9 +45,10 @@ The broad proposed matrix and role-combination TBD later in this document remain
 
 This document defines the security requirements, authentication architecture, authorization rules, staff access, branch restrictions, sensitive information protections, financial controls, audit logging and security verification requirements for the Academy Management ERP.
 
-It establishes security boundaries for the four primary roles:
+It establishes security boundaries for the five primary roles:
 
 - Super Admin
+- Admin
 - Owner
 - Receptionist
 - Teacher
@@ -88,12 +89,13 @@ Do not invent permission grants.
 
 ### SEC-001 — Named Roles
 
-The application supports four primary roles:
+The application supports five primary roles:
 
 1. Super Admin
-2. Owner
-3. Receptionist
-4. Teacher
+2. Admin
+3. Owner
+4. Receptionist
+5. Teacher
 
 ### SEC-002 — Multiple Branch Assignments
 
@@ -142,6 +144,12 @@ Production passwords, tokens and secrets must never be hardcoded in source code.
 Super Admin has approved branch-management responsibilities and an authorized all-branches reporting context.
 
 Detailed sensitive-operation privileges still require explicit approval.
+
+### SEC-013 — Branch Admin Boundary
+
+CONFIRMED — 2026-10-21:
+
+Admin receives the implemented Super Admin module permissions only inside an explicitly assigned branch. Admin must not receive implicit all-branch access. Admin may create Owner, Receptionist and Teacher accounts in the active assigned branch, but must not create or assign Admin or Super Admin roles. Production enforcement remains a backend requirement; the current implementation is a frontend mock boundary.
 
 ---
 
@@ -1549,3 +1557,17 @@ Owner authorizes email/password UX and current-branch staff assignments in front
 
 ## AUDIT-LOG-20261020 - confirmed mock access and privacy policy
 Owner explicitly authorizes Audit Log visibility for active-branch single-role Super Admin only through audit.view (supersedes earlier TBD audit visibility for this frontend scope). Canonical service gate + protected route + hidden unauthorized navigation enforce demo scope. Current branch records only, no unrestricted All Branches. Safe before/after allowlist; credentials/tokens/photos/contact/notes values excluded. Password changes produce generic metadata only. Journal embedded in successful domain storage writes preserves atomicity; no readonly seed/migration backfill or failed-write events. No UI/API edit/delete history. Browser-local storage is user-controlled, so production server audit integrity, retention, authentication/security-event coverage and backend authorization remain separate tickets. This saved-change journal does not record page views, sign-in/out or exports. IN_REVIEW.
+
+## PAYROLL-TWO-METHODS - 2026-10-22
+
+Owner-approved payroll management scope is explicitly Admin/Super Admin within the selected authorized branch, checked in both UI and serialized mock adapter operations. Existing Owner FINANCE_VIEW permits read-only payroll overview; its unrelated expense-management policy is unchanged. Receptionist/Teacher cannot query or export payroll under current permissions; Teacher self-service remains disabled. Every new agreement/line carries stable assignment and academic IDs plus the single-academy mock namespace, and scope mismatches reject. This is frontend mock isolation; production server-side branch/tenant authorization remains a separate backend responsibility.
+## Owner-approved role matrix reconciliation - 2026-10-22
+
+ROLE-MATRIX-UPDATE supersedes earlier denial of Receptionist admission decisions and Owner/Receptionist reports/assets reads. Admin/Super Admin retain full existing module permissions inside assigned branches; standard Admin cannot edit/status-toggle/delete Admin or Super Admin identities, including downgrading a privileged target, nor grant higher roles. License rules and paused branch creation remain protected.
+
+Receptionist admissions approve/enroll use existing validation, audit and serialization. Admissions delete remains denied (the attachment enumerates create/edit/view/review/approve/enroll, not deletion). Independent fee management, expense operations, payroll and administration remain denied. Existing class edits use classes.edit; classes.manage remains unavailable. Asset create/update/view allowed; assign/inspect/maintenance operations denied at adapter and hidden in UI. Operational report responses exclude expenses; Finance report tab unavailable. Owner assets are readonly and reports active-branch only. Cross-branch reports include only branches where canonical role grants reports.view.
+
+Teacher branch-wide services remain denied; own financial/student/report modules are not enabled in the current implementation and are not replaced by broad branch grants. Other users' records must never become visible merely to match a navigation matrix. Existing mock role/branch access remains frontend validation, not server-enforced production security.
+# ROLE-TAB-ACCESS-STRICT — 2026-10-22
+
+The frontend mock now uses one module-access registry for sidebar, mobile drawer and global search. Hidden navigation is paired with `ProtectedRoute` checks and existing service/query/action/export permission checks. `/finance/payroll` and `?tab=payroll` require `payroll.view`; only Admin, Super Admin and Owner receive the current read scope, while payroll mutations remain Admin/Super Admin only. Branch changes recompute grants from the selected branch. Logout removes the mock session and clears transient page-resource snapshots. These controls are frontend mock enforcement, not production backend security.

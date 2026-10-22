@@ -92,6 +92,67 @@ html:has(.app-drawer[data-state="open"]) { overflow: hidden; }
 
 .dark .text-slate-950, .dark .text-slate-900, .dark .text-slate-800, .dark .text-gray-950, .dark .text-gray-900, .dark .text-gray-800 { color: #ffffff; }
 .dark .text-slate-700, .dark .text-gray-700 { color: #f1f5f9; }
+.dark .app-topbar { background: color-mix(in srgb, var(--app-surface) 92%, transparent); }
+.dark .app-shell [class~="bg-white"],
+.dark .app-shell [class~="bg-white/80"],
+.dark .app-shell [class~="bg-white/70"],
+.dark .app-shell [class~="bg-white/60"],
+.dark .app-shell [class~="bg-white/20"],
+.dark .ui-dialog-content [class~="bg-white"],
+.dark [role="menu"][class~="bg-white"] { background-color: var(--card) !important; }
+.dark .app-shell [class~="bg-slate-50"],
+.dark .app-shell [class~="bg-slate-50/90"],
+.dark .app-shell [class~="bg-slate-50/80"],
+.dark .app-shell [class~="bg-slate-50/70"],
+.dark .app-shell [class~="bg-slate-50/50"],
+.dark .app-shell [class~="bg-[#fcf5f7]"],
+.dark .app-shell [class~="bg-[#F9EBEE]"],
+.dark .app-shell [class~="bg-[#F9EBEE]/50"],
+.dark .app-shell [class~="bg-[#F9EBEE]/35"],
+.dark .app-shell [class~="bg-[#F9EBEE]/20"] { background-color: var(--muted) !important; }
+.dark .app-shell [class~="border-slate-100"],
+.dark .app-shell [class~="border-slate-200"],
+.dark .app-shell [class~="border-slate-200/90"],
+.dark .app-shell [class~="border-slate-200/80"],
+.dark .app-shell [class~="border-slate-300"] { border-color: var(--border) !important; }
+.dark .app-shell [class*="bg-linear"] { background-image: none !important; background-color: var(--card) !important; }
+.dark .app-shell [class~="bg-emerald-50"] { background-color: color-mix(in srgb, #059669 16%, var(--card)) !important; }
+.dark .app-shell [class~="bg-amber-50"] { background-color: color-mix(in srgb, #d97706 16%, var(--card)) !important; }
+.dark .app-shell [class~="bg-red-50"],
+.dark .app-shell [class~="bg-rose-50"] { background-color: color-mix(in srgb, #e11d48 16%, var(--card)) !important; }
+.dark .app-shell [class~="text-emerald-700"] { color: #6ee7b7 !important; }
+.dark .app-shell [class~="text-amber-700"] { color: #fcd34d !important; }
+.dark .app-shell [class~="text-red-700"],
+.dark .app-shell [class~="text-rose-700"] { color: #fda4af !important; }
+.dark .app-shell select,
+.dark .app-shell input,
+.dark .app-shell textarea { color: var(--foreground); }
+
+/* Legacy maroon utility classes follow the selected branch accent. */
+[class~="bg-[#940016]"] { background-color: var(--primary) !important; }
+[class~="text-[#940016]"] { color: var(--primary) !important; }
+[class~="border-[#940016]"] { border-color: var(--primary) !important; }
+[class~="bg-[#940016]/10"] { background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
+[class~="bg-[#940016]/5"] { background-color: color-mix(in srgb, var(--primary) 5%, transparent) !important; }
+[class~="border-[#940016]/10"] { border-color: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
+[class~="border-[#940016]/20"] { border-color: color-mix(in srgb, var(--primary) 20%, transparent) !important; }
+[class~="border-[#940016]/30"] { border-color: color-mix(in srgb, var(--primary) 30%, transparent) !important; }
+[class~="text-[#7a0012]"] { color: var(--primary-hover) !important; }
+[class~="bg-[#F9EBEE]"],
+[class~="bg-[#F9EBEE]/50"],
+[class~="bg-[#F9EBEE]/35"],
+[class~="bg-[#F9EBEE]/20"],
+[class~="bg-[#F9EBEE]/15"] { background-color: var(--accent) !important; }
+[class~="border-[#f0d5d9]"],
+[class~="border-[#F0D5D9]"] { border-color: var(--border) !important; }
+[class~="hover:bg-[#940016]/5"]:hover { background-color: color-mix(in srgb, var(--primary) 5%, transparent) !important; }
+[class~="hover:bg-[#F9EBEE]/50"]:hover,
+[class~="hover:bg-[#F9EBEE]/20"]:hover,
+[class~="hover:bg-[#F9EBEE]/15"]:hover { background-color: var(--accent) !important; }
+[class~="hover:border-[#940016]/40"]:hover { border-color: color-mix(in srgb, var(--primary) 40%, transparent) !important; }
+[class~="focus:border-[#940016]"]:focus { border-color: var(--primary) !important; }
+[class~="focus:ring-[#940016]"]:focus { --tw-ring-color: var(--primary) !important; }
+[class~="hover:bg-[#7a0012]"]:hover { background-color: var(--primary-hover) !important; }
 .dark .dashboard-class-slot .text-slate-950 { color: #0f172a; }
 .dark .dashboard-class-slot .text-slate-800 { color: #1e293b; }
 .dark .dashboard-class-slot .text-slate-700 { color: #334155; }

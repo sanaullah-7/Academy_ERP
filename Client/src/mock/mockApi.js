@@ -131,6 +131,9 @@ export function createMockApi({ database = createMockDatabase(), beforeRequest }
     async reportOperation(operation, args, validateScope) {
       return serialize(async () => { if (validateScope) await validateScope(); return database.reportOperation(operation, args) })
     },
+    async dashboardOperation(operation, args, validateScope) {
+      return serialize(async () => { if (validateScope) await validateScope(); return database.dashboardOperation(operation, args) })
+    },
     async deleteEmptyBranch(id) {
       return serialize(() => database.deleteEmptyBranch(id))
     },

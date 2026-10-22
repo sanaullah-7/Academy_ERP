@@ -118,7 +118,7 @@ function AssetForm({ value, onChange, editing }) {
 }
 
 // ─── Row actions dropdown (3-dots) ────────────────────────────────────────────
-function RowMenu({ item, canManage, onView, onEdit, onMaintenance }) {
+function RowMenu({ item, canManage, canOperate, onView, onEdit, onMaintenance }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState(null)
   const triggerRef = useRef(null)
@@ -214,14 +214,14 @@ function RowMenu({ item, canManage, onView, onEdit, onMaintenance }) {
                 <Pencil size={13} className="shrink-0 text-violet-600" />
                 Edit Asset
               </button>
-              <button
+              {canOperate && <button
                 type="button" role="menuitem"
                 onClick={() => { setOpen(false); setPosition(null); (['Needs Maintenance', 'Out of Service'].includes(item.condition) ? onMaintenance() : onView()) }}
                 className="flex w-full items-center gap-2 px-2 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-[#F9EBEE] hover:text-[#940016] focus-visible:bg-[#F9EBEE] focus-visible:text-[#940016] rounded-lg text-left transition-colors cursor-pointer"
               >
                 <ClipboardCheck size={12} className="shrink-0 text-emerald-600" />
                 {['Needs Maintenance', 'Out of Service'].includes(item.condition) ? 'Log Repair' : 'Inspect'}
-              </button>
+              </button>}
 
             </>
           )}
@@ -235,8 +235,9 @@ function RowMenu({ item, canManage, onView, onEdit, onMaintenance }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AssetsPage() {
   const { branchId, branch, scopeKey } = useBranch()
-  const { can } = usePermissions()
+  const { can, roles } = usePermissions()
   const canManage = can(PERMISSIONS.ASSETS_MANAGE)
+  const canOperate = canManage && !roles.includes('receptionist')
 
   // Data state
   const [result, setResult] = useState(() => peekPageResource('assets', { scopeKey, refresh: 0 }))
@@ -700,6 +701,7 @@ export default function AssetsPage() {
                               <RowMenu
                                 item={item}
                                 canManage={canManage}
+                                canOperate={canOperate}
                                 onView={() => { setSelected(item); setDialog('details') }}
                                 onEdit={() => openEdit(item)}
                                 onMaintenance={() => openAction(item, 'maintenance')}
@@ -778,7 +780,7 @@ export default function AssetsPage() {
                   </div>
                 </div>
 
-                {canManage ? (
+                {canOperate ? (
                   <form onSubmit={quickInspect} className="space-y-3">
                     {/* Asset tag selector */}
                     <div>
@@ -930,9 +932,9 @@ export default function AssetsPage() {
                 </div>
                 {canManage && selected.status !== 'Retired' && (
                   <div className="flex flex-wrap gap-2 border-t pt-3">
-                    <Button size="sm" onClick={() => openAction(selected, 'assign')}>{selected.assignedToId ? 'Reassign' : 'Assign Staff'}</Button>
-                    {selected.assignedToId && <Button size="sm" variant="outline" onClick={() => unassign(selected)}>Unassign</Button>}
-                    <Button size="sm" variant="outline" onClick={() => openAction(selected, 'maintenance')}>Log Maintenance</Button>
+                    {canOperate && <Button size="sm" onClick={() => openAction(selected, 'assign')}>{selected.assignedToId ? 'Reassign' : 'Assign Staff'}</Button>}
+                    {canOperate && selected.assignedToId && <Button size="sm" variant="outline" onClick={() => unassign(selected)}>Unassign</Button>}
+                    {canOperate && <Button size="sm" variant="outline" onClick={() => openAction(selected, 'maintenance')}>Log Maintenance</Button>}
                     <Button size="sm" variant="outline" onClick={() => openEdit(selected)}>Edit Details</Button>
                   </div>
                 )}

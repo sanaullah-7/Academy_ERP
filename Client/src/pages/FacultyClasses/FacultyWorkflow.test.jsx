@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.jsx'
 import { authService } from '../../services/authService.js'
@@ -21,6 +21,33 @@ async function signIn(userId = 'demo-admin', branchId = 'demo-central') {
 }
 
 describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
+  it('does not invent timetable slots or student counts for unassigned faculty in either branch', async () => {
+    const user = userEvent.setup()
+    for (const branchId of ['demo-central', 'demo-north']) {
+      localStorage.clear()
+      history.replaceState(null, '', '/faculty')
+      await signIn('demo-admin', branchId)
+      const view = render(<App />)
+      const link = await screen.findByRole('link', { name: /Prof\. Naeem/ })
+      const row = within(link.closest('.mobile-faculty-row'))
+      expect(row.getByText('No course assigned')).toBeInTheDocument()
+      expect(row.getByText('No batch assigned')).toBeInTheDocument()
+      await user.click(link.closest('.mobile-faculty-row'))
+      const profile = document.getElementById('faculty-mobile-details')
+      expect(within(profile).getByText('No classes assigned to this instructor yet.')).toBeInTheDocument()
+      expect(within(profile).queryByText('120 Students')).not.toBeInTheDocument()
+      view.unmount()
+    }
+  })
+
+  it('allows an unassigned built-in faculty profile to be removed from the directory', async () => {
+    await signIn()
+    expect((await facultyService.list({ branchId: 'demo-central' })).some((t) => t.id === 'teacher-naeem')).toBe(true)
+    await facultyService.deleteTeacher('teacher-naeem', { branchId: 'demo-central' })
+    expect((await facultyService.list({ branchId: 'demo-central' })).some((t) => t.id === 'teacher-naeem')).toBe(false)
+    await expect(facultyService.getById('teacher-naeem', { branchId: 'demo-central' })).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+
   it('renders persisted professional details on the faculty profile',async()=>{
     await signIn()
     const teacher=await facultyService.createTeacher({name:'QA Professional Faculty',contact:'03000000041',qualifications:'QA MSc Botany',specialization:'QA Plant Sciences',department:'QA Science Department'},{branchId:'demo-central'})
@@ -115,16 +142,16 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
 
     await screen.findAllByRole('link', { name: 'Faculty Teacher' })
 
-    // 1. Export with NO checkboxes selected -> exports all 6 teachers
+    // 1. Export with NO checkboxes selected -> exports all 5 teachers
     await user.click(screen.getByRole('button', { name: /Export CSV/i }))
     expect(downloadCsvSpy).toHaveBeenCalled()
     const allCsvRows = downloadCsvSpy.mock.calls[0][2]
-    expect(allCsvRows.length).toBe(6)
+    expect(allCsvRows.length).toBe(5)
 
     await user.click(screen.getByRole('button', { name: /Print or save PDF/i }))
     expect(exportPdfSpy).toHaveBeenCalled()
     const allPdfRows = exportPdfSpy.mock.calls[0][0].rows
-    expect(allPdfRows.length).toBe(6)
+    expect(allPdfRows.length).toBe(5)
 
     // 2. Select exactly one teacher checkbox
     const demoTeacherCheckbox = screen.getByRole('checkbox', { name: 'Select Faculty Teacher' })
@@ -132,7 +159,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     expect(demoTeacherCheckbox).toBeChecked()
 
     // Bulk action bar should appear showing 1 selected
-    expect(await screen.findByText(/1 of 6 record.*selected/i)).toBeInTheDocument()
+    expect(await screen.findByText(/1 of 5 record.*selected/i)).toBeInTheDocument()
 
     // Export CSV with 1 selected (use the circular toolbar button)
     downloadCsvSpy.mockClear()
@@ -159,7 +186,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     downloadCsvSpy.mockClear()
     await user.click(screen.getAllByRole('button', { name: /Export CSV/i })[0])
     expect(downloadCsvSpy).toHaveBeenCalled()
-    expect(downloadCsvSpy.mock.calls[0][2].length).toBe(6)
+    expect(downloadCsvSpy.mock.calls[0][2].length).toBe(5)
   })
 
   it('adds a new faculty member, updates the roster, and selects their profile', async () => {
@@ -169,7 +196,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
     render(<App />)
 
     await screen.findAllByRole('link', { name: 'Faculty Teacher' })
-    expect(screen.getByText('6 / 6 teachers')).toBeInTheDocument()
+    expect(screen.getByText('5 / 5 teachers')).toBeInTheDocument()
 
     // Click + Add Faculty Member
     await user.click(screen.getByRole('button', { name: /\+ Add Faculty Member/i }))
@@ -187,7 +214,7 @@ describe('Faculty & Classes Table Utilities & End-to-End Workflow', () => {
 
     // Roster updates and includes the new teacher
     expect(await screen.findByRole('link', { name: 'Dr. Ayesha Malik' })).toBeInTheDocument()
-    expect(screen.getByText('7 / 7 teachers')).toBeInTheDocument()
+    expect(screen.getByText('6 / 6 teachers')).toBeInTheDocument()
   })
 
   it('assigns teacher to a batch/subject, syncs with Daily Dashboard class, and allows removing assignment', async () => {

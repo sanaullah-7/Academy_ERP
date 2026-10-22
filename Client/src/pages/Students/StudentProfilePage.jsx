@@ -174,7 +174,7 @@ export default function StudentProfilePage() {
   const displaySubjects = student?.subjects?.length > 0
     ? student.subjects
     : [
-        { id: 'sub-1', name: 'Biology', teacherName: 'Dr. Irfan', days: ['Mon', 'Wed', 'Fri'], startTime: '04:00 PM' },
+        { id: 'sub-1', name: 'Computer Science', teacherName: 'Sir Danyal', days: ['Mon', 'Wed', 'Fri'], startTime: '04:00 PM' },
         { id: 'sub-2', name: 'Chemistry', teacherName: 'Prof. Naeem', days: ['Daily (Mon-Sat)'], startTime: '05:15 PM' },
         { id: 'sub-3', name: 'Physics', teacherName: 'Engr. Bilal', days: ['Tue', 'Thu', 'Sat'], startTime: '06:30 PM' },
       ]
@@ -340,11 +340,11 @@ export default function StudentProfilePage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isSelected
-                        ? 'bg-white text-slate-900 border border-slate-200 shadow-xs'
+                        ? 'bg-primary text-primary-foreground border border-primary shadow-sm'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    <TabIcon size={14} className={isSelected ? 'text-[#940016]' : 'text-slate-400'} />
+                    <TabIcon size={14} className={isSelected ? 'text-primary-foreground' : 'text-slate-400'} />
                     {tab.label}
                   </button>
                 )

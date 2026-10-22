@@ -1205,3 +1205,67 @@ Files: services/payrollService.js and test; mock/mockDatabase.js and mockAudit.j
 ## PAYROLL-CORRECTIONS-UNDO - 2026-10-21
 
 Owner explicitly reverses PAYROLL-CORRECTIONS. Removed Reopen Payroll/Additional Bonus UI, modal, service operations, correction-specific audit extensions and three corresponding tests; prior approved payroll lock/payment workflow restored. Existing styling and unrelated edits preserved. No stored financial records or existing audit history deleted or migrated. Previous correction documentation marked REVERTED as historical evidence. PASS targeted ESLint, 33 focused payroll/audit/financial tests and scoped git diff --check. Build/browser NOT_RUN for undo. No commit/push. IN_REVIEW pending owner acceptance.
+
+## F12-BRANCH-ADMIN-ROLE - 2026-10-21
+
+CONFIRMED by the project owner: `Admin` is a fifth role. It has the same implemented module/tab permissions as Super Admin only within its explicitly assigned branch and gains no implicit access to any other branch. In Users, Admin may create Owner, Receptionist and Teacher accounts only; Admin and Super Admin roles remain assignable only by Super Admin. This is currently frontend mock authorization and must later be enforced by the backend.
+
+## F13-BRANCH-THEME-DARK-MODE - 2026-10-21
+
+CONFIRMED by the project owner: Super Admin or Admin theme changes apply to every role in the active assigned branch and must not affect other branches. Global primary color controls the full system accent, while sidebar background/text/icon/active colors remain independently configurable. Dark mode must provide a complete professional dark presentation with readable topbar, text, cards, tabs, tables, menus, forms and dialogs.
+
+## F13-BRANCH-NOTIFICATIONS - 2026-10-21
+
+CONFIRMED by the project owner: notifications are branch-specific and Owner is excluded. Receptionist admissions/student additions and challans notify Admin/Super Admin in that branch. Equivalent Admin/Super Admin actions notify Receptionists. Admin/Super Admin class assignment notifies the assigned Teacher only. Current delivery is browser-local mock persistence; production delivery and authorization require a backend ticket.
+
+## F02-ADMISSION-PRICING-DISPLAY - 2026-10-21
+
+CONFIRMED by the project owner: Admission subject cards must hide subject-level prices when the selected course pricing model is `One course fee`, and show individual subject prices when it is `Sum selected subject fees`. This is a presentation rule; existing configured-fee calculations remain unchanged.
+
+## DATA-LEGACY-FACULTY-LINK-REPAIR - 2026-10-21
+
+CONFIRMED by the project owner through the reported failure: deleting staff access must not destroy or invalidate retained faculty profiles, assignments or academic history. Legacy built-in teacher deletions are interpreted as access revocation. A legacy deletion tombstone may preserve reads for an already-removed created teacher's assignments, but arbitrary missing teacher references remain invalid. This is frontend mock compatibility behavior; backend identity lifecycle and referential integrity require explicit enforcement during backend integration.
+
+## DATA-LOAD-RECOVERY - 2026-10-21
+
+Historical record integrity must be independent of a teacher's current account enabled status or role. A confirmed existing identity continues to resolve old faculty assignments after deactivation or role changes; creating/updating assignments still requires an enabled Teacher in the active branch. This fixes the owner's reported cross-module load failure without re-enabling any account or clearing stored data. Actual browser snapshot replay confirmed a disabled teacher was the remaining blocker after the earlier legacy-deletion repair.
+
+## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
+
+CONFIRMED: remove only Month Selector, Recalculate and Staff Advance from Finance > Teacher Payroll header. Preserve the Payroll tab/module, calculations, agreements, batch details, payments, balances, payslips, reports and saved history; do not change Finance Overview. The previous manual month-selector UI requirement is superseded by this explicit removal. The service layer and historical records remain intact.
+
+## PAYROLL-TWO-METHODS - 2026-10-22
+
+CONFIRMED by the owner's attached two-method payroll request: new salary agreements are assignment/batch-specific and support Fixed Monthly or Percentage only. Percentage uses eligible distinct active subject enrollment times the saved listed subject/course fee times agreed percentage, independently of cash receipts or student discounts. Full-course fee use requires separate explicit authorization for each assignment. Missing participation mapping or required fee must be flagged. No assignment means no eligible salary. New active payroll excludes bonuses, allowances, deductions/tax and advance recovery; legacy financial history must survive unchanged. Monthly effective versions and frozen approved salary/payment snapshots govern future method changes. Earlier four-method/new-advance workflows and teacher-account-based eligibility are SUPERSEDED for new payroll. The prior header control removal remains in effect; content-level salary-period navigation fulfills this newer request's selected-month and history workflow. Full monthly salaries use first-day-effective agreements without guessed mid-month proration; PKR amounts round to two decimals. A known explicitly configured zero listed fee yields zero percentage salary; missing fee is never inferred as zero.
+
+## PAYROLL-RUNNING-BALANCE - 2026-10-22
+
+CONFIRMED by the owner's latest request and clarification: retain only one running salary balance per assignment, without automatic monthly renewals, Add Salary cycles or approval. Partial/full salary payments may be recorded on their actual dates, and unpaid balance persists indefinitely. Explicit agreement saves adjust the same total payable while preserving all recorded payments and salary revisions; total payable cannot fall below already-paid money. Percentage fees/enrollment calculations occur on explicit salary save rather than time/navigation. Prior PAYROLL-TWO-METHODS monthly effective dates, draft recalculation and approval/locking policies are SUPERSEDED for active payroll; original historical sources remain preserved. No automatic Payroll idle/focus/storage refresh. Finance Overview keeps its existing behavior.
+## FACULTY-SYNTHETIC-ASSIGNMENT-CLEANUP - 2026-10-22
+
+CONFIRMED: Faculty schedules, course/batch labels and student counts must be derived from saved branch data. Curated fallback class allocations and fictional student totals are rejected. Unassigned built-in faculty may be removed from the Faculty directory when no real assignment, dated class or asset link protects the profile; demo-class seed references alone are not a deletion blocker. Historical identity tombstones may remain for record resolution without making the removed profile visible.
+## ROLE-MATRIX-UPDATE - 2026-10-22
+
+CONFIRMED by final owner attachment: Admin full existing module access including Settings within authorized branches; no higher-role escalation or license bypass. Receptionist can approve/enroll supported admissions without independent expense/payroll/fee-management rights, edit existing classes without creating/deleting assignments, manage asset details and read operational reports. Owner may read assets and branch reports. Audit Log/Branches/Users/Settings remain Admin/Super Admin only. Teacher owns-only data access is conditional on implemented self-service: existing disabled modules remain denied. Do not restore historical monthly approval or four-method salary logic from the reference illustration. Branch comparison must authorize each included branch independently.
+# 2026-10-22 — Strict module visibility follows effective permission
+
+**CONFIRMED:** Module discovery surfaces use effective permissions for the selected branch. `No Access` modules are absent from desktop/mobile navigation and Ctrl+K, not rendered as disabled placeholders. Direct routes and domain operations remain independently guarded. Teacher own-record modules are not enabled through broad branch permissions; their scoped screens/queries require a separate approved implementation.
+
+## PAYROLL-REPORTS-CACHE-20261022 - approved integration
+
+Owner attachment 51d487e7 confirms organization-wide payroll reports for Admin/Super Admin and authorized Owner only. The existing running-balance decision supersedes the attachment's illustrative approval/monthly flow: reports never create monthly charges or restore approval. No historical timeline is fabricated; current salary balances are shown as Running balance unless a persisted period exists. Reuse localPageResources for derived reads and initialization; never preload restricted records for performance. Frontend mock remains browser-local with no multi-device synchronization claim.
+## 2026-10-22 — CONFIRMED: authoritative five-role dashboard data
+
+The owner confirmed that all role dashboards must derive from the same saved frontend data source. Role-specific presentation may differ, but separate fake datasets, hardcoded KPI values and organization-wide Teacher/Receptionist financial exposure are rejected. Teacher dashboard data is limited to the current teacher's saved faculty assignments and matching enrolled students, with own salary only. Frontend localStorage remains a same-browser mock boundary; shared-backend and cross-device synchronization remain deferred.
+
+## 2026-10-22 — CONFIRMED: shared premium responsive presentation
+
+The owner confirmed that Super Admin remains the visual reference for Admin, Receptionist, Owner and Teacher. Responsive presentation may adapt grids, spacing and overflow containment, but must preserve authorized role data, permissions, workflows and the existing Super Admin design. No new UI dependency is required.
+
+## 2026-10-22 — CONFIRMED: Teacher profile and dashboard cleanup
+
+Teacher My Profile does not show Back to Dashboard, WhatsApp or Call actions, and Teacher Dashboard does not show Instructor Actions cards. Teacher profile workload KPIs must come from the same branch/account-scoped saved projection as the Teacher Dashboard; denied broad Faculty/Students queries must not be converted into misleading zero workload values.
+
+## 2026-10-23 — CONFIRMED: final frontend QA and normal dev publication
+
+The owner authorizes all existing uncommitted frontend changes to undergo final lint/test/build/browser review and be included in one reviewed normal `dev` commit/push only if critical checks pass and the fetched remote has no unexpected commits. This supersedes the earlier no-commit/push restriction for this release. Local data, artifacts and unrelated empty documentation placeholders remain preserved; backend and deployment are excluded.

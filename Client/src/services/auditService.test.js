@@ -77,8 +77,8 @@ it('captures the first mutation even when the academic database was never opened
 })
 
 it('keeps shared teacher access changes in each affected branch with actor snapshot',async()=>{
- await organizationService.deleteUser('teacher-irfan')
+ await organizationService.deleteUser('teacher-naeem')
  expect((await auditService.list(q)).some(log=>log.action==='Access removed')).toBe(true)
  await authService.selectBranch('demo-admin','demo-north')
- expect(await auditService.list({branchId:'demo-north'})).toEqual(expect.arrayContaining([expect.objectContaining({recordId:'teacher-irfan',userName:'Administrator',roles:['super_admin'],action:'Access removed'})]))
+ expect(await auditService.list({branchId:'demo-north'})).toEqual(expect.arrayContaining([expect.objectContaining({recordId:'teacher-naeem',userName:'Administrator',roles:['super_admin'],action:'Access removed'})]))
 })

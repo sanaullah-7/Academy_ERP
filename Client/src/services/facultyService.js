@@ -10,20 +10,22 @@ import { ROLES, getBranchRoles } from '../constants/roles.js'
 import { getDemoUsers } from '../mock/authFixtures.js'
 import { readOrganization, writeOrganization } from '../mock/mockOrganization.js'
 import { MockDataError } from '../mock/mockDatabase.js'
+import { notificationService } from './notificationService.js'
 import { mockApi } from '../mock/mockApi.js'
 import { authService } from './authService.js'
 import { batchService } from './batchService.js'
 import { courseService } from './courseService.js'
 import { studentService } from './studentService.js'
 
-async function inScope(operation, query, permission = PERMISSIONS.FACULTY_VIEW) {
+async function inScope(operation, query, permission = PERMISSIONS.FACULTY_VIEW, allowSelfId = null) {
   const started = await authService.getSession()
   const validate = async () => {
     const current = await authService.getSession()
     if (!started?.user || current?.user?.id !== started.user.id || !current?.branchId || current.branchId !== query?.branchId) {
       throw new MockDataError('INVALID_SCOPE', 'Your active session or branch changed. Reload Faculty & Classes.')
     }
-    if (!canAccess(permission, current.user, current.branchId)) {
+    const isSelf = Boolean(allowSelfId && current.user.id === allowSelfId)
+    if (!isSelf && !canAccess(permission, current.user, current.branchId)) {
       throw new MockDataError('DEMO_ACTION_DENIED', 'This role is not authorized to view Faculty & Classes.')
     }
   }
@@ -50,7 +52,7 @@ async function listTeachers(query) {
     return getDemoUsers()
       .filter(user => {
         const roles = getBranchRoles(user, branchId)
-        return roles.length === 1 && roles[0] === ROLES.TEACHER
+        return !user.facultyRemoved && roles.length === 1 && roles[0] === ROLES.TEACHER
       })
       .map(user => {
         const teacherAssignments = assignments.filter(a => a.teacherId === user.id)
@@ -148,21 +150,28 @@ export const facultyService = {
     return inScope(async branchId => {
       const teacher = getDemoUsers().find(user => {
         const roles = getBranchRoles(user, branchId)
-        return user.id === id && roles.length === 1 && roles[0] === ROLES.TEACHER
+        return !user.facultyRemoved && user.id === id && roles.length === 1 && roles[0] === ROLES.TEACHER
       })
       if (!teacher) throw new MockDataError('NOT_FOUND', 'Faculty record was not found in the selected branch.')
 
-      let assignments
-      try {
-        assignments = await mockApi.facultyAssignmentOperation('list', { query: { branchId } })
-      } catch {
-        assignments = []
+      const session = await authService.getSession()
+      const isSelfProfile = session?.user?.id === teacher.id
+      const ownDashboard = isSelfProfile
+        ? await mockApi.dashboardOperation('overview', { query: { branchId } })
+        : null
+      let assignments = ownDashboard?.assignments
+      if (!assignments) {
+        try {
+          assignments = await mockApi.facultyAssignmentOperation('list', { query: { branchId } })
+        } catch {
+          assignments = []
+        }
       }
       const teacherAssignments = assignments.filter(a => a.teacherId === teacher.id)
 
       const [batches, students] = await Promise.all([
-        batchService.list({ branchId }).catch(() => []),
-        studentService.listDirectory({ branchId }).catch(() => []),
+        ownDashboard ? Promise.resolve(ownDashboard.batches ?? []) : batchService.list({ branchId }).catch(() => []),
+        ownDashboard ? Promise.resolve(ownDashboard.students ?? []) : studentService.listDirectory({ branchId }).catch(() => []),
       ])
       const batchMap = new Map(batches.map(b => [b.id, b]))
 
@@ -203,13 +212,15 @@ export const facultyService = {
 
       const teacherBatchIds = new Set(teacherAssignments.map(a => a.batchId))
       const reachedStudentIds = new Set()
-      students.forEach(s => {
-        (s.enrollments ?? []).forEach(e => {
-          if (e.status === 'Active' && teacherBatchIds.has(e.batchId)) {
-            reachedStudentIds.add(s.id)
-          }
+      if (ownDashboard) {
+        ownDashboard.enrollments?.forEach(enrollment => reachedStudentIds.add(enrollment.studentId))
+      } else {
+        students.forEach(s => {
+          (s.enrollments ?? []).forEach(e => {
+            if (e.status === 'Active' && teacherBatchIds.has(e.batchId)) reachedStudentIds.add(s.id)
+          })
         })
-      })
+      }
       const studentReach = reachedStudentIds.size
 
       return {
@@ -232,7 +243,7 @@ export const facultyService = {
           status: teacher.enabled ? 'Active' : 'Disabled',
         },
       }
-    }, query)
+    }, query, PERMISSIONS.FACULTY_VIEW, id)
   },
   async createTeacher(data, query) {
     return inScope(async branchId => {
@@ -299,13 +310,15 @@ export const facultyService = {
   },
   async assignFaculty(record, query) {
     return inScope(async branchId => {
-      return mockApi.facultyAssignmentOperation('create', { record, query: { branchId } })
+      const result = await mockApi.facultyAssignmentOperation('create', { record, query: { branchId } })
+      try { await notificationService.publish({ type: 'class_assigned', branchId, entityId: result.id, teacherId: result.teacherId, title: 'New class assigned', message: `${result.subjectName ?? 'A subject'} in ${result.batchName ?? 'a batch'} has been assigned to you.` }) } catch { /* Preserve the successful assignment. */ }
+      return result
     }, query, PERMISSIONS.CLASSES_MANAGE)
   },
   async updateAssignment(id, record, query) {
     return inScope(async branchId => {
       return mockApi.facultyAssignmentOperation('update', { id, record, query: { branchId } })
-    }, query, PERMISSIONS.CLASSES_MANAGE)
+    }, query, PERMISSIONS.CLASSES_EDIT)
   },
   async removeAssignment(id, query) {
     return inScope(async branchId => {

@@ -27,6 +27,10 @@
   .demo-branch-option { min-height: 44px; font-size: 13px; }
   .app-topbar [role="menu"] { max-width: calc(100vw - 24px); }
   .app-topbar [role="menuitem"] { min-height: 44px; font-size: 13px; }
+  .app-topbar section[role="dialog"][aria-label="Notifications"] {
+    position: fixed; top: calc(64px + env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); width: auto;
+  }
 
   .app-page-header { min-height: 36px; gap: 8px; margin-bottom: 14px; padding: 0; }
   .app-page-title { min-width: 0; flex-shrink: 1; font-size: 16px; line-height: 1.35; }
@@ -56,6 +60,16 @@
   .app-content .top-kpi-card .flex { min-width: 0; gap: 5px; }
   .app-content .top-kpi-card .flex > div { min-width: 0; }
   .app-content .top-kpi-card .border-t { flex-wrap: wrap; }
+  .app-content .dashboard-premium-kpi { min-height: 112px; border-radius: 14px; }
+  .app-content .dashboard-premium-kpi > [data-slot="card-content"] { gap: 8px; padding: 12px; }
+  .app-content .dashboard-premium-kpi p.uppercase { font-size: 9px; line-height: 1.35; letter-spacing: .035em; }
+  .app-content .dashboard-premium-kpi p.text-2xl { font-size: 20px; line-height: 1.2; }
+  .app-content .dashboard-premium-kpi .size-9 { width: 28px; height: 28px; }
+  .app-content .dashboard-premium-kpi .size-9 svg { width: 15px; height: 15px; }
+  .app-content .dashboard-premium-kpi .leading-5 { line-height: 1.35; }
+  .app-content .role-dashboard { gap: 16px; padding-bottom: 8px; }
+  .app-content .role-dashboard > header { gap: 8px; }
+  .app-content .role-dashboard > header p { margin-top: 4px; font-size: 12px; }
   .app-content header > div.flex { max-width: 100%; flex-wrap: wrap; }
   .app-content header > div.flex button { flex-shrink: 1; }
   .app-content .mobile-chart-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -165,6 +179,32 @@
 
 @media screen and (max-width: 359px) {
   .app-page-breadcrumb { display: none; }
+  .app-content section[aria-label="Dashboard key metrics"],
+  .app-content section[aria-labelledby="dashboard-kpis"] > .grid { grid-template-columns: minmax(0, 1fr); }
   .app-content[data-page="Finance"] .grid:has(> .top-kpi-card) { grid-template-columns: minmax(0, 1fr); }
-  .app-topbar .demo-branch-trigger { width: 122px; }
+  .app-topbar .demo-branch-trigger { width: 104px; }
+}
+
+@media screen and (min-width: 360px) and (max-width: 767px) {
+  .app-content section[aria-labelledby="dashboard-kpis"] > .grid,
+  .app-content section[aria-labelledby="quick-operations"] > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .app-content .role-dashboard section[aria-labelledby="financial-overview"] [data-slot="card-content"] > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .app-content .role-dashboard section[aria-labelledby="financial-overview"] [data-slot="card-content"] > .grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .app-content section[aria-labelledby="quick-operations"] [data-slot="card-content"] { min-height: 72px; padding: 10px; }
+  .app-content section[aria-labelledby="quick-operations"] [data-slot="card-content"] > div { min-width: 0; gap: 8px; }
+  .app-content section[aria-labelledby="quick-operations"] [data-slot="card-content"] span { overflow-wrap: anywhere; }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] { min-width: 0; padding: 10px; }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] > div,
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] > div > div { min-width: 0; gap: 8px; }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] > div > svg { display: none; }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] span { overflow-wrap: anywhere; }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1199px) {
+  .app-content section[aria-labelledby="quick-operations"] > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] { min-width: 0; padding: 12px; }
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] > div,
+  .app-content section[aria-labelledby="quick-operations"] > .grid > [data-slot="card"] > div > div { min-width: 0; }
 }

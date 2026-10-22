@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
+  Banknote,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock,
+  FileText,
   GraduationCap,
   Layers,
   Loader2,
@@ -15,22 +18,29 @@ import {
   Phone,
   Plus,
   Printer,
+  Sparkles,
   Trash2,
+  TrendingUp,
   UserRound,
   Users,
+  Wallet,
 } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 
 import { Button } from '../../components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card.jsx'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 import { useBranch } from '../../hooks/useBranch.js'
 import { usePermissions } from '../../hooks/usePermissions.js'
 import { PERMISSIONS } from '../../constants/permissions.js'
+import { ROLES } from '../../constants/roles.js'
 import { facultyService } from '../../services/facultyService.js'
 import { academicService } from '../../services/academicService.js'
+import { payrollService } from '../../services/payrollService.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import AssignFacultyModal from '../../components/CoursesBatches/AssignFacultyModal.jsx'
+import PayslipModal from '../../components/Finance/PayslipModal.jsx'
 import AcademyLogo from '../../components/Layout/AcademyLogo.jsx'
 import { classTimeLabel } from '../../utils/classTime.js'
 
@@ -60,39 +70,58 @@ function Detail({ label, value }) {
   )
 }
 
-export default function FacultyProfilePage() {
-  const { teacherId } = useParams()
+const money = val => 'PKR ' + Number(val || 0).toLocaleString('en-PK', { maximumFractionDigits: 2 })
+
+export default function FacultyProfilePage({ isMyProfile = false }) {
+  const { teacherId: paramTeacherId } = useParams()
+  const { state: navigationState } = useLocation()
+  const { user } = useAuth()
   const { branch, branchId, scopeKey } = useBranch()
-  const { can } = usePermissions()
+  const { can, hasRole } = usePermissions()
+  const isTeacher = hasRole(ROLES.TEACHER)
   const canManage = can(PERMISSIONS.CLASSES_MANAGE) || can(PERMISSIONS.COURSES_MANAGE)
+  const canViewSalary = isMyProfile || isTeacher || can(PERMISSIONS.PAYROLL_VIEW)
+
+  const targetTeacherId = isMyProfile ? (user?.id || paramTeacherId) : (paramTeacherId || user?.id)
+
   const [result, setResult] = useState(null)
   const [academicData, setAcademicData] = useState({ courses: [], batches: [], subjects: [], streams: [] })
+  const [compensation, setCompensation] = useState(null)
   const [retryCount, setRetryCount] = useState(0)
   const [assignOpen, setAssignOpen] = useState(false)
   const [removingId, setRemovingId] = useState(null)
   const [removeError, setRemoveError] = useState('')
   const [removeBusy, setRemoveBusy] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(() => isMyProfile && navigationState?.profileTab === 'classes' ? 'classes' : 'overview')
+
+  const [payslipData, setPayslipData] = useState(null)
+  const [payslipOpen, setPayslipOpen] = useState(false)
+  const [payslipLoadingId, setPayslipLoadingId] = useState(null)
 
   useEffect(() => {
     let active = true
-    if (!branchId || !teacherId) return () => { active = false }
+    if (!branchId || !targetTeacherId) return () => { active = false }
+
     Promise.all([
-      facultyService.getById(teacherId, { branchId }),
+      facultyService.getById(targetTeacherId, { branchId }),
       academicService.overview({ branchId }).catch(() => ({ courses: [], batches: [], subjects: [], streams: [] })),
+      canViewSalary
+        ? payrollService.getTeacherCompensation({ branchId, teacherId: targetTeacherId }).catch(() => null)
+        : Promise.resolve(null),
     ]).then(
-      ([teacher, overview]) => {
+      ([teacher, overview, compensationData]) => {
         if (active) {
-          setResult({ teacher, scopeKey, teacherId, retryCount })
+          setResult({ teacher, scopeKey, targetTeacherId, retryCount })
           setAcademicData(overview)
+          setCompensation(compensationData)
         }
       },
-      error => { if (active) setResult({ error, scopeKey, teacherId, retryCount }) },
+      error => { if (active) setResult({ error, scopeKey, targetTeacherId, retryCount }) },
     )
     return () => { active = false }
-  }, [branchId, scopeKey, teacherId, retryCount])
+  }, [branchId, scopeKey, targetTeacherId, retryCount, canViewSalary])
 
-  const current = result?.scopeKey === scopeKey && result?.teacherId === teacherId && result?.retryCount === retryCount ? result : null
+  const current = result?.scopeKey === scopeKey && result?.targetTeacherId === targetTeacherId && result?.retryCount === retryCount ? result : null
   const teacher = current?.teacher
 
   const fieldName = courseId => {
@@ -114,6 +143,20 @@ export default function FacultyProfilePage() {
     }
   }
 
+  const handleOpenPayslip = async lineId => {
+    if (!lineId) return
+    setPayslipLoadingId(lineId)
+    try {
+      const data = await payrollService.getPayslip(lineId, { branchId })
+      setPayslipData(data)
+      setPayslipOpen(true)
+    } catch {
+      // Payslip loading error handled silently
+    } finally {
+      setPayslipLoadingId(null)
+    }
+  }
+
   const cleanDigits = (teacher?.contact || '').replace(/[^0-9]/g, '')
   const waPhone = cleanDigits.startsWith('0') ? `92${cleanDigits.slice(1)}` : cleanDigits
 
@@ -122,6 +165,21 @@ export default function FacultyProfilePage() {
   const weeklyHours = teacher?.stats?.weeklyHours ?? (teacher?.schedules ? (teacher.schedules.length * 3.5).toFixed(1) : 0)
   const studentReach = teacher?.stats?.studentReach ?? (teacher?.schedules ? teacher.schedules.reduce((acc, s) => acc + (s.enrolledCount || 0), 0) : 0)
   const totalSlots = teacher?.schedules?.length ?? 0
+
+  // Salary calculations
+  const totalContracted = compensation?.totals?.netPayable ?? 0
+  const totalDisbursed = compensation?.totals?.paid ?? 0
+  const totalOutstanding = compensation?.totals?.outstanding ?? 0
+  const settlementPercentage = totalContracted > 0 ? Math.min(100, Math.round((totalDisbursed / totalContracted) * 100)) : (totalDisbursed > 0 ? 100 : 0)
+  const salaryLines = compensation?.lines ?? []
+  const salaryPayments = compensation?.payments ?? []
+
+  const tabs = [
+    { id: 'overview', label: 'Overview & Bio', icon: Layers },
+    { id: 'classes', label: 'Class Schedule & Timetable', icon: CalendarDays },
+    { id: 'assignments', label: 'Academic Assignments', icon: BookOpen },
+    ...(canViewSalary ? [{ id: 'salary', label: 'Salary & Compensation', icon: Wallet }] : []),
+  ]
 
   return (
     <DashboardLayout>
@@ -148,13 +206,15 @@ export default function FacultyProfilePage() {
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:gap-5 pb-12">
         {/* Top Navigation & Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-          <Button asChild variant="outline" size="sm" className="rounded-xl gap-1.5">
-            <Link to={ROUTE_PATHS.FACULTY_CLASSES}>
-              <ArrowLeft size={16} aria-hidden="true" />
-              Back to Faculty
-            </Link>
-          </Button>
+        <div className={`flex flex-wrap items-center gap-3 print:hidden ${(isMyProfile || isTeacher) ? 'justify-end' : 'justify-between'}`}>
+          {!isMyProfile && !isTeacher && (
+            <Button asChild variant="outline" size="sm" className="rounded-xl gap-1.5">
+              <Link to={ROUTE_PATHS.FACULTY_CLASSES}>
+                <ArrowLeft size={16} aria-hidden="true" />
+                Back to Faculty
+              </Link>
+            </Button>
+          )}
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -202,7 +262,7 @@ export default function FacultyProfilePage() {
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-5">
-            {/* 1. Hero Header Area (Matching and elevating beyond Student Profile) */}
+            {/* 1. Hero Header Area */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs print:hidden">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-3.5 sm:gap-4">
@@ -227,6 +287,12 @@ export default function FacultyProfilePage() {
                       <span className="inline-flex items-center rounded-md bg-rose-50 border border-rose-200/80 px-2 py-0.5 font-mono text-[11px] font-bold text-[#940016]">
                         {teacher.id?.startsWith('teacher-') ? `FAC-${teacher.id.replace('teacher-', '').toUpperCase()}` : `TSA-FAC`}
                       </span>
+                      {isMyProfile && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-bold text-purple-700">
+                          <UserRound size={11} />
+                          My Profile
+                        </span>
+                      )}
                     </div>
                     <p className="mt-1 text-xs sm:text-sm font-medium text-slate-500">
                       {teacher.department || 'Academic Faculty'} • {teacher.specialization || 'Subject Specialist'} • {teacher.qualifications || 'Qualified Teacher'}
@@ -243,8 +309,8 @@ export default function FacultyProfilePage() {
                     </span>
                   </div>
 
-                  {/* Direct Contact Buttons */}
-                  <div className="flex items-center gap-2">
+                  {/* Direct Contact Buttons are administrative profile actions. */}
+                  {!isMyProfile && !isTeacher && <div className="flex items-center gap-2">
                     {waPhone ? (
                       <a
                         href={`https://wa.me/${waPhone}?text=${encodeURIComponent(`Assalam-o-Alaikum ${teacher.name}, regarding The Scholar Coaching Academy classes:`)}`}
@@ -273,12 +339,12 @@ export default function FacultyProfilePage() {
                         <span>Call</span>
                       </a>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>
 
-            {/* 2. Quick Contact Banner (Matching Student Profile pattern) */}
+            {/* 2. Quick Contact Banner */}
             <div className="rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 {/* Left: Department & Campus */}
@@ -379,11 +445,7 @@ export default function FacultyProfilePage() {
 
             {/* 4. Horizontal Navigation Tabs */}
             <div className="flex items-center gap-1.5 border-b border-slate-200/80 pb-2 overflow-x-auto no-scrollbar print:hidden">
-              {[
-                { id: 'overview', label: 'Overview & Bio', icon: Layers },
-                { id: 'classes', label: 'Class Schedule & Timetable', icon: CalendarDays },
-                { id: 'assignments', label: 'Academic Assignments', icon: BookOpen },
-              ].map(tab => {
+              {tabs.map(tab => {
                 const isSelected = activeTab === tab.id
                 const TabIcon = tab.icon
                 return (
@@ -393,11 +455,11 @@ export default function FacultyProfilePage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isSelected
-                        ? 'bg-white text-slate-900 border border-slate-200 shadow-xs'
+                        ? 'bg-primary text-primary-foreground border border-primary shadow-sm'
                         : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
-                    <TabIcon size={15} className={isSelected ? 'text-[#940016]' : 'text-slate-400'} />
+                    <TabIcon size={15} className={isSelected ? 'text-primary-foreground' : 'text-slate-400'} />
                     {tab.label}
                   </button>
                 )
@@ -437,7 +499,46 @@ export default function FacultyProfilePage() {
                   )}
                 </ProfileCard>
 
-
+                {canViewSalary && compensation && (
+                  <div className="lg:col-span-2">
+                    <ProfileCard title="Teaching Remuneration & Settlement Quick Overview" icon={Wallet}>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Total Contracted</span>
+                          <strong className="block text-lg font-extrabold text-slate-900 mt-0.5 tabular-nums">
+                            {money(totalContracted)}
+                          </strong>
+                          <span className="text-[11px] text-muted-foreground">{salaryLines.length} course/batch assignments</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                          <span className="text-[10px] uppercase font-bold text-emerald-700">Verified Disbursed</span>
+                          <strong className="block text-lg font-extrabold text-emerald-700 mt-0.5 tabular-nums">
+                            {money(totalDisbursed)}
+                          </strong>
+                          <span className="text-[11px] text-emerald-600">{salaryPayments.length} payments paid</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200">
+                          <span className="text-[10px] uppercase font-bold text-[#940016]">Remaining Outstanding</span>
+                          <strong className="block text-lg font-extrabold text-[#940016] mt-0.5 tabular-nums">
+                            {money(totalOutstanding)}
+                          </strong>
+                          <span className="text-[11px] text-rose-700">Pending settlement</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs gap-1.5 rounded-xl border-[#940016]/30 text-[#940016] hover:bg-[#940016]/10"
+                          onClick={() => setActiveTab('salary')}
+                        >
+                          <Wallet size={14} />
+                          View Detailed Salary Breakdown &amp; Payslips
+                        </Button>
+                      </div>
+                    </ProfileCard>
+                  </div>
+                )}
               </div>
             )}
 
@@ -595,65 +696,326 @@ export default function FacultyProfilePage() {
             )}
 
             {activeTab === 'assignments' && (
-              <div className="print:hidden"><ProfileCard title="Academic Teaching Relationships" icon={BookOpen}>
-                <p className="mb-3 text-[11px] text-muted-foreground">
-                  Saved academic courses, batches, and subject relationships for this faculty member.
-                </p>
-                {teacher.schedules?.length ? (
-                  <div className="overflow-hidden rounded-xl border border-slate-200">
-                    <table className="w-full table-fixed text-left text-xs" aria-label="Academic assignments">
-                      <colgroup>
-                        <col style={{ width: '22%' }} />
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '20%' }} />
-                        <col style={{ width: '21%' }} />
-                        <col style={{ width: '12%' }} />
-                      </colgroup>
-                      <thead className="border-b border-slate-200 bg-slate-50/90 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
-                        <tr>
-                          {['Field', 'Course', 'Batch', 'Subject', 'Students'].map(label => (
-                            <th key={label} scope="col" className="truncate px-3 py-2.5">
-                              {label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {[
-                          ...new Map(
-                            teacher.schedules.map(slot => [
-                              `${slot.courseId}|${slot.batchId}|${slot.subjectId}`,
-                              slot,
-                            ])
-                          ).values(),
-                        ].map(slot => (
-                          <tr key={`${slot.courseId}|${slot.batchId}|${slot.subjectId}`} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="truncate px-3 py-3 text-muted-foreground" title={fieldName(slot.courseId)}>
-                              {fieldName(slot.courseId)}
-                            </td>
-                            <td className="truncate px-3 py-3 font-semibold text-slate-900" title={slot.courseName}>
-                              {slot.courseName}
-                            </td>
-                            <td className="truncate px-3 py-3" title={slot.batchName}>
-                              {slot.batchName}
-                            </td>
-                            <td className="truncate px-3 py-3" title={slot.subjectName}>
-                              {slot.subjectName}
-                            </td>
-                            <td className="px-3 py-3 font-bold tabular-nums text-[#940016]">
-                              {slot.enrolledCount ?? 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="rounded-xl border border-dashed p-6 text-xs text-muted-foreground text-center">
-                    No saved academic assignments.
+              <div className="print:hidden">
+                <ProfileCard title="Academic Teaching Relationships" icon={BookOpen}>
+                  <p className="mb-3 text-[11px] text-muted-foreground">
+                    Saved academic courses, batches, and subject relationships for this faculty member.
                   </p>
-                )}
-              </ProfileCard></div>
+                  {teacher.schedules?.length ? (
+                    <div className="overflow-hidden rounded-xl border border-slate-200">
+                      <table className="w-full table-fixed text-left text-xs" aria-label="Academic assignments">
+                        <colgroup>
+                          <col style={{ width: '22%' }} />
+                          <col style={{ width: '25%' }} />
+                          <col style={{ width: '20%' }} />
+                          <col style={{ width: '21%' }} />
+                          <col style={{ width: '12%' }} />
+                        </colgroup>
+                        <thead className="border-b border-slate-200 bg-slate-50/90 text-[10px] font-semibold uppercase tracking-wider text-slate-700">
+                          <tr>
+                            {['Field', 'Course', 'Batch', 'Subject', 'Students'].map(label => (
+                              <th key={label} scope="col" className="truncate px-3 py-2.5">
+                                {label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {[
+                            ...new Map(
+                              teacher.schedules.map(slot => [
+                                `${slot.courseId}|${slot.batchId}|${slot.subjectId}`,
+                                slot,
+                              ])
+                            ).values(),
+                          ].map(slot => (
+                            <tr key={`${slot.courseId}|${slot.batchId}|${slot.subjectId}`} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="truncate px-3 py-3 text-muted-foreground" title={fieldName(slot.courseId)}>
+                                {fieldName(slot.courseId)}
+                              </td>
+                              <td className="truncate px-3 py-3 font-semibold text-slate-900" title={slot.courseName}>
+                                {slot.courseName}
+                              </td>
+                              <td className="truncate px-3 py-3" title={slot.batchName}>
+                                {slot.batchName}
+                              </td>
+                              <td className="truncate px-3 py-3" title={slot.subjectName}>
+                                {slot.subjectName}
+                              </td>
+                              <td className="px-3 py-3 font-bold tabular-nums text-[#940016]">
+                                {slot.enrolledCount ?? 0}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed p-6 text-xs text-muted-foreground text-center">
+                      No saved academic assignments.
+                    </p>
+                  )}
+                </ProfileCard>
+              </div>
+            )}
+
+            {/* 6. Salary & Compensation Tab (Elevated UI Matching Screenshot) */}
+            {activeTab === 'salary' && canViewSalary && (
+              <div className="space-y-4 sm:space-y-5 print:hidden">
+                {/* Official Information Banner */}
+                <div className="rounded-2xl border border-[#940016]/20 bg-gradient-to-r from-[#940016]/5 via-white to-amber-500/5 p-4 sm:p-5 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="size-9 rounded-xl bg-[#940016] text-white grid place-items-center shrink-0 shadow-xs">
+                      <Sparkles size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-sm font-bold text-slate-900">
+                        Official Faculty Compensation &amp; Teaching Ledgers
+                      </h2>
+                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                        Track your contract-agreed remuneration across all enrolled batches, subjects, verified disbursement receipts, and pending balance settlements. Every payment disbursed by academy administration appears here instantly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4 Salary Financial KPI Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <Card className="rounded-2xl border border-slate-200/90 bg-white shadow-xs py-0 overflow-hidden">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Contracted</span>
+                        <strong className="block text-xl sm:text-2xl font-extrabold text-slate-900 mt-1 tabular-nums truncate">
+                          {money(totalContracted)}
+                        </strong>
+                        <span className="text-[10px] text-muted-foreground mt-0.5 block">{salaryLines.length} teaching assignments</span>
+                      </div>
+                      <div className="size-10 rounded-xl bg-[#F9EBEE] text-[#940016] border border-[#f0d5d9] grid place-items-center shrink-0">
+                        <Wallet size={18} />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="rounded-2xl border border-slate-200/90 bg-white shadow-xs py-0 overflow-hidden">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Disbursed / Paid</span>
+                        <strong className="block text-xl sm:text-2xl font-extrabold text-emerald-700 mt-1 tabular-nums truncate">
+                          {money(totalDisbursed)}
+                        </strong>
+                        <span className="text-[10px] text-emerald-600 mt-0.5 block">{salaryPayments.length} verified payouts</span>
+                      </div>
+                      <div className="size-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 grid place-items-center shrink-0">
+                        <CheckCircle2 size={18} />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="rounded-2xl border border-slate-200/90 bg-white shadow-xs py-0 overflow-hidden">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#940016]">Remaining Balance</span>
+                        <strong className="block text-xl sm:text-2xl font-extrabold text-[#940016] mt-1 tabular-nums truncate">
+                          {money(totalOutstanding)}
+                        </strong>
+                        <span className="text-[10px] text-rose-700 mt-0.5 block">Pending academy settlement</span>
+                      </div>
+                      <div className="size-10 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 grid place-items-center shrink-0">
+                        <AlertTriangle size={18} />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="rounded-2xl border border-slate-200/90 bg-white shadow-xs py-0 overflow-hidden">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="min-w-0 flex-1 mr-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Settlement Ratio</span>
+                        <strong className="block text-xl sm:text-2xl font-extrabold text-blue-900 mt-1 tabular-nums">
+                          {settlementPercentage}%
+                        </strong>
+                        <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#940016] to-emerald-600 rounded-full transition-all duration-500"
+                            style={{ width: `${settlementPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="size-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 grid place-items-center shrink-0">
+                        <TrendingUp size={18} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Table 1: Teaching Assignment Compensation Breakdown */}
+                <ProfileCard title="Course & Batch Remuneration Breakdown" icon={Banknote}>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Itemized salary agreed per course, batch and subject with ongoing disbursement tracking.
+                  </p>
+                  {salaryLines.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-xs" aria-label="Salary breakdown table">
+                        <thead className="bg-slate-50/90 border-b border-slate-200 font-bold text-slate-700">
+                          <tr>
+                            <th className="px-3.5 py-2.5">Course &amp; Batch</th>
+                            <th className="px-3.5 py-2.5">Subject</th>
+                            <th className="px-3.5 py-2.5">Agreement Type</th>
+                            <th className="px-3.5 py-2.5 text-right">Agreed Total</th>
+                            <th className="px-3.5 py-2.5 text-right">Paid</th>
+                            <th className="px-3.5 py-2.5 text-right">Remaining</th>
+                            <th className="px-3.5 py-2.5 text-center">Status</th>
+                            <th className="px-3.5 py-2.5 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {salaryLines.map(line => {
+                            const isPaid = line.outstanding === 0
+                            const isPartial = line.totalPaid > 0 && line.outstanding > 0
+                            const agree = line.agreementSnapshot
+                            const agreeLabel = agree?.salaryType === 'percentage'
+                              ? `Percentage (${agree.percentage}%)`
+                              : `Fixed (${money(agree?.monthlySalary ?? line.netPayable)})`
+
+                            return (
+                              <tr key={line.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="px-3.5 py-3">
+                                  <strong className="block text-slate-900 text-xs">{line.courseName}</strong>
+                                  <span className="text-[11px] text-muted-foreground block">{line.batchName}</span>
+                                </td>
+                                <td className="px-3.5 py-3 font-bold text-slate-800">
+                                  {line.subjectName}
+                                </td>
+                                <td className="px-3.5 py-3">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                    {agreeLabel}
+                                  </span>
+                                </td>
+                                <td className="px-3.5 py-3 text-right font-bold tabular-nums text-slate-900">
+                                  {money(line.netPayable)}
+                                </td>
+                                <td className="px-3.5 py-3 text-right font-bold tabular-nums text-emerald-700">
+                                  {money(line.totalPaid)}
+                                </td>
+                                <td className="px-3.5 py-3 text-right font-extrabold tabular-nums text-[#940016]">
+                                  {money(line.outstanding)}
+                                </td>
+                                <td className="px-3.5 py-3 text-center">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    isPaid
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : isPartial
+                                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        : 'bg-rose-50 text-[#940016] border border-rose-200'
+                                  }`}>
+                                    {isPaid ? 'Fully Paid' : isPartial ? 'Partially Paid' : 'Unpaid'}
+                                  </span>
+                                </td>
+                                <td className="px-3.5 py-3 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-xs gap-1 border-slate-200 text-[#940016] hover:bg-[#940016]/10"
+                                    disabled={payslipLoadingId === line.id}
+                                    onClick={() => handleOpenPayslip(line.id)}
+                                  >
+                                    {payslipLoadingId === line.id ? (
+                                      <Loader2 size={12} className="animate-spin" />
+                                    ) : (
+                                      <FileText size={12} />
+                                    )}
+                                    <span>Payslip</span>
+                                  </Button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                      <Wallet size={28} className="mx-auto text-slate-400 mb-2" />
+                      <p className="text-sm font-semibold text-slate-800">No Salary Agreements Recorded</p>
+                      <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
+                        Salary agreements have not yet been configured by the administration for these assigned batches.
+                      </p>
+                    </div>
+                  )}
+                </ProfileCard>
+
+                {/* Table 2: Payment Receipt & Disbursement History */}
+                <ProfileCard title="Verified Payment Receipts & Disbursement History" icon={CheckCircle2}>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Official financial payout records disbursed to faculty via cash, bank transfer, or online methods.
+                  </p>
+                  {salaryPayments.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-xs" aria-label="Salary disbursement history table">
+                        <thead className="bg-slate-50/90 border-b border-slate-200 font-bold text-slate-700">
+                          <tr>
+                            <th className="px-3.5 py-2.5">Date</th>
+                            <th className="px-3.5 py-2.5">Reference #</th>
+                            <th className="px-3.5 py-2.5">Method</th>
+                            <th className="px-3.5 py-2.5 text-right">Amount Disbursed</th>
+                            <th className="px-3.5 py-2.5 text-center">Verification</th>
+                            <th className="px-3.5 py-2.5 text-right">Official Document</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {salaryPayments.map(p => (
+                            <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-3.5 py-3 font-mono text-slate-700 text-xs">
+                                {p.paidAt ? p.paidAt.slice(0, 10) : '—'}
+                              </td>
+                              <td className="px-3.5 py-3 font-mono font-bold text-slate-900">
+                                {p.transactionReference || `TXN-${p.id.slice(-6).toUpperCase()}`}
+                              </td>
+                              <td className="px-3.5 py-3">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]">
+                                  {p.method || 'Cash'}
+                                </span>
+                              </td>
+                              <td className="px-3.5 py-3 text-right font-extrabold tabular-nums text-emerald-700 text-xs">
+                                {money(p.amount)}
+                              </td>
+                              <td className="px-3.5 py-3 text-center">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                  <CheckCircle2 size={10} className="text-emerald-600" />
+                                  Verified
+                                </span>
+                              </td>
+                              <td className="px-3.5 py-3 text-right">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs gap-1 border-slate-200 text-[#940016] hover:bg-[#940016]/10"
+                                  disabled={payslipLoadingId === p.payrollLineId}
+                                  onClick={() => handleOpenPayslip(p.payrollLineId)}
+                                >
+                                  {payslipLoadingId === p.payrollLineId ? (
+                                    <Loader2 size={12} className="animate-spin" />
+                                  ) : (
+                                    <FileText size={12} />
+                                  )}
+                                  <span>Official Payslip</span>
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                      <Banknote size={28} className="mx-auto text-slate-400 mb-2" />
+                      <p className="text-sm font-semibold text-slate-800">No Payment Receipts Disbursed Yet</p>
+                      <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
+                        When the administration posts salary disbursements or partial payments, official receipts will be logged here.
+                      </p>
+                    </div>
+                  )}
+                </ProfileCard>
+              </div>
             )}
           </div>
         )}
@@ -675,6 +1037,16 @@ export default function FacultyProfilePage() {
               setAssignOpen(false)
               setRetryCount(v => v + 1)
             }}
+          />
+        )}
+
+        {/* Official Institutional Payslip Modal */}
+        {payslipOpen && payslipData && (
+          <PayslipModal
+            open={payslipOpen}
+            onClose={() => setPayslipOpen(false)}
+            payslipData={payslipData}
+            branchName={branch?.name}
           />
         )}
       </div>

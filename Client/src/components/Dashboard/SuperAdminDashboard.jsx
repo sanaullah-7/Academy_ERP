@@ -5,7 +5,6 @@ import { capturePageVersion, peekPageResource, rememberPageResource } from '../.
 import { classPeriod } from '../../utils/classTime.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { AlertCircle, ArrowRight, Banknote, CalendarDays, CheckCircle2, Clock3, CreditCard, DoorOpen, GraduationCap, Loader2, MapPin, ReceiptText, RefreshCw, Search, TrendingDown, UserPlus, UserRound, Users } from 'lucide-react'
 import DashboardLayout from '../../layouts/DashboardLayout.jsx'
 import { Card, CardContent, CardHeader } from '../ui/card.jsx'
@@ -25,100 +24,21 @@ import { PERMISSIONS } from '../../constants/permissions.js'
 import { ROUTE_PATHS } from '../../routes/routePaths.js'
 import RecentPayments from './Shared/RecentPayments.jsx'
 import { financialService } from '../../services/financialService.js'
+import { KpiCard as DashboardKpi } from './KpiCard.jsx'
+import CashflowChart from './CashflowChart.jsx'
+import { PERIODS, isInPeriod, localDateKey } from '../../utils/dashboardCashflow.js'
 
-const PERIODS = Object.freeze([
-  { id: 'all', label: 'All' },
-  { id: 'daily', label: 'Daily' },
-  { id: 'weekly', label: 'Weekly' },
-  { id: 'monthly', label: 'Monthly' },
-  { id: 'yearly', label: 'Yearly' },
-  { id: 'custom', label: 'Custom' },
-])
-
-function isInPeriod(value, period, range, now = new Date()) {
-  if (period === 'all') return true
-  const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value)
-  if (Number.isNaN(date.getTime())) return false
-  if (period === 'daily') return date.toDateString() === now.toDateString()
-  if (period === 'weekly') {
-    const start = new Date(now)
-    start.setHours(0, 0, 0, 0)
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
-    return date >= start && date <= now
-  }
-  if (period === 'monthly') return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
-  if (period === 'yearly') return date.getFullYear() === now.getFullYear()
-  if (period === 'custom') {
-    if (!range.start || !range.end) return false
-    const start = new Date(`${range.start}T00:00:00`)
-    const end = new Date(`${range.end}T23:59:59.999`)
-    return start <= end && date >= start && date <= end
-  }
-  return false
-}
 
 function formatDateTime(value) {
   return formatTimestamp(value, { dateOptions: { day: 'numeric', month: 'short' } })
 }
 
-function localDateKey(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 const money = value => new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(value)
-
-function DashboardKpi({ title, value, note, periodLabel, icon: Icon, tone = 'maroon', unavailable = false }) {
-  const palette = {
-    maroon: { icon: 'bg-primary/10 text-primary', card: 'border-primary/15 bg-[#F9EBEE]/40', bar: 'bg-primary' },
-    blue: { icon: 'bg-blue-100 text-blue-700', card: 'border-blue-100 bg-blue-50/35', bar: 'bg-blue-500' },
-    violet: { icon: 'bg-violet-100 text-violet-700', card: 'border-violet-100 bg-violet-50/35', bar: 'bg-violet-500' },
-    red: { icon: 'bg-rose-100 text-rose-700', card: 'border-rose-100 bg-rose-50/35', bar: 'bg-rose-500' },
-  }[tone] ?? { icon: 'bg-primary/10 text-primary', card: 'border-border bg-card', bar: 'bg-primary' }
-  return <Card className={`relative min-h-36 overflow-hidden py-0 shadow-[0_8px_24px_rgba(15,23,42,0.05)] ${palette.card}`}>
-    <span className={`absolute inset-x-0 top-0 h-1 ${palette.bar}`} aria-hidden="true" />
-    <CardContent className="flex h-full flex-col justify-between gap-3 p-5">
-      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">{title}</p>{periodLabel && <Badge variant="outline" className="mt-2 h-5 rounded-full px-2 text-[10px] normal-case tracking-normal">{periodLabel}</Badge>}</div><span className={`grid size-9 shrink-0 place-items-center rounded-lg ${palette.icon}`}><Icon size={18} aria-hidden="true" /></span></div>
-      <div><p className={`break-words text-2xl font-bold tracking-tight ${unavailable ? 'text-muted-foreground' : tone === 'red' ? 'text-red-700' : 'text-foreground'}`}>{value}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{note}</p></div>
-    </CardContent>
-  </Card>
-}
 
 function EmptyData({ icon: Icon, title, description }) {
   return <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
     <span className="mb-3 grid size-11 place-items-center rounded-xl bg-background text-muted-foreground shadow-sm"><Icon size={21} aria-hidden="true" /></span>
     <p className="font-semibold">{title}</p><p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">{description}</p>
-  </div>
-}
-
-function CashflowChart({ period, periodLabel, range, payments, expenses }) {
-  const records = useMemo(() => {
-    const now = new Date()
-    const create = (key, label) => ({ key, label, revenue: 0, expenses: 0 })
-    let buckets
-    if (period === 'daily') buckets = Array.from({ length: 6 }, (_, index) => create(index, formatTime(`${String(index * 4).padStart(2, '0')}:00`)))
-    else if (period === 'weekly') { const monday = new Date(now); monday.setHours(0,0,0,0); monday.setDate(monday.getDate()-((monday.getDay()+6)%7)); buckets = Array.from({length:7},(_,index)=>{const date=new Date(monday);date.setDate(date.getDate()+index);return create(localDateKey(date),new Intl.DateTimeFormat('en-PK',{weekday:'short'}).format(date))}) }
-    else if (period === 'monthly') buckets = Array.from({length:5},(_,index)=>create(index,`Week ${index+1}`))
-    else if (period === 'custom' && range.start && range.end) { const start=new Date(`${range.start}T00:00:00`), end=new Date(`${range.end}T00:00:00`), days=Math.min(31,Math.floor((end-start)/86400000)+1); buckets=Array.from({length:Math.max(0,days)},(_,index)=>{const date=new Date(start);date.setDate(date.getDate()+index);return create(localDateKey(date),new Intl.DateTimeFormat('en-PK',{day:'numeric',month:'short'}).format(date))}) }
-    else { const first = new Date(now.getFullYear(), now.getMonth() - 11, 1); buckets = Array.from({length:12},(_,index)=>{const date=new Date(first.getFullYear(),first.getMonth()+index,1);return create(`${date.getFullYear()}-${date.getMonth()}`,new Intl.DateTimeFormat('en-PK',{month:'short'}).format(date))}) }
-    const bucketFor = value => { const date=new Date(value); if(Number.isNaN(date.getTime()))return null; if(period==='daily')return buckets[Math.floor(date.getHours()/4)]; if(period==='weekly'||period==='custom')return buckets.find(item=>item.key===localDateKey(date)); if(period==='monthly')return buckets[Math.min(4,Math.floor((date.getDate()-1)/7))]; return buckets.find(item=>item.key===`${date.getFullYear()}-${date.getMonth()}`) }
-    payments.filter(item=>isInPeriod(item.paidAt,period,range,now)).forEach(item=>{const bucket=bucketFor(item.paidAt);if(bucket)bucket.revenue+=item.amount})
-    expenses.filter(item=>isInPeriod(item.entryDate,period,range,now)).forEach(item=>{const bucket=bucketFor(item.entryDate);if(bucket)bucket.expenses+=item.amount})
-    return buckets
-  }, [expenses, payments, period, range])
-  const inflow = records.reduce((sum,item)=>sum+item.revenue,0)
-  const burn = records.reduce((sum,item)=>sum+item.expenses,0)
-  const hasData = inflow > 0 || burn > 0
-  return <div className="space-y-3">
-    <div className="mobile-chart-summary grid gap-2 rounded-xl bg-muted/40 p-2.5 sm:grid-cols-3">
-      {[['Inflow', inflow], ['Burn', burn], ['Net Margin', inflow-burn]].map(([label, value]) => <div key={label}><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{periodLabel} {label}</p><p className={`mt-1 font-bold ${value<0?'text-red-700':'text-foreground'}`}>{money(value)}</p></div>)}
-    </div>
-    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-4 text-sm"><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-primary" />Revenue</span><span className="flex items-center gap-2"><span className="size-3 rounded-full bg-blue-200" />Expenses</span></div><Badge variant="outline">{periodLabel}</Badge></div>
-    <div className="relative h-52 w-full sm:h-60" aria-label={`Revenue and expenses chart for ${periodLabel}`}>
-      <ResponsiveContainer width="100%" height="100%"><BarChart data={records} margin={{ top: 16, right: 8, left: -8, bottom: 0 }}><CartesianGrid vertical={false} strokeDasharray="4 4" stroke="var(--border)" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} /><Tooltip formatter={value=>money(value)} /><Bar dataKey="revenue" name="Revenue" fill="var(--dashboard-revenue)" radius={[5, 5, 0, 0]} /><Bar dataKey="expenses" name="Expenses" fill="#bfdbfe" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer>
-      {!hasData&&<div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="max-w-sm rounded-xl border bg-card/95 px-5 py-4 text-center shadow-sm"><p className="font-semibold">No financial records for {periodLabel.toLowerCase()}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Verified receipts and posted expenses will appear automatically.</p></div></div>}
-    </div>
   </div>
 }
 

@@ -24,6 +24,7 @@ export default function AppRouter() {
         <Route path={ROUTE_PATHS.LOGIN} element={<LoginPage />} />
         <Route path={ROUTE_PATHS.SELECT_BRANCH} element={<SelectBranchPage />} />
         <Route path={ROUTE_PATHS.DASHBOARD} element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.MY_PROFILE} element={<ProtectedRoute><FacultyProfilePage isMyProfile={true} /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.ADMISSIONS} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_VIEW}><AdmissionsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENTS} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.STUDENT_PROFILE} element={<ProtectedRoute permission={PERMISSIONS.STUDENTS_VIEW}><StudentProfilePage /></ProtectedRoute>} />
@@ -37,7 +38,7 @@ export default function AppRouter() {
         <Route path={ROUTE_PATHS.NEW_ADMISSION} element={<ProtectedRoute permission={PERMISSIONS.ADMISSIONS_CREATE}><Navigate to={ROUTE_PATHS.ADMISSIONS} replace state={{ focusNewAdmission: true }} /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FEES} element={<ProtectedRoute permission={PERMISSIONS.FEES_VIEW}><FeesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.FINANCE} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage /></ProtectedRoute>} />
-        <Route path={ROUTE_PATHS.PAYROLL} element={<ProtectedRoute permission={PERMISSIONS.FINANCE_VIEW}><FinancePage initialTab="payroll" /></ProtectedRoute>} />
+        <Route path={ROUTE_PATHS.PAYROLL} element={<ProtectedRoute permission={PERMISSIONS.PAYROLL_VIEW}><FinancePage initialTab="payroll" /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.DEMO_CLASSES} element={<ProtectedRoute permission={PERMISSIONS.DEMO_CLASSES_VIEW}><DemoClassesPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.ASSETS} element={<ProtectedRoute permission={PERMISSIONS.ASSETS_VIEW}><AssetsPage /></ProtectedRoute>} />
         <Route path={ROUTE_PATHS.REPORTS} element={<ProtectedRoute permission={PERMISSIONS.REPORTS_VIEW}><ReportsPage /></ProtectedRoute>} />
