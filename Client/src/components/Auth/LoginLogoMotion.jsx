@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import useAcademy from '../../hooks/useAcademy.js'
 import tsaLogo from '../../assets/images/tsa-logo.png'
+import { scheduleIdleTask } from '../../utils/idleTask.js'
 
 export default function LoginLogoMotion() {
   const { branding } = useAcademy()
@@ -137,14 +138,19 @@ export default function LoginLogoMotion() {
       })
     }
 
-    void initialize().catch(error => {
-      if (!disposed) {
-        console.error('Login logo animation failed to initialize.', error)
-        cleanup()
-      }
+    const cancelInitialization = scheduleIdleTask(() => {
+      void initialize().catch(error => {
+        if (!disposed) {
+          console.error('Login logo animation failed to initialize.', error)
+          cleanup()
+        }
+      })
     })
 
-    return cleanup
+    return () => {
+      cancelInitialization()
+      cleanup()
+    }
   }, [loadedSource, reducedMotion, source])
 
   function animateTilt(event, reset = false) {

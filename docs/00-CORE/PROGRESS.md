@@ -399,7 +399,7 @@ Examples: four visible students/admissions 1,2,3,4 / ADM-1..ADM-4; delete middle
 
 **Current safety rule:** validate unique reciprocal admission/student links, matching branch and Provisional status. Delete only that pair in one commit; preserve unrelated records and durable counters. Unlinked admission deletes alone. Active, broken, cross-branch or ambiguous links remain blocked without erasure. No marker backfill, data reset, migration framework or extra dependency added.
 
-**MODIFIED files:** Client/src/mock/mockDatabase.js (remove marker-only restriction, retain link/status/branch checks); Client/src/components/Admissions/AdmissionActions.jsx (simple accurate confirmation); Client/src/mock/admissionCrud.test.js (legacy pair deletion and ambiguous-link safety); Client/src/pages/Admissions/AdmissionCrud.test.jsx (reported legacy deletion UI regression). docs/TASKS.md, PROGRESS.md, FEATURE_TICKETS.md, MEMORY.md, SECURITY.md, ERD.md, FRONTEND_INTEGRATION.md record this owner-approved correction. No files created/deleted; package/lockfiles, backend and unrelated code/comments unchanged.
+**MODIFIED files:** Client/src/mock/mockDatabase.js (remove marker-only restriction, retain link/status/branch checks); Client/src/components/Admissions/AdmissionActions.jsx (simple accurate confirmation); Client/src/mock/admissionCrud.test.js (legacy pair deletion and ambiguous-link safety); Client/src/pages/Admissions/AdmissionCrud.test.jsx (reported legacy deletion UI regression). docs/00-CORE/TASKS.md, PROGRESS.md, FEATURE_TICKETS.md, MEMORY.md, SECURITY.md, ERD.md, FRONTEND_INTEGRATION.md record this owner-approved correction. No files created/deleted; package/lockfiles, backend and unrelated code/comments unchanged.
 
 **PASS:** before-edit CRUD tests 23/23; final full suite 176/176 tests, 16 files. Lint zero errors with one existing Dashboard unused-disable warning. Production build PASS with existing >500 kB bundle warning. Isolated local Edge production-preview checks PASS: Add/View/Edit/Delete with legacy ownership markers absent, confirmation/cancel, linked records, double-submit prevention, branch Student/Admission sequences, deletion without reuse, actual refresh, branch switching/isolation, standalone form, dashboard and logout regression, 360/768/1024/1440px menu/edit bounds and keyboard/focus, no runtime exceptions. No owner's browser data was changed by verification. CI/deployment/backend/formal accessibility NOT_RUN.
 
@@ -440,8 +440,8 @@ Incoming working tree already contained Antigravity's shared admission form/popu
 | Client/src/pages/Admissions/AdmissionsPage.jsx | Row actions, immediate list/filter refresh, feedback, mobile spacing and stable post-save focus |
 | Client/src/mock/admissionTransaction.test.js | Retained prior coverage, updated superseded academy-wide expectations |
 | Client/src/pages/Admissions/AdmissionWorkflow.test.jsx | Branch-aware ID assertions while retaining shared popup/route regressions |
-| docs/TASKS.md, PROGRESS.md, FEATURE_TICKETS.md | Current scope, delivery status and executed evidence |
-| docs/MEMORY.md, ERD.md, FRONTEND_INTEGRATION.md, SECURITY.md | Owner decision, mock metadata/contracts and safe deletion/security limitations |
+| docs/00-CORE/TASKS.md, PROGRESS.md, FEATURE_TICKETS.md | Current scope, delivery status and executed evidence |
+| docs/00-CORE/MEMORY.md, ERD.md, FRONTEND_INTEGRATION.md, SECURITY.md | Owner decision, mock metadata/contracts and safe deletion/security limitations |
 
 **CREATED:**
 
@@ -486,7 +486,7 @@ No new installs or upgrades.
 - **FAIL (pre-existing):** repository-wide git diff --check reports incoming whitespace defects, notably DashboardPage and earlier files. Baseline comparison found no new trailing whitespace added by this task; unrelated edits were preserved.
 - **NOT_RUN:** actual CI, production deployment, backend runtime/database/security and formal accessibility certification. Browser tests ran only isolated local Edge; no saved owner browser database was changed.
 
-**Screenshots:** [mobile menu](../artifacts/f02-003-crud/actions-menu-360.png), [desktop menu](../artifacts/f02-003-crud/actions-menu-1440.png), [mobile edit](../artifacts/f02-003-crud/edit-admission-360.png), [saved View](../artifacts/f02-003-crud/view-admission-1440.png), [Delete confirmation](../artifacts/f02-003-crud/delete-confirmation-1440.png).
+**Screenshots:** [mobile menu](../../artifacts/f02-003-crud/actions-menu-360.png), [desktop menu](../../artifacts/f02-003-crud/actions-menu-1440.png), [mobile edit](../../artifacts/f02-003-crud/edit-admission-360.png), [saved View](../../artifacts/f02-003-crud/view-admission-1440.png), [Delete confirmation](../../artifacts/f02-003-crud/delete-confirmation-1440.png).
 
 **Final scope/documentation PASS:** baseline hashes show only the listed admission source/tests and seven documentation files changed, with no baseline files deleted or original explanatory comments removed. Fifteen root/governance Markdown files checked; all local file/image targets exist and new evidence anchor resolves.
 
@@ -507,7 +507,7 @@ No new installs or upgrades.
 
 **Executed evidence:** baseline 127/127 tests (12 files) PASS before edits; final 151/151 tests (14 files) PASS, including 24 new transaction/workflow cases. Lint PASS (0 errors; one pre-existing DashboardPage unused-disable warning). Production build PASS (existing >500 kB bundle warning remains).
 
-**Local production-preview browser checks PASS:** 360/768/1024/1440px popup bounds/no page overflow; Tab containment; Escape/focus restoration; first-error focus/description; formatted success/list IDs; atomic linked storage; actual nested URL reload; North/Central isolation and sequential IDs; standalone shared form; dashboard route and logout denial; no runtime exceptions. Screenshots: [mobile popup](../artifacts/f02-003/admission-popup-360.png), [desktop popup](../artifacts/f02-003/admission-popup-1440.png), [saved list](../artifacts/f02-003/admissions-saved-1440.png).
+**Local production-preview browser checks PASS:** 360/768/1024/1440px popup bounds/no page overflow; Tab containment; Escape/focus restoration; first-error focus/description; formatted success/list IDs; atomic linked storage; actual nested URL reload; North/Central isolation and sequential IDs; standalone shared form; dashboard route and logout denial; no runtime exceptions. Screenshots: [mobile popup](../../artifacts/f02-003/admission-popup-360.png), [desktop popup](../../artifacts/f02-003/admission-popup-1440.png), [saved list](../../artifacts/f02-003/admissions-saved-1440.png).
 
 **Limitations / NOT_RUN:** CI, production deployment, backend/database checks and formal accessibility certification were not run. Native Web Locks serialize cooperating browser tabs where supported (verified in local Edge); the fallback guarantees one JavaScript context only, not concurrent tabs without Web Locks. Browser-local storage can be manually cleared/tampered with; this is not a server sequence or authorization boundary. Duplicate-person matching, real program/batch references, admission approval rules and enrollment remain unapproved/deferred.
 
@@ -722,9 +722,9 @@ Route: central ROUTE_PATHS.DASHBOARD=/dashboard; AppRouter wraps DashboardPage i
 Read-only source: https://sunbeam-styler.lovable.app/. web tool returned URL not accessible via this tool. Initial Edge wait for readyState complete plus h1 timed out; direct later DOM inspection showed rendered reference content while readyState remained interactive. Observed title Dashboard / Elarion Academy ERP, Plus Jakarta Sans, rgb(248,249,255) canvas, sidebar/topbar, greeting, four KPI cards, larger chart panel and Quick Operations section. Skeleton follows the observed section hierarchy and previously verified approved shell tokens; reference names, figures, financial metrics/actions, chart rules and role policies are not copied or approved by this review. No new exact design tokens adopted.
 
 Captured/inspected local screenshots (not a production deployment):
-- [Before workspace, 1440px](../artifacts/f01-001/workspace-before-1440.png).
-- [After Dashboard, 1440px](../artifacts/f01-001/dashboard-1440.png).
-- [After Dashboard, 360px](../artifacts/f01-001/dashboard-360.png).
+- [Before workspace, 1440px](../../artifacts/f01-001/workspace-before-1440.png).
+- [After Dashboard, 1440px](../../artifacts/f01-001/dashboard-1440.png).
+- [After Dashboard, 360px](../../artifacts/f01-001/dashboard-360.png).
 
 Final screenshots use settled large-height viewports and reduced motion for capture. Initial full-page screenshot capture produced transient clipping despite correct settled DOM bounds; viewport captures replaced them. Responsive checks separately used 1100px-high viewports and verified no horizontal overflow at each requested width.
 
@@ -736,11 +736,11 @@ MODIFIED:
 - Client/src/routes/AppRouter.jsx - guarded dashboard route.
 - Client/src/components/Layout/Sidebar.jsx - authorized Dashboard NavLink and active-route handling; preserve other placeholders/comments.
 - Client/src/layouts/DashboardLayout.jsx - optional description passed through existing PageHeader, default behavior preserved.
-- docs/TASKS.md - accepted foundation/current F01 delivery and next approval.
-- docs/PROGRESS.md - verified delivery, source/artifacts, limits.
-- docs/FEATURE_TICKETS.md - accepted F00 main statuses/parent coverage, F01 scoped route/delivery evidence.
-- docs/MEMORY.md - explicit owner acceptance and narrowed F01 authorization decision.
-- docs/DESIGN.md - scoped acceptance/current verified visual observations; preserve earlier records.
+- docs/00-CORE/TASKS.md - accepted foundation/current F01 delivery and next approval.
+- docs/00-CORE/PROGRESS.md - verified delivery, source/artifacts, limits.
+- docs/00-CORE/FEATURE_TICKETS.md - accepted F00 main statuses/parent coverage, F01 scoped route/delivery evidence.
+- docs/00-CORE/MEMORY.md - explicit owner acceptance and narrowed F01 authorization decision.
+- docs/04-FRONTEND/DESIGN.md - scoped acceptance/current verified visual observations; preserve earlier records.
 - docs/SECURITY.md - approved skeleton reuses workspace.view; no new grant.
 
 CREATED:
@@ -827,11 +827,11 @@ A maintained regression test reproduced a lost branding update: calling updateBr
 MODIFIED:
 - `Client/src/contexts/AcademyContext.jsx` - minimal fix for verified React-batched branding updates.
 - `Client/src/contexts/brandingContexts.test.jsx` - regression reproducing simultaneous academy/theme updates.
-- `docs/TASKS.md` - F00-010 current status and owner/F01 gate.
-- `docs/PROGRESS.md` - current evidence, acceptance audit, exact files and limitations.
-- `docs/FEATURE_TICKETS.md` - parent F00-002 coverage reconciliation, F00-010 status and F01 boundary.
+- `docs/00-CORE/TASKS.md` - F00-010 current status and owner/F01 gate.
+- `docs/00-CORE/PROGRESS.md` - current evidence, acceptance audit, exact files and limitations.
+- `docs/00-CORE/FEATURE_TICKETS.md` - parent F00-002 coverage reconciliation, F00-010 status and F01 boundary.
 - `docs/SECURITY.md` - current narrowed mock security boundary; no new permission decision.
-- `docs/FRONTEND_INTEGRATION.md` - verified current service/context contracts and future consumer requirements.
+- `docs/04-FRONTEND/FRONTEND_INTEGRATION.md` - verified current service/context contracts and future consumer requirements.
 
 CREATED: None. No packages, lockfile, backend, unrelated source or CI workflow modified. Existing uncommitted repository changes predated this task and remain preserved; no commit made. Build regenerated ignored dist/cache artifacts. Browser harness/profile were temporary local verification tooling, not new maintained project infrastructure.
 
@@ -932,7 +932,7 @@ MODIFIED:
 - `Client/src/layouts/DashboardLayout.jsx` â€” shared default academy name for both sidebars.
 - `Client/src/components/Layout/Sidebar.jsx` â€” AcademyLogo and shared layout identity.
 - `Client/src/components/Layout/Header.jsx` â€” context name and bounded responsive flex sizing.
-- `docs/TASKS.md`, `docs/PROGRESS.md`, `docs/FEATURE_TICKETS.md` â€” approved scope, delivery evidence and pending acceptance; prior comments/history retained.
+- `docs/00-CORE/TASKS.md`, `docs/00-CORE/PROGRESS.md`, `docs/00-CORE/FEATURE_TICKETS.md` â€” approved scope, delivery evidence and pending acceptance; prior comments/history retained.
 
 ### Dependencies / Actual Checks
 
@@ -982,9 +982,9 @@ studentService/courseService -> createCollectionService -> mockApi.request -> mo
 | MODIFIED | Client/src/services/studentService.js | Student service contract |
 | MODIFIED | Client/src/services/courseService.js | Course service contract |
 | CREATED | Client/src/mock/mockDatabase.test.js | CRUD/storage/seeding/branch/failure/replacement tests |
-| MODIFIED | docs/TASKS.md | Owner acceptance and current delivery status |
-| MODIFIED | docs/FEATURE_TICKETS.md | Accepted dependency and approved minimal scope/status |
-| MODIFIED | docs/PROGRESS.md | Contracts, files, results and limitations |
+| MODIFIED | docs/00-CORE/TASKS.md | Owner acceptance and current delivery status |
+| MODIFIED | docs/00-CORE/FEATURE_TICKETS.md | Accepted dependency and approved minimal scope/status |
+| MODIFIED | docs/00-CORE/PROGRESS.md | Contracts, files, results and limitations |
 
 ### Libraries / Usage
 
@@ -1102,9 +1102,9 @@ Read AGENTS, RULES, SECURITY, active ticket and tracking records; reviewed F00-0
 | MODIFIED | Client/src/pages/Errors/UnauthorizedPage.jsx | Reuse shared denial notice |
 | CREATED | Client/src/components/Auth/PermissionGate.test.jsx | Hook/gate, roles, denial, fallback, logout tests |
 | CREATED | Client/src/constants/permissions.test.js | Registry, malformed assignments, branch separation/immutability tests |
-| MODIFIED | docs/TASKS.md | Current approved task/status and remaining approvals |
-| MODIFIED | docs/FEATURE_TICKETS.md | Reconciled minimal scope and delivery evidence |
-| MODIFIED | docs/PROGRESS.md | Actual results and changed-file/library inventory |
+| MODIFIED | docs/00-CORE/TASKS.md | Current approved task/status and remaining approvals |
+| MODIFIED | docs/00-CORE/FEATURE_TICKETS.md | Reconciled minimal scope and delivery evidence |
+| MODIFIED | docs/00-CORE/PROGRESS.md | Actual results and changed-file/library inventory |
 
 ### Existing Libraries / Exact Consumers (nothing installed)
 
@@ -1168,9 +1168,9 @@ Final role-permission matrix, multi-role combining/deny precedence, record restr
 | MODIFIED | Client/src/contexts/accessContexts.test.jsx | Removed-assignment rejection clears protected branch state |
 | MODIFIED | Client/src/services/authService.test.js | Saved selection revalidation after assignment removal |
 | MODIFIED | Client/src/routes/authRoutes.test.jsx | Preserve current user-edited root text in regression assertions |
-| MODIFIED | docs/TASKS.md | Active ticket/delivery boundary |
-| MODIFIED | docs/PROGRESS.md | Actual delivery, dependency and verification evidence |
-| MODIFIED | docs/FEATURE_TICKETS.md | Current approved scope/status; historical All Branches scope superseded |
+| MODIFIED | docs/00-CORE/TASKS.md | Active ticket/delivery boundary |
+| MODIFIED | docs/00-CORE/PROGRESS.md | Actual delivery, dependency and verification evidence |
+| MODIFIED | docs/00-CORE/FEATURE_TICKETS.md | Current approved scope/status; historical All Branches scope superseded |
 
 No new page or route. BranchSwitcher is consumed by DemoSessionControls inside Header on public authenticated home and protected WorkspacePage. All original explanatory comments remain in their original files. Existing uncommitted changes, including App.jsx's `Academy Managemnt System`, were preserved. Package/lockfile, Server/ and CI untouched by this ticket; no commits.
 
@@ -1418,7 +1418,7 @@ Tailwind already existed. PageHeader and DashboardLayout do not directly import 
 
 DONE refers to the expressly approved limited scopes, not the full original F00-002 backlog or whole F00. Authentication, guards, Unauthorized/module routes, branch/session logic, working ERP navigation and dashboards are deferred. Sidebar labels are disabled placeholders. Neutral styling was provisional when reference access failed during implementation; this sync subsequently accessed the reference in Edge. Formal acceptance of reference-driven visual changes, persistent tests, production fallback and full device/browser coverage remain open.
 
-[DESIGN.md records verified observations and proposed differences](DESIGN.md#doc-sync-001--lovable-reference-review-2026-10-09). DOC-SYNC-001 stops after documentation delivery; no further coding is authorized.
+[DESIGN.md records verified observations and proposed differences](../04-FRONTEND/DESIGN.md#doc-sync-001--lovable-reference-review-2026-10-09). DOC-SYNC-001 stops after documentation delivery; no further coding is authorized.
 
 ---
 
@@ -1585,19 +1585,19 @@ The following documentation files belong to the project.
 
 | Document | Current review classification |
 |---|---|
-| docs/README.md | Current content requires verification |
-| docs/PRD.md | Expanded draft supplied for review |
-| docs/SYSTEM_DESIGN.md | Draft reported; detailed review pending |
-| docs/ARCHITECTURE.md | Expanded draft supplied for review |
-| docs/ERD.md | Expanded draft supplied for review |
-| docs/DESIGN.md | Expanded draft supplied for review |
+| docs/00-CORE/README.md | Current content requires verification |
+| docs/00-CORE/PRD.md | Expanded draft supplied for review |
+| docs/00-CORE/SYSTEM_DESIGN.md | Draft reported; detailed review pending |
+| docs/01-ARCHITECTURE/ARCHITECTURE.md | Expanded draft supplied for review |
+| docs/01-ARCHITECTURE/ERD.md | Expanded draft supplied for review |
+| docs/04-FRONTEND/DESIGN.md | Expanded draft supplied for review |
 | docs/SECURITY.md | Review pending |
-| docs/FRONTEND_INTEGRATION.md | Expanded draft supplied for review |
-| docs/RULES.md | Review pending |
-| docs/FEATURE_TICKETS.md | Expanded draft supplied for review |
-| docs/TASKS.md | Review pending |
-| docs/MEMORY.md | Expanded draft supplied for review |
-| docs/PROGRESS.md | Expanded draft supplied for review |
+| docs/04-FRONTEND/FRONTEND_INTEGRATION.md | Expanded draft supplied for review |
+| docs/00-CORE/RULES.md | Review pending |
+| docs/00-CORE/FEATURE_TICKETS.md | Expanded draft supplied for review |
+| docs/00-CORE/TASKS.md | Review pending |
+| docs/00-CORE/MEMORY.md | Expanded draft supplied for review |
+| docs/00-CORE/PROGRESS.md | Expanded draft supplied for review |
 | AGENTS.md | Previously reported as created; current content requires verification |
 
 ### Documentation Status Rules
@@ -2138,11 +2138,11 @@ Begin only after the appropriate backend plan, security specifications and integ
 - [Documentation Index](README.md)
 - [Product Requirements](PRD.md)
 - [System Design](SYSTEM_DESIGN.md)
-- [Technical Architecture](ARCHITECTURE.md)
-- [Database ERD](ERD.md)
-- [Visual Design](DESIGN.md)
-- [Security Specification](SECURITY.md)
-- [Frontend Integration](FRONTEND_INTEGRATION.md)
+- [Technical Architecture](../01-ARCHITECTURE/ARCHITECTURE.md)
+- [Database ERD](../01-ARCHITECTURE/ERD.md)
+- [Visual Design](../04-FRONTEND/DESIGN.md)
+- [Security Specification](../SECURITY.md)
+- [Frontend Integration](../04-FRONTEND/FRONTEND_INTEGRATION.md)
 - [Engineering Rules](RULES.md)
 - [Feature Tickets](FEATURE_TICKETS.md)
 - [Current Tasks](TASKS.md)
@@ -2213,7 +2213,7 @@ Saving the revised content to the repository, running documentation link checks,
 
 **Libraries verified installed; no installs/upgrades:** React 19.3.0 (StudentsPage/StudentsTable); Router 7.18.4 (AppRouter/Sidebar); Tailwind 4.3.3 and Plus Jakarta Sans 5.3.0 (existing theme/font); Lucide 1.54.0 (StudentsPage and existing sidebar); shared shadcn-derived Card/Badge/Button (directory), Radix Dialog 1.2.0 only reused indirectly in existing layout/Admissions. Tests: Vitest 5.0.3, React Testing Library 16.3.3, user-event 14.6.7, jest-dom 7.0.1 and jsdom 30.1.2.
 
-Screenshots: [360px](../artifacts/f03-001/students-360.png), [768px](../artifacts/f03-001/students-768.png), [1024px](../artifacts/f03-001/students-1024.png), [1440px](../artifacts/f03-001/students-1440.png).
+Screenshots: [360px](../../artifacts/f03-001/students-360.png), [768px](../../artifacts/f03-001/students-768.png), [1024px](../../artifacts/f03-001/students-1024.png), [1440px](../../artifacts/f03-001/students-1440.png).
 
 **Next:** owner review F03-001; normal next F02-004 Program and Batch Selection needs separate rules/scope approval. F02-005 Admission Status Workflow, F02-006 Admission-to-Enrollment Mock Integration and F02-007 Admission Module Testing remain separate. F03-002 Student Search and Filtering, F03-003 Student Profile, F03-004 Student Editing and Validation, F03-005 Student Enrollment History, F03-006 Student Fee/Attendance Views and F03-007 Students Module Testing remain planned/unimplemented. Stop after this task.
 ## F02-004 Program and Batch Selection delivery (2026-10-12)
@@ -2234,7 +2234,7 @@ Shared NewAdmissionForm now loads saved current-branch courses and batches, filt
 
 **Libraries; no installs/package/lockfile changes:** React 19.3.0 (form state/effects); Radix Dialog 1.2.0 (existing popup/View/Edit); Tailwind 4.3.3 (selectors and existing theme); Lucide 1.54.0 (existing loading icon); Router 7.18.4 (existing list/standalone route). Native Array map/filter/find suffices; Luxon/Lodash/Moment/Jest not added. Tests reuse Vitest 5.0.3, RTL 16.3.3, DOM Testing Library 10.4.2, user-event 14.6.7, jest-dom 7.0.1 and jsdom 30.1.2.
 
-Screenshots: [mobile popup](../artifacts/f02-004/program-popup-360.png), [tablet popup](../artifacts/f02-004/program-popup-768.png), [1024px popup](../artifacts/f02-004/program-popup-1024.png), [desktop popup](../artifacts/f02-004/program-popup-1440.png).
+Screenshots: [mobile popup](../../artifacts/f02-004/program-popup-360.png), [tablet popup](../../artifacts/f02-004/program-popup-768.png), [1024px popup](../../artifacts/f02-004/program-popup-1024.png), [desktop popup](../../artifacts/f02-004/program-popup-1440.png).
 
 **Limitations/next:** browser-local DEMO UX checks are not production authorization; workspace.view unchanged, no production permission or Super Admin bypass. No batch management UI, schedules/capacities/fees/enrollment/status workflow. Existing Web Locks/single-context fallback limitations remain. Owner review required. Next planned F02-005 Admission Status Workflow requires separate approval of transitions and authority; F02-006 enrollment and F02-007 module testing remain separate. Full academy-wide course/enrollment model deferred. Stop after F02-004.
 ## F02-005 Admission Status Workflow delivery (2026-10-12)
@@ -2257,7 +2257,7 @@ Screenshots: [mobile popup](../artifacts/f02-004/program-popup-360.png), [tablet
 
 **Libraries, no installs/upgrades:** React 19.3.0 (AdmissionActions state/effects), Radix Dialog 1.2.0 (existing confirmation/View dialog), Lucide 1.54.0 (Approve/Reject icons), Tailwind 4.3.3 (existing styling), Router 7.18.4 (existing navigation only). Native Date.toISOString/Array helpers suffice. Vitest 5.0.3, RTL 16.3.3, DOM Testing Library 10.4.2, user-event 14.6.7, jest-dom 7.0.1, jsdom 30.1.2 reused. No package/lockfile or backend changes in this ticket.
 
-Screenshots: [360px](../artifacts/f02-005/status-confirmation-360.png), [768px](../artifacts/f02-005/status-confirmation-768.png), [1024px](../artifacts/f02-005/status-confirmation-1024.png), [1440px](../artifacts/f02-005/status-confirmation-1440.png).
+Screenshots: [360px](../../artifacts/f02-005/status-confirmation-360.png), [768px](../../artifacts/f02-005/status-confirmation-768.png), [1024px](../../artifacts/f02-005/status-confirmation-1024.png), [1440px](../../artifacts/f02-005/status-confirmation-1440.png).
 
 **Next:** owner review F02-005; F02-006 Admission-to-Enrollment Mock Integration needs separate approved trigger/schema/rules and must reconcile decided-read-only records without automatic reopening/activation. Real permissions, production audit retention, backend authorization and any later reversal policy remain unresolved/deferred. No fees/enrollment work or next ticket started. Stop after F02-005.
 

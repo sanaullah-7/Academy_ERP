@@ -12,6 +12,7 @@ import { findDemoUser, getAuthorizedBranches, getDemoUsers } from '../mock/authF
 import { readMockSession, saveMockSession, clearMockSession } from '../mock/mockAuth.js'
 
 export const authService = {
+  restoreSession() { return readMockSession() },
   async getSession() { return readMockSession() },
   async getCurrentUser() { return readMockSession()?.user ?? null },
   async login({ userId, email, password }) {

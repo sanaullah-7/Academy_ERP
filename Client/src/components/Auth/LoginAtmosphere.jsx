@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { scheduleIdleTask } from '../../utils/idleTask.js'
 
 export default function LoginAtmosphere({ variant = 'panel' }) {
   const mountRef = useRef(null)
@@ -156,10 +157,11 @@ export default function LoginAtmosphere({ variant = 'panel' }) {
       if (!observer) disposables.push({ dispose: () => window.removeEventListener('resize', resize) })
     }
 
-    void initialize()
+    const cancelInitialization = scheduleIdleTask(() => { void initialize() })
 
     return () => {
       stopped = true
+      cancelInitialization()
       if (frame) cancelAnimationFrame(frame)
       observer?.disconnect()
       disposables.forEach(item => item.dispose())
