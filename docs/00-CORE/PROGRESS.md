@@ -1,13 +1,139 @@
 <!-- Development progress â€” kya complete hua, kya tested hai, kya pending hai aur kya blocked hai -->
 
-# Academy Management ERP â€” Verified Development Progress
+# Academy Management ERP — Verified Development Progress
 
 **Document:** PROGRESS.md
-**Version:** 1.0
-**Status:** ACTIVE â€” Development Progress Register
-**Last Updated:** 2026-10-21
+**Version:** 1.5
+**Status:** ACTIVE — BE-003-FIX Transaction & Idempotency Safety Gate Complete, Ready for Owner Review
+**Last Updated:** 2026-10-23
 **Project:** Academy Management ERP
-**Current Stage:** F00-011 Login logo motion — IN_REVIEW, owner acceptance pending
+**Current Stage:** Transaction & Idempotency Safety Gate Complete (BE-003-FIX)
+
+## BE-003-FIX — Transaction & Idempotency Safety Gate (2026-10-23)
+
+**Status:** IN_REVIEW; safety review and hardening complete, owner acceptance pending.
+- **Fail-Closed Transaction Safety (`withTransaction`)**:
+  - Eliminated silent fallback execution of callbacks without a transaction when MongoDB lacks replica-set support.
+  - Multi-record operations strictly fail closed with `TRANSACTION_FAILED` (500) if transactions are unavailable. Callbacks are NEVER executed outside an active transaction session.
+  - Dedicated commit retry: Retries `session.commitTransaction()` on `UnknownTransactionCommitResult` on the SAME session without re-executing `operationFn` (preventing duplicate writes).
+  - Throws `TRANSACTION_UNCERTAIN` when commit uncertainty persists after retries.
+  - Transient errors before commit (`TransientTransactionError` / `WriteConflict`) abort and restart the transaction up to `maxRetries`.
+  - Guaranteed session release in `finally { await session.endSession() }`.
+- **Hardened Idempotency Infrastructure**:
+  - Cross-endpoint isolation: Compound unique index updated to `{ organizationId: 1, requestMethod: 1, requestPath: 1, key: 1 }` preventing key collisions across different routes.
+  - Uncertain failure protection: Idempotency records are NEVER deleted when write outcome is uncertain. Marked as `status: 'failed', uncertain: true` to block duplicate business effects on retry. Clean client input errors (4xx) safely allow retry.
+  - Client disconnect safety: Middleware intercepts socket aborts/disconnects before response completion, marking the operation uncertain.
+- **Verification Evidence**:
+  - 62/62 automated tests PASS (`npm --prefix Server test` in ~8.2s). Real multi-record transaction atomicity marked `NOT_VERIFIED` on standalone local MongoDB until a replica set is configured.
+  - Zero modifications to `Client/`.
+
+## BE-003 — Backend Data, API & Performance Foundation (2026-10-23)
+
+**Status:** IN_REVIEW; implementation and verification complete, owner acceptance pending.
+- **API Response & Error Normalization**:
+  - `successResponse` and `paginatedResponse` standard envelopes implemented in `Server/src/shared/utils/response.js`.
+  - Reusable `errorResponse` enhanced with `fieldErrors` and `details`.
+  - `errorHandler.js` normalizes Mongoose duplicate keys (E11000 -> 409 `CONFLICT`), validation errors (422 `VALIDATION_ERROR`), and cast errors (400 `VALIDATION_ERROR`).
+  - `requestLogger.js` enhanced to preserve incoming `X-Request-Id` and inject `X-Response-Time` header.
+  - DateTime ISO-8601 utilities and 24-char ObjectId validator implemented.
+- **Validation Foundation & Injection Defense**:
+  - Built zero-dependency validation middleware `validateRequest` supporting types (`string`, `number`, `boolean`, `date`, `objectId`, `array`, `enum`) and boundaries.
+  - Enforced NoSQL injection defense blocking keys with `$` or `.` across `body`, `query`, and `params`.
+  - Strict field allowlist checking reporting unexpected fields.
+- **Data Access, Pagination & Performance Conventions**:
+  - `parsePagination` implemented with default 20, max 100 limit ceiling, and skip calculation.
+  - `parseSort` implemented with allowlist validation and deterministic `_id: -1` tie-breaker.
+  - Compound indexing rules documented in `indexes.js` following ESR rules (`organizationId: 1, branchId: 1, ...`).
+  - `tenantScope` middleware created to bind `scopedQuery` and `branchScopedQuery` builders to requests.
+- **Financial Integrity Technical Primitives**:
+  - `withTransaction` utility created with transient error retry (`TransientTransactionError`, `UnknownTransactionCommitResult`) and non-replica test fallback.
+  - `IdempotencyRecord` Mongoose model with TTL index and `IdempotencyService` with `createIdempotencyMiddleware` detecting concurrent processing (409) and payload mismatches (409).
+- **Test Database Guard Host Inspection**:
+  - Hardened `assertSafeTestDatabase` to inspect hostname and database name, rejecting production/staging cloud hosts even if the database name ends in `_test`.
+- **Verification Evidence**:
+  - 61/61 automated tests PASS (`npm --prefix Server test` in ~6.4s).
+  - 17/17 BE-001 regression tests pass.
+  - 31/31 BE-002 security regression tests pass.
+  - 13/13 BE-003 new unit and integration tests pass.
+  - Zero modifications to `Client/`.
+
+## BE-002-FINAL — Final Security Gate (2026-10-23)
+
+**Status:** IN_REVIEW; implementation and hardening complete, owner acceptance pending.
+- **Branch Membership Authority**:
+  - `BranchRoleAssignment` model (`userBranchRoles`) established as the single authoritative source of truth.
+  - Eliminated fallback to embedded `User.assignments` when the collection model is configured; revoked or deleted records can never be resurrected by stale embedded user documents.
+  - Verified with live MongoDB negative tests for deletion (`deleteOne`), revocation (`status: 'inactive'`), and stale embedded isolation.
+- **Independent IP and Account Rate Limiting**:
+  - Implemented decoupled rate-limit counters in `Server/src/middleware/rateLimiter.js`: `ip:${ip}` (`maxIp`) and `account:${email}` (`maxAccount`).
+  - Rotating fake emails from a single IP cannot circumvent IP-level throttling.
+  - Distributed attacks targeting a single account cannot circumvent account-level throttling.
+  - Anti-eviction memory protection: entries with active violations (`count >= limit && now <= resetTime`) are immune to eviction during memory-pressure pruning.
+  - Added unit and HTTP integration abuse tests in `Server/tests/security/session.test.js`.
+- **Strict MongoDB Test Guard & Scoped Cleanup**:
+  - Implemented `assertSafeTestDatabase` in `Server/src/config/databaseTestGuard.js` with full URL path parsing to extract exact database names.
+  - Rejects URIs containing production/staging keywords (`prod`, `production`, `live`, `staging`, `uat`) or invalid test names, and enforces `NODE_ENV !== 'production'`.
+  - Database cleanup in integration tests is strictly scoped to `{ organizationId: 'test-org-db' }`, leaving foreign organizational records untouched.
+  - Verified with unit tests for malicious/non-test URIs and live multi-org isolation test.
+- **Verification Evidence**:
+  - 48/48 tests PASS cleanly (`npm --prefix Server test` in ~5.5s).
+  - 17/17 BE-001 foundational tests pass.
+  - Live MongoDB tested on port 27017 (`mongodb://127.0.0.1:27017/tsa_academy_test`).
+  - Zero files modified in `Client/`.
+
+## BE-002-SR — Authentication, RBAC & Security Hardening Review (2026-10-23)
+
+**Status:** IN_REVIEW; review and hardening complete, owner acceptance pending.
+- **Security Hardening & Refinements**:
+  - Replaced synchronous `scryptSync` with asynchronous `promisify(crypto.scrypt)` offloading CPU-intensive password derivation to libuv worker pool; event loop stays 100% non-blocking during concurrent logins.
+  - Resolved dual branch-assignment ambiguity: `BranchRoleAssignment` model (`userBranchRoles`) is authoritative whenever records exist; stale or revoked embedded assignments in `User.assignments` can never bypass deactivation.
+  - Restamped single approved browser credential transport: removed Bearer token parsing from `authenticate` middleware, strictly enforcing HttpOnly session cookie transport.
+  - Eliminated query-string CSRF token extraction (`req.query._csrf`) to avoid URI/log leakage; upgraded `compareTokens` to SHA-256 pre-hashed buffers eliminating length timing leaks.
+  - Hardened CORS preflight `OPTIONS` to explicitly reject unapproved origins with 403 Forbidden.
+  - Enhanced login rate limiter with proxy-aware IP extraction, dual IP+email keying, and bounded memory protection (`maxRecords = 5000`) with automatic oldest-key pruning.
+  - Enforced test database isolation check (ensures URI includes `test`) and `t.skip` marking tests BLOCKED when MongoDB is offline.
+- **Verification**: 45/45 tests PASS (`node --test --test-concurrency=1` in 3.5s). Zero frontend modifications.
+
+## BE-002 — Authentication, RBAC & Multi-Branch Security (2026-10-23)
+
+**Status:** IN_REVIEW; implementation complete, owner acceptance pending.
+- **Backend Architecture & Security Implementation**:
+  - Implemented server-managed session authentication under `Server/src/modules/auth/` and `Server/src/middleware/`.
+  - Secure password hashing using native `node:crypto.scrypt` with 16-byte cryptographically secure random salt and memory-hard parameters ($N=16384, r=8, p=1$).
+  - Timing-safe credential and token verification with `crypto.timingSafeEqual` preventing timing attacks.
+  - Server-side Session storage in MongoDB with TTL auto-expiration index (`expiresAt`), token SHA-256 hash storage, and explicit revocation handling (`revokedAt`).
+  - Secure HttpOnly, SameSite, and Secure-configured cookies (`tsa_session`, `tsa_csrf`) via dedicated cookie parsing/configuration middleware.
+  - State-changing mutation CSRF protection verifying `x-csrf-token` header against session CSRF tokens.
+  - In-memory sliding-window rate limiting protecting login endpoints against brute-force attacks.
+- **RBAC & Authorization Matrix**:
+  - Centralized server-side roles (`super_admin`, `admin`, `owner`, `receptionist`, `teacher`) and 32 action permissions strictly aligned with `Client/src/constants/permissions.js`.
+  - Receptionist role granted full Admissions and Fees module workflows; strictly denied independent Finance, Teacher Payroll, Expenses, Audit Log, User Management, Branch Management, and Settings.
+  - Owner role granted financial and management views; strictly denied system administrative modules.
+  - Teacher role granted 0 general module permissions, restricted strictly to self-only record access and dashboard.
+  - Unknown roles and unmapped permissions fail closed and deny by default.
+- **Branch Scope & Escalation Control**:
+  - Branch scope middleware resolving active branch, verifying user branch assignments, and failing closed on ambiguous same-branch multi-role assignments.
+  - Admin privilege escalation policy preventing assignment of Admin/Super Admin roles or modification of protected/Super Admin accounts.
+  - Branch creation pause strictly enforced across all roles via `BRANCH_CREATION_PAUSED` (403).
+  - Record ownership middleware (`requireTeacherSelfOnly`) preventing cross-teacher salary and record inspection.
+- **Persistence Models**:
+  - `User`: Mongoose model with email normalization, unique index, hidden `passwordHash` (`select: false`), status validation, and assignments.
+  - `Session`: Mongoose model with unique `tokenHash` index, TTL expiration index, and revocation timestamp.
+  - `Branch`: Mongoose model with compound unique `{ organizationId, code }` index.
+  - `BranchRoleAssignment`: Mongoose model with compound unique `{ userId, branchId }` index.
+- **Verification Evidence**:
+  - Unit & Security tests: 41/41 PASS (node --test --test-concurrency=1 in 3.5s).
+  - Regression: All 17 BE-001 tests pass with 0 regressions.
+  - Live MongoDB integration test: verified document creation, unique index constraints (code 11000), session revocation, and `AuthRepository` persistence against local MongoDB.
+  - Code hygiene: 0 ESLint warnings, 0 deprecation warnings, 0 modifications to `Client/`.
+
+## DOC-FULL-AUDIT-UPDATE — 2026-10-23
+
+**Status:** DONE pending owner review. Reviewed the existing Markdown inventory, five completed frontend audit/handoff documents, current permissions/routes/services and payroll source boundaries. Updated authoritative product, workflow, security, architecture, data, integration, design, engineering, agent and tracking documents without changing application code.
+
+**Effective result:** exactly five roles; Receptionist full implemented Admissions/Fees with specified denials; Teacher self-only My Profile/compensation; assignment-based running payroll without monthly renewal; verified-payment/posted-expense reconciliation; Admin ceilings; branch creation pause; deferred Platform Admin/media and explicit TBD reversal/transfer/migration decisions.
+
+**Validation:** role/payroll contradiction scan, intended-file existence, relative Markdown link validation, `git diff --check` and application-file status checks. ESLint, Vitest and build were NOT_RUN because this ticket changes documentation only.
 
 ## Teacher "My Profile" Navigation, Schedule & Salary Compensation Hub (2026-10-22)
 
@@ -3612,7 +3738,7 @@ Browser verification PASS: replayed the read-only localhost Chrome ERP snapshot 
 
 ## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
 
-Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
+**SUPERSEDED by PAYROLL-RUNNING-BALANCE (2026-10-22):** Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
 
 ## PAYROLL-TWO-METHODS - 2026-10-22
 
@@ -3620,7 +3746,7 @@ Owner-approved focused payroll simplification; IN_REVIEW pending owner browser a
 
 New drafts omit bonuses, allowances, deductions, tax and automatic advance recovery. Historical approved/paid payroll and advances remain preserved. Legacy or removed/reassigned draft lines are retained with supersededAt rather than deleted; active views exclude superseded drafts. Historical approved teacher-only rows remain readable/payable under their original snapshot. The month/Recalculate/Staff Advance header controls remain absent; salary-period/history navigation is in the content area to meet the newly requested monthly workflow. Draft calculation refreshes through normal navigation and agreement changes. Six simplified KPIs show salary due/paid/remaining, assigned teachers, current agreements and pending assignment balances.
 
-Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist and Teacher payroll requests remain denied under current policy (Teacher self-service is not enabled). Branch guards and existing adapter serialization remain in effect. No Server changes, new packages, destructive migration, worktree, commit or push.
+Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist remains denied. **Updated 2026-10-23:** Teacher may read only their own compensation, verified payment history and payslips through `/my-profile`, without organization Payroll access. Branch guards and existing adapter serialization remain in effect. No Server changes, new packages, destructive migration, worktree, commit or push.
 
 PASS: 66 unique focused/regression tests (57 payroll/component/faculty/academic/PDF/audit + 4 Finance Overview + 5 financial tests); targeted ESLint; one production build; diff check. A broader run had one receipt-navigation timeout; its isolated five-test file passed. Disposable Edge browser PASS: zero unassigned payroll rows, separate two-batch setup, 50 x 5000 x 30% = 75000, fixed 50000, approval, 25000/50000 partial/full batch payment, exactly one expense per payment, PDF/CSV with assignment details, future fixed-rate switch to 60000 without changing approved history, reload and mobile fit, zero page errors. Existing build chunk warnings remain. Full suite and real backend integration NOT_RUN. Evidence: artifacts/payroll-two-methods-20261022/.
 

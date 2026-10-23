@@ -10,6 +10,14 @@
 **Application:** React + Vite Web Application
 **Design Strategy:** Reference-Driven, Component-Based, Responsive
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The completed frontend uses the premium TSA visual language across all five role dashboards while preserving role-specific data. Current branding is TSA maroon/white, soft `#F7F8FC` page backgrounds, white content surfaces, shared KPI/card/chart primitives, Plus Jakarta Sans, responsive sidebar/mobile navigation, accessible dialogs and compact status badges. Branch settings control academy identity and per-branch theme/sidebar values for authorized roles.
+
+Preserve the approved desktop/mobile layouts and semantic success/warning/error colors during backend integration. Loading/error states may change only to consume HTTP data; backend work must not redesign screens, inject technical details into user flows or expose unauthorized data. Login Three.js/GSAP is decorative, deferred and removable without affecting authentication. Physical Assets means academy inventory; no Cloudinary or new digital-media workflow is approved.
+
+Historical teal/reference-only notes below describe earlier design phases and are superseded where they conflict with the current implemented maroon premium UI.
+
 ## F00-011 — Approved login logo motion (2026-10-21)
 
 Owner-approved login-only polish: the configured academy logo keeps its white image background and current layout, with a subtle GSAP idle float and gentle Three.js tilt on pointer movement. Respect `prefers-reduced-motion` by rendering a static logo; preserve a static fallback if WebGL is unavailable. This does not establish animation patterns for other screens.
@@ -150,7 +158,7 @@ CONFIRMED:
 - Web-based Academy Management ERP.
 - One academy organization in the initial release.
 - Multiple academy branches.
-- Four primary roles: Super Admin, Owner, Receptionist and Teacher.
+- Five primary roles: Super Admin, Admin, Receptionist, Owner and Teacher.
 - Configurable academy name, logo and primary theme colors.
 - Consistent design across all modules.
 - Reusable React components.

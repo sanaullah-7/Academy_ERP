@@ -13,6 +13,16 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+Current frontend entities that the backend design must reconcile include Organization, Branch, User, BranchRoleAssignment, Session, Student, Admission, Enrollment, Course, Batch, Subject, Stream, FacultyAssignment, Class, Challan, FeePayment, Expense, SalaryAgreement, running PayrollObligation, PayrollPayment, DemoInquiry, Asset, AssetEvent, Notification and AuditEvent.
+
+Operational records require organization and branch ownership. Relationships use immutable internal IDs; display serials/names are presentation or historical snapshots. Admission completion, demo conversion and payroll payment plus posted expense require transactions. Exact money storage must use an approved integer-minor-unit or Decimal128 convention. Unique constraints are required for normalized login, scoped display counters, course/batch naming, assignment identity, challan per enrollment and payment/idempotency references.
+
+Teacher Payroll is assignment/batch/subject-based running balance, not a monthly period generator. Historical payroll periods remain compatibility records. Final field-level schemas, retention, refunds/reversals, student transfer and historical payroll migration remain PROPOSED/TBD and must not be inferred from this summary.
+
+---
+
 ## 1. Purpose
 
 This document defines the proposed database entities, MongoDB collections, relationships, field structures, indexes, constraints and data integrity rules for the Academy Management ERP.

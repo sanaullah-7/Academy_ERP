@@ -1,15 +1,16 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "this is backend of School Management System",
+  "description": "Backend API for the TSA Academy ERP",
   "keywords": [],
   "license": "ISC",
   "author": "SanaUllah",
   "type": "module",
-  "main": "Server.js",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test --test-concurrency=1"
   },
   "dependencies": {
     "dotenv": "^18.0.6",

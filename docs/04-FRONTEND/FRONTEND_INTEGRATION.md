@@ -14,6 +14,16 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The actual runtime chain is `Page → hook/context → domain service → mockApi/mock storage`. `mockDatabase` is the browser-local academic/financial source of truth; organization, session, branding and notifications use separate versioned keys. `localPageResources` is a bounded derived cache whose identity includes canonical storage, user, branch, role/permissions and date. It is never authoritative and logout clears it.
+
+Backend integration must retain service interfaces and replace the adapter incrementally with authenticated HTTP. Responses received after branch/role changes must be discarded. Server queries and exports must return only authorized rows rather than relying on React filtering. Proposed endpoints live in [FRONTEND_BACKEND_HANDOFF.md](../FRONTEND_BACKEND_HANDOFF.md) and are not implemented APIs.
+
+Current special contracts include Receptionist full Admissions/Fees operations, Teacher `/my-profile` self-only reads and assignment-based running payroll. Payroll uses `assignmentPayroll.js`, `runningPayroll.js` and `payrollService.js`; exact formulas must be ported from source and tests without monthly renewal or invented adjustment flows.
+
+---
+
 ## F00-010 Current Mock Integration Boundary (2026-10-09)
 
 Current verified chain remains Page -> Hook/Context -> Domain Service -> Mock Adapter. Auth/Branch contexts and scopeKey are shared; future branch-scoped consumers must invalidate/remount their transient UI and re-query when scopeKey changes. This foundation does not add a query cache or ERP module state.
@@ -1605,7 +1615,7 @@ Implemented IN_REVIEW; acceptance pending, as are F02-002/F02-003/F02-004/F03-00
 
 ## F02-005 final action integration boundary (2026-10-12)
 
-CONFIRMED: active-branch Super Admin has named `admissions.decide` and `admissions.delete` grants in addition to View/Create/Edit. Receptionist retains View/Create/Edit, Owner retains View and Teacher remains denied. The page derives visible actions from canonical Auth/Branch context; `admissionService` repeats the permission and session/branch check; the mock database independently reads the canonical session before status or delete mutation. Dashboard preview state is never consulted.
+**SUPERSEDED permission snapshot:** The service/UI/mock reauthorization pattern remains current, but Receptionist now has the implemented full Admissions workflow described in the 2026-10-23 effective section. Owner remains read-only and Teacher remains denied the Admissions module.
 
 Status changes retain the existing atomic status/history contract and preserve the linked Provisional Student. Pending Delete retains the verified same-branch reciprocal Provisional-link transaction. Decided records reject Edit/Delete and display View only. The adapter contract remains replaceable, but browser-local checks are DEMO safeguards and must be reimplemented as backend authorization later. Final evidence: 246/246 tests, lint and build PASS with existing warnings; no package or backend change. F02-005 remains IN_REVIEW pending owner acceptance.
 

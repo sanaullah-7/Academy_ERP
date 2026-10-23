@@ -2,9 +2,9 @@
 
 **A modular, web-based Academy Management System for multiple branches of a single academy organization.**
 
-**Version:** 1.0 — Documentation Baseline
-**Status:** Under Development
-**Last Updated:** 2026-10-09
+**Version:** 1.1 — Frontend Complete / Backend Preparation
+**Status:** Frontend verified; backend implementation awaiting approved tickets
+**Last Updated:** 2026-10-23
 **Development Strategy:** Frontend First, Backend Integration Later
 
 ---
@@ -52,15 +52,16 @@ Detailed requirements are maintained in the [documentation directory](docs/00-CO
 ### Primary User Roles
 
 1. **Super Admin** — Academy administration and approved branch management.
-2. **Owner** — Approved business and operational access.
-3. **Receptionist** — Approved front-desk and student-related operations.
-4. **Teacher** — Approved teaching and assigned student/class information.
+2. **Admin** — Full current-branch operations with higher-role account ceilings.
+3. **Owner** — Approved business and operational summaries.
+4. **Receptionist** — Full implemented Admissions/Fees and approved front-desk operations.
+5. **Teacher** — Own dashboard, profile, classes, assignments and compensation records.
 
 A staff account may have:
 
 - Access to multiple branches.
 - Different roles in different branches.
-- Multiple permitted roles within the same branch.
+- Same-branch multi-role combinations currently fail closed; final policy is TBD.
 
 Detailed role permissions are defined in [SECURITY.md](docs/SECURITY.md).
 
@@ -609,6 +610,11 @@ All central project specifications are stored under the root `docs/` directory.
 | [docs/00-CORE/TASKS.md](docs/00-CORE/TASKS.md) | Active work |
 | [docs/00-CORE/MEMORY.md](docs/00-CORE/MEMORY.md) | Decision history |
 | [docs/00-CORE/PROGRESS.md](docs/00-CORE/PROGRESS.md) | Verified progress |
+| [docs/FRONTEND_AUDIT.md](docs/FRONTEND_AUDIT.md) | Actual completed frontend behavior |
+| [docs/MODULE_WORKFLOW_MAP.md](docs/MODULE_WORKFLOW_MAP.md) | Cross-module data flows |
+| [docs/ROLE_BRANCH_DATA_MATRIX.md](docs/ROLE_BRANCH_DATA_MATRIX.md) | Effective role/branch visibility and actions |
+| [docs/FRONTEND_BACKEND_HANDOFF.md](docs/FRONTEND_BACKEND_HANDOFF.md) | PROPOSED backend contract mapping |
+| [docs/BACKEND_GAPS_AND_RISKS.md](docs/BACKEND_GAPS_AND_RISKS.md) | Backend security and integrity gaps |
 
 Do not duplicate conflicting central specifications in the application folders.
 
@@ -641,14 +647,14 @@ The presence of a requirement in a draft does not authorize implementation.
 
 ## 19. Current Project Status
 
-**As of the supplied documentation context dated 2026-10-09:**
+**As of 2026-10-23:**
 
 - General project direction has been accepted by the client, as reported by the project owner.
-- Documentation is being expanded and reviewed.
-- The frontend-first approach has been established.
+- The frontend and final QA are complete enough to serve as backend compatibility evidence.
+- Documentation reconciliation and non-executable backend scaffolding are complete pending owner review.
 - The application is not independently verified as production-ready.
 - Detailed business rules and security permissions remain partly unresolved.
-- A fresh repository audit is required before implementing F00.
+- Backend work requires one small explicit ticket; no scaffold file is an implementation.
 
 Refer to [PROGRESS.md](docs/00-CORE/PROGRESS.md) for verified status.
 

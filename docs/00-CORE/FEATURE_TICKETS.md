@@ -3,12 +3,107 @@
 # Academy Management ERP — Feature Ticket Register
 
 **Document:** FEATURE_TICKETS.md
-**Version:** 1.0
-**Status:** DRAFT — Pending Review and Ticket Approval
-**Updated:** 2026-10-10
+**Version:** 1.5
+**Status:** ACTIVE — BE-003-FIX Complete, Ready for Owner Review
+**Updated:** 2026-10-23
 **Project:** Academy Management ERP
-**Development Strategy:** Frontend First
+**Development Strategy:** Frontend First -> Modular Monolith Backend
 **Delivery Approach:** Incremental, Ticket-Based Development
+
+## BE-003-FIX — Transaction & Idempotency Safety Gate (2026-10-23)
+
+**Owner authorization:** CONFIRMED. **Status:** IN_REVIEW; safety review and hardening complete, owner acceptance pending.
+- **Scope**: Backend only (`Server/`), zero frontend changes.
+- **Hardened Capabilities**:
+  - `withTransaction`: Fails closed if MongoDB lacks replica-set support (`TRANSACTION_FAILED`); never executes operations outside an actual transaction session. Retries commit on `UnknownTransactionCommitResult` on the same session without re-executing `operationFn`; marks persistent commit uncertainty as `TRANSACTION_UNCERTAIN`. Aborts and retries on `TransientTransactionError`.
+  - Idempotency: Cross-endpoint unique indexing (`organizationId, requestMethod, requestPath, key`). Records never deleted on uncertain write failures (marked `status: 'failed', uncertain: true` to prevent duplicate effects). Client disconnect detection marks requests uncertain. Clean 4xx validation errors safely allow retry.
+- **Acceptance Evidence**:
+  - 62/62 automated tests PASS cleanly (`node --test --test-concurrency=1` in ~8.2s).
+  - Standalone MongoDB transaction verification marked `NOT_VERIFIED` pending replica set configuration.
+  - Zero modifications to `Client/`.
+
+## BE-003 — Backend Data, API & Performance Foundation (2026-10-23)
+
+**Owner authorization:** CONFIRMED. **Status:** IN_REVIEW; implementation complete, owner acceptance pending.
+- **Scope**: Backend only (`Server/`), zero frontend changes.
+- **Implemented Capabilities**:
+  - Reusable API response envelopes (`successResponse`, `paginatedResponse`) and standardized error responses with field-level details (`errorResponse`).
+  - Mongoose error normalization middleware for duplicate keys (E11000 -> 409 `CONFLICT`), validation errors (422 `VALIDATION_ERROR`), and invalid identifiers (400 `VALIDATION_ERROR`).
+  - Request ID correlation (`X-Request-Id`) and high-resolution latency measurement header (`X-Response-Time`).
+  - Lightweight, zero-dependency schema validation middleware (`validateRequest`) with strict NoSQL injection defense blocking keys starting with `$` or containing `.`.
+  - Safe pagination and allowlisted sorting with deterministic tie-breaker (`_id: -1`).
+  - Multi-tenant compound index standards (`organizationId: 1, branchId: 1, ...`).
+  - Reusable transaction management (`withTransaction`) with automated retry for transient errors.
+  - Idempotency infrastructure: `IdempotencyRecord` Mongoose model, `IdempotencyService`, and `createIdempotencyMiddleware`.
+  - Enhanced test database guard (`assertSafeTestDatabase`) validating hostnames against production/staging keywords.
+- **Acceptance Evidence**:
+  - 61/61 automated tests PASS cleanly (`node --test --test-concurrency=1` in ~6.4s).
+  - Live MongoDB integration verified against `mongodb://127.0.0.1:27017/tsa_academy_test`.
+  - Zero modifications to `Client/`.
+
+## BE-002-FINAL — Final Security Gate (2026-10-23)
+
+**Owner authorization:** CONFIRMED. **Status:** IN_REVIEW; implementation complete, owner acceptance pending.
+- **Scope**: Backend only (`Server/`), zero frontend changes.
+- **Hardened Capabilities**:
+  - Reconciled branch membership authority: `BranchRoleAssignment` (`userBranchRoles`) is the single authoritative source of truth; deleted or revoked records cannot fall back to stale embedded data in `User.assignments`.
+  - Multi-counter rate limiting: independent counters for IP (`maxIp`) and account (`maxAccount`) with anti-eviction protection during high memory load.
+  - Test database isolation guard: `assertSafeTestDatabase` with strict URL pathname parsing, rejection of production/staging keywords, environment verification, and partition-scoped test cleanup (`organizationId: 'test-org-db'`).
+- **Acceptance Evidence**:
+  - 48/48 automated tests PASS cleanly (`node --test --test-concurrency=1` in ~5.5s).
+  - Live MongoDB integration verified against `mongodb://127.0.0.1:27017/tsa_academy_test`.
+  - Zero modifications to `Client/`.
+
+## BE-002-SR — Authentication, RBAC & Security Hardening Review (2026-10-23)
+
+**Owner authorization:** CONFIRMED. **Status:** IN_REVIEW; hardening review complete, owner acceptance pending.
+- **Scope**: `Server/` only, focused security review, zero frontend changes.
+- **Hardened Capabilities**:
+  - Asynchronous `crypto.scrypt` password hashing and verification to offload CPU cost to worker threads, preventing event-loop stalls under concurrent load while keeping exact hash format compatibility.
+  - Reconciled dual branch-assignment models: `BranchRoleAssignment` (`userBranchRoles`) is the single authoritative source of truth whenever records exist, completely neutralizing stale embedded `User.assignments`.
+  - Cookie-only session transport: eliminated unapproved Bearer token handling in `authenticate` middleware.
+  - Stripped query-string CSRF token extraction (`req.query._csrf`) to prevent token leakage in URLs and logs.
+  - Hardened CORS preflight `OPTIONS` requests from unauthorized origins with 403 Forbidden.
+  - Enhanced rate limiter with proxy-aware IP resolution, dual IP+email keying, and bounded memory protection (`maxRecords = 5000`).
+  - Added test database isolation URI verification and `t.skip` marking tests BLOCKED when MongoDB is offline.
+- **Acceptance Evidence**:
+  - 45/45 automated tests pass (17 BE-001 regression, 8 crypto/auth/concurrency, 7 RBAC, 6 branch-scope/ownership, 6 session/CSRF/CORS/rate-limit, 1 live MongoDB integration).
+  - Zero modifications to `Client/`.
+
+## BE-002 — Authentication, RBAC & Multi-Branch Security (2026-10-23)
+
+**Owner authorization:** CONFIRMED. **Status:** IN_REVIEW; implementation complete, owner acceptance pending.
+- **Scope**: Backend only (`Server/`), zero frontend changes.
+- **Implemented Capabilities**:
+  - Secure login (`POST /api/v1/auth/login`), current session inspection (`GET /api/v1/auth/session`), active branch selection (`PATCH /api/v1/auth/active-branch`), logout (`DELETE /api/v1/auth/session`), and branch list (`GET /api/v1/auth/branches`).
+  - Native `node:crypto.scrypt` password hashing with random salt and timing-safe equality checks.
+  - Server-side Session model with SHA-256 token hashing, TTL index (`expiresAt`), and explicit revocation (`revokedAt`).
+  - HttpOnly, SameSite, and Secure session and CSRF cookies.
+  - Authenticated mutation CSRF protection via header `x-csrf-token`.
+  - In-memory sliding-window login rate limiting (returns 429 `RATE_LIMITED`).
+  - 5-role RBAC (`super_admin`, `admin`, `receptionist`, `owner`, `teacher`) with 32 action permissions strictly aligned with `Client/src/constants/permissions.js`.
+  - Receptionist full Admissions & Fees access with explicit denials on Finance, Payroll, Expenses, Audit, and Administration.
+  - Teacher self-only record ownership primitives (`requireTeacherSelfOnly`) preventing cross-teacher salary and record inspection.
+  - Branch scope middleware resolving active branch and failing closed on ambiguous multi-role branch assignments.
+  - Admin privilege escalation policy preventing assignment of Admin/Super Admin roles or editing protected accounts.
+  - Branch creation pause strictly enforced across all roles via `BRANCH_CREATION_PAUSED` (403).
+  - Mongoose models for `User`, `Session`, `Branch`, and `BranchRoleAssignment` with strict validation and indexes.
+- **Acceptance Evidence**:
+  - 41/41 automated tests pass cleanly (17 BE-001 regressions, 6 crypto/auth, 7 RBAC, 6 branch-scope/ownership, 4 HTTP session/CSRF, 1 live MongoDB Mongoose integration).
+  - Local MongoDB integration test executed against `mongodb://127.0.0.1:27017/tsa_academy_test`.
+  - `Client/` directory remained 100% untouched.
+
+## DOC-FULL-AUDIT-UPDATE — Documentation reconciliation (2026-10-23)
+
+**Authorization:** OWNER APPROVED — documentation only. **Status:** DONE pending owner review.
+
+Reconciles authoritative specifications with the completed frontend: five roles; Receptionist full Admissions/Fees and explicit denials; Teacher `/my-profile` self-only compensation; assignment-based running payroll; Admin ceilings; branch-creation pause; backend security/integrity boundaries; and deferred Platform Admin/media/refund/transfer/migration work. Historical evidence is preserved and superseded conflicts are labeled through dated effective sections.
+
+Validation requires role/payroll contradiction scans, Markdown relative-link checks, `git diff --check` and proof that no application files changed. This ticket authorizes no backend implementation, dependency, commit or push.
+
+## Planned backend boundary
+
+Backend work must be split into small separately approved tickets, beginning with trusted configuration/database bootstrap and authentication/RBAC/branch scope. Empty scaffold files are not implementations. API/database purpose documents remain concise placeholders until their own authoring tickets.
 
 ## F00-011 — Login logo motion (2026-10-21)
 
@@ -1801,7 +1896,7 @@ Implementation evidence: centralized named permissions, route/sidebar/action gua
 
 ## F02-005 final confirmed Super Admin actions (2026-10-12)
 
-The owner has now explicitly confirmed Super Admin View/Create/Edit/Approve/Reject and Pending Delete within the active assigned branch. Receptionist remains View/Create/Edit only, Owner View only, and Teacher has no Admissions access. This decision supersedes the unresolved authority note above. Named `admissions.decide` and `admissions.delete` permissions are enforced in the Actions UI, domain service and mock-database boundary; there is no broad Super Admin bypass or All Branches grant.
+**SUPERSEDED historical permission snapshot:** Receptionist was then limited to View/Create/Edit. The current effective matrix grants the implemented full Admissions workflow; branch/service/adapter reauthorization remains required.
 
 Pending may transition once to Approved or Rejected; repeat same-status requests are idempotent and stale/opposite/reopen attempts are denied. Status and append-only actor/time history persist atomically, while the linked Student remains Provisional. Only Pending admissions may be deleted through the existing verified linked-pair transaction; decided records remain read-only and non-deletable. **Status: IN_REVIEW; owner acceptance pending.** Evidence: 246/246 tests in 23 files PASS, lint PASS with one existing warning, build PASS with the existing chunk warning; final manual browser recheck/CI/deployment/backend/formal accessibility are NOT_RUN.
 
@@ -3083,7 +3178,7 @@ Browser verification PASS: replayed the read-only localhost Chrome ERP snapshot 
 
 ## PAYROLL-HEADER-CONTROLS-REMOVE - 2026-10-22
 
-Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
+**SUPERSEDED by PAYROLL-RUNNING-BALANCE (2026-10-22):** Owner explicitly approved removal of ONLY the Teacher Payroll header Month Selector, Recalculate and Staff Advance controls. Removed those controls and their now-unused UI handlers/icons, retaining automatic initial/month-change-after-agreement calculations, Approve Payroll, exports, salary agreements, adjustments, payment/balance/payslip flows, service operations and all historical data. Empty action wrappers are omitted when no remaining controls render. Finance Overview is unchanged. Updated component coverage for control absence, retained approval/exports and an empty approved-period action portal; removed the obsolete manual-month-selector test. PASS: 18 payroll component/service tests and 4 Finance Overview tests (isolated rerun after one initial lazy-module loading timeout), targeted ESLint and scoped diff check. Build and browser QA NOT_RUN for this UI-only removal. IN_REVIEW pending owner acceptance. No commit/push.
 
 ## PAYROLL-TWO-METHODS - 2026-10-22
 
@@ -3091,7 +3186,7 @@ Owner-approved focused payroll simplification; IN_REVIEW pending owner browser a
 
 New drafts omit bonuses, allowances, deductions, tax and automatic advance recovery. Historical approved/paid payroll and advances remain preserved. Legacy or removed/reassigned draft lines are retained with supersededAt rather than deleted; active views exclude superseded drafts. Historical approved teacher-only rows remain readable/payable under their original snapshot. The month/Recalculate/Staff Advance header controls remain absent; salary-period/history navigation is in the content area to meet the newly requested monthly workflow. Draft calculation refreshes through normal navigation and agreement changes. Six simplified KPIs show salary due/paid/remaining, assigned teachers, current agreements and pending assignment balances.
 
-Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist and Teacher payroll requests remain denied under current policy (Teacher self-service is not enabled). Branch guards and existing adapter serialization remain in effect. No Server changes, new packages, destructive migration, worktree, commit or push.
+Payments retain original ledger/expense integration and add assignment scope, verified status and exact two-decimal PKR amounts. A branch-unique transaction reference prevents repeat posting, including across batches; overpayments/negative values/cross-branch actions reject. Only Admin/Super Admin manage payroll; Owner retains authorized read-only payroll overview and existing unrelated Finance permissions. Receptionist remains denied. **Updated 2026-10-23:** Teacher may read only their own compensation/payslips through `/my-profile`, without organization Payroll access. Branch guards and existing adapter serialization remain in effect.
 
 PASS: 66 unique focused/regression tests (57 payroll/component/faculty/academic/PDF/audit + 4 Finance Overview + 5 financial tests); targeted ESLint; one production build; diff check. A broader run had one receipt-navigation timeout; its isolated five-test file passed. Disposable Edge browser PASS: zero unassigned payroll rows, separate two-batch setup, 50 x 5000 x 30% = 75000, fixed 50000, approval, 25000/50000 partial/full batch payment, exactly one expense per payment, PDF/CSV with assignment details, future fixed-rate switch to 60000 without changing approved history, reload and mobile fit, zero page errors. Existing build chunk warnings remain. Full suite and real backend integration NOT_RUN. Evidence: artifacts/payroll-two-methods-20261022/.
 

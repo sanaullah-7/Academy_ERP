@@ -85,4 +85,21 @@ describe('FinancePage KPI Cards and Month Selector', () => {
     const customInput = screen.getByPlaceholderText(/e\.g\. Science Lab Supplies/i)
     expect(customInput).toBeInTheDocument()
   })
+  it('renders Teacher Payroll tab and allows navigation between Finance Overview and Teacher Payroll', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Academy Finance' })).toBeInTheDocument()
+
+    // Both tabs are visible
+    const overviewTab = screen.getByRole('button', { name: /Finance Overview/i })
+    const payrollTab = screen.getByRole('button', { name: /Teacher Payroll/i })
+    expect(overviewTab).toBeInTheDocument()
+    expect(payrollTab).toBeInTheDocument()
+
+    // Switch to Teacher Payroll
+    await user.click(payrollTab)
+    expect(await screen.findByText(/TOTAL SALARY PAYABLE/i)).toBeInTheDocument()
+    expect(screen.getByText(/TOTAL SALARY PAID/i)).toBeInTheDocument()
+    expect(screen.getByText(/Salary Payment Progress/i)).toBeInTheDocument()
+  })
 })

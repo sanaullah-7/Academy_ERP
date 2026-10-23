@@ -1,4 +1,4 @@
-<!-- Security & Access Control Specification — Super Admin, Owner, Receptionist aur Teacher kya dekh aur change kar sakte hain -->
+<!-- Security & Access Control Specification — five-role effective access and production backend requirements -->
 
 
 # Academy Management ERP — Security & Access Control Specification
@@ -10,6 +10,19 @@
 **Project:** Academy Management ERP
 **Application:** React + Vite, Node.js + Express, MongoDB + Mongoose
 **Security Strategy:** Least Privilege, Server-Side Authorization, Branch Isolation and Defense in Depth
+
+---
+
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The active frontend roles are Super Admin, Admin, Receptionist, Owner and Teacher. [ROLE_BRANCH_DATA_MATRIX.md](ROLE_BRANCH_DATA_MATRIX.md) records the effective module surface. Historical four-role matrices and older denial statements below are retained as dated evidence and are **SUPERSEDED** wherever they conflict with this section.
+
+- Super Admin and Admin have current-branch full module grants; Admin retains privilege ceilings and cannot create or manage Admin/Super Admin identities.
+- Receptionist has the implemented full Admissions and Fees workflows, including approved status/enrollment, challan and collection actions. Receptionist has no independent Finance, Expenses, Teacher Payroll, Audit Log, Branches, Users or Settings access. Refunds, reversals and chargebacks are not implied.
+- Owner receives authorized summaries/reads and the current documented expense boundary; no administration access.
+- Teacher may open `/my-profile` and read only their own bio, timetable, assignments, salary agreement/balance, verified payment history, notifications and payslips. Self-service does not grant broad Faculty, Finance or administrative Payroll access.
+
+The future server must derive the actor and organization from a trusted session, validate active branch membership, enforce permission and record ownership on queries/actions/exports, and fail closed on ambiguous same-branch multi-role assignments. Frontend guards/localStorage are UX controls only. Branch creation remains paused; Platform Admin/SaaS remains deferred.
 
 ---
 
@@ -1397,7 +1410,7 @@ When documents conflict, report the contradiction before implementing affected f
 
 ### Confirmed
 
-- Four roles.
+- **SUPERSEDED:** Historical four-role baseline. The current effective model has five roles, including Admin.
 - Multiple branches.
 - Different and multiple roles per branch.
 - Backend-enforced security.
@@ -1513,11 +1526,11 @@ The following module matrix is **CONFIRMED** as the owner-provided source of tru
 
 `Full`, `Operational`, `Owner summary`, `Teacher summary`, `limited`, `assigned only`, `own`, `Collect`, and report labels require action- and record-level rules before their dependent features are implemented. `None/limited` does not grant Finance access until the limited operations are named. All Branches, multi-role permission combination and final record-level restrictions remain deferred.
 
-Admission Approve/Reject and Pending Delete are **PROPOSED for Super Admin only and are not confirmed**. They are denied to every role in the UI and service boundary pending explicit owner confirmation. Receptionist has no Delete or status-decision authority; Owner is read-only; Teacher has no Admissions route. Existing Approved/Rejected records remain readable but immutable, and their saved linked Provisional Student/status history/localStorage data is preserved. This current matrix correction **SUPERSEDES** the earlier F02-005 Owner/Super Admin decision-authority grant; historical evidence remains recorded above and the ticket remains IN_REVIEW.
+**SUPERSEDED historical snapshot:** Admission Approve/Reject and Pending Delete were once proposed for Super Admin only. The current effective Receptionist Admissions workflow is governed by the dated section at the top of this document; this paragraph remains historical evidence.
 
 ## F02-005 final confirmed Admissions action authority (2026-10-12)
 
-CONFIRMED and superseding the unresolved proposal immediately above: Super Admin may View, Create, Edit, Approve, Reject and delete Pending admissions only while assigned to the active authorized branch. Receptionist may View/Create/Edit only, Owner may View only, and Teacher has no Admissions access. Dashboard role preview never changes identity or authority. Unknown permissions, unresolved multi-role combinations, All Branches access and broad Super Admin bypass remain denied.
+**SUPERSEDED permission snapshot:** This earlier matrix limited Receptionist to View/Create/Edit. The current effective section grants the implemented full Admissions workflow while retaining branch scope and denying unknown permissions.
 
 ## F02-006 mock enrollment authorization (2026-10-12)
 
@@ -1560,7 +1573,7 @@ Owner explicitly authorizes Audit Log visibility for active-branch single-role S
 
 ## PAYROLL-TWO-METHODS - 2026-10-22
 
-Owner-approved payroll management scope is explicitly Admin/Super Admin within the selected authorized branch, checked in both UI and serialized mock adapter operations. Existing Owner FINANCE_VIEW permits read-only payroll overview; its unrelated expense-management policy is unchanged. Receptionist/Teacher cannot query or export payroll under current permissions; Teacher self-service remains disabled. Every new agreement/line carries stable assignment and academic IDs plus the single-academy mock namespace, and scope mismatches reject. This is frontend mock isolation; production server-side branch/tenant authorization remains a separate backend responsibility.
+**PARTIALLY SUPERSEDED snapshot:** Admin/Super Admin management, Owner authorized overview, Receptionist denial, stable assignment IDs and branch scope remain current. The statement that Teacher self-service is disabled is superseded: Teacher may read only their own compensation and payslips through `/my-profile`; broad Payroll/Finance access remains denied.
 ## Owner-approved role matrix reconciliation - 2026-10-22
 
 ROLE-MATRIX-UPDATE supersedes earlier denial of Receptionist admission decisions and Owner/Receptionist reports/assets reads. Admin/Super Admin retain full existing module permissions inside assigned branches; standard Admin cannot edit/status-toggle/delete Admin or Super Admin identities, including downgrading a privileged target, nor grant higher roles. License rules and paused branch creation remain protected.

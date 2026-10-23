@@ -2215,7 +2215,7 @@ export function createMockDatabase({ storage = () => window.localStorage, makeId
 
     if (operation === 'getSettings') {
       return {
-        enabled: Boolean(org.settings?.teacherPayrollEnabled),
+        enabled: org.settings?.teacherPayrollEnabled !== false,
         branchId: query.branchId
       }
     }

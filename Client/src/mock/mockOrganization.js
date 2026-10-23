@@ -2,7 +2,7 @@ import { appendAudit } from './mockAudit.js'
 import { MOCK_ORGANIZATION_KEY } from '../constants/storageKeys.js'
 
 export const ORGANIZATION_LICENSE_LIMIT = 5
-const defaultSettings = { academyName: 'The Scholar Coaching Academy', tagline: '', contactEmail: '', contactPhone: '', website: '', streetAddress: '', city: '', province: '', country: '', description: '', primaryColor: '#940016', logo: null, sidebarBackground: '#FFFFFF', sidebarText: '#111827', sidebarIcon: '#111827', sidebarActive: '#940016', branchThemes: {}, notificationsConfigured: false, teacherPayrollEnabled: false }
+const defaultSettings = { academyName: 'The Scholar Coaching Academy', tagline: '', contactEmail: '', contactPhone: '', website: '', streetAddress: '', city: '', province: '', country: '', description: '', primaryColor: '#940016', logo: null, sidebarBackground: '#FFFFFF', sidebarText: '#111827', sidebarIcon: '#111827', sidebarActive: '#940016', branchThemes: {}, notificationsConfigured: false, teacherPayrollEnabled: true }
 // One canonical snapshot, checked against storage on EVERY read (including other tabs).
 // Return detached values so callers cannot mutate the next reader's permissions.
 let organizationSnapshot = null
@@ -20,6 +20,9 @@ export function readOrganization() {
   value.deletedBranchIds ??= []
   if (!value.branchOverrides || typeof value.branchOverrides !== 'object' || Array.isArray(value.branchOverrides) || !Array.isArray(value.deletedBranchIds)) throw new Error('Saved branch settings are invalid; existing data was preserved.')
   value.settings = { ...defaultSettings, ...value.settings }
+  if (value.settings.teacherPayrollEnabled === undefined || value.settings.teacherPayrollEnabled === null || value.settings.teacherPayrollEnabled === false) {
+    value.settings.teacherPayrollEnabled = true
+  }
   organizationSnapshot = { raw, value: structuredClone(value) }
   return value
 }

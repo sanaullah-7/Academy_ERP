@@ -13,6 +13,18 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The completed frontend covers 16 functional areas: Dashboard, Admissions, Students, Courses & Batches, Faculty & Classes, Fees, Finance Overview, Expenses, Teacher Payroll, Demo Classes, Assets, Reports & Ledgers, Audit Log, Branches, Users and Settings. The initial deployment is one academy organization with multiple branches.
+
+Exactly five frontend roles are active: Super Admin, Admin, Receptionist, Owner and Teacher. Receptionist has the implemented full Admissions and Fees workflows but no independent Finance, Expenses, Payroll, Audit, Branch, User or Settings access. Teacher uses `/my-profile` for self-only bio, timetable, assignments, compensation, verified payment history and payslips; this grants no broad Faculty or Finance access.
+
+Payroll is one running obligation per approved faculty assignment using the existing Fixed or Percentage calculation. Payments reduce that balance and post the corresponding expense; no automatic monthly salary, approval cycle, new advance/adjustment/correction workflow or fabricated obligation is required. Branch creation remains paused. Platform Admin/SaaS, refunds/reversals, student transfers and payroll migration remain deferred or TBD.
+
+The detailed actual module behavior is recorded in [Frontend Audit](../FRONTEND_AUDIT.md) and [Workflow Map](../MODULE_WORKFLOW_MAP.md).
+
+---
+
 ## 1. Document Purpose
 
 This Product Requirements Document defines the goals, users, functional modules, user journeys, business requirements, scope boundaries, acceptance criteria and unresolved product decisions for the Academy Management ERP.

@@ -12,6 +12,16 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The approved direction remains a Node.js + Express + MongoDB/Mongoose modular monolith. `Server/src/modules/` is organized by auth, organizations, branches, users, dashboard, admissions, students, academics, faculty, classes, fees, finance, payroll, demos, assets, reports, audit, settings and notifications. Routes/controllers handle HTTP, services own workflows, repositories own persistence, models define records, validation rejects input and policies enforce module rules.
+
+Cross-cutting middleware must authenticate, authorize, enforce organization/branch/record scope, validate requests, rate-limit, protect cookie mutations, support idempotency and map safe errors. Mongo transactions replace browser-local serialized writes. Redis, realtime and background jobs are reserved optional components, not required implementation. The system supports five roles: Super Admin, Admin, Receptionist, Owner and Teacher; Platform Admin/SaaS remains deferred.
+
+The frontend stays behind `Page → service → adapter`; HTTP adapters will replace mock adapters incrementally without rewriting approved UI workflows.
+
+---
+
 ## 1. Purpose
 
 This document defines the proposed technical architecture of the Academy Management ERP.
@@ -40,12 +50,13 @@ These are engineering goals that must be validated through implementation and te
 
 The initial release is a web-based ERP for one academy organization with multiple branches.
 
-The application supports four primary roles:
+The application supports five primary roles:
 
 1. Super Admin
-2. Owner
-3. Receptionist
-4. Teacher
+2. Admin
+3. Owner
+4. Receptionist
+5. Teacher
 
 Users may have multiple branch assignments and different or multiple roles within each assigned branch.
 
@@ -263,10 +274,10 @@ Authorization determines which actions and records that user may access.
 
 ### Confirmed Requirements
 
-- Four primary roles
+- Five primary roles: Super Admin, Admin, Receptionist, Owner and Teacher
 - Multiple branches
 - Branch-specific role assignments
-- Multiple permitted roles per branch
+- Same-branch multi-role combinations currently fail closed; final combination policy is TBD
 - Authorized All Branches view for Super Admin
 
 ### Required Production Controls

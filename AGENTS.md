@@ -1,9 +1,9 @@
 # Academy Management ERP — AI Agent Instructions
 
 **File:** AGENTS.md
-**Version:** 1.0
-**Status:** DRAFT — Pending Project Owner Approval
-**Updated:** 2026-10-09
+**Version:** 1.1
+**Status:** ACTIVE — Owner-Approved Operating Instructions
+**Updated:** 2026-10-23
 **Applies To:** Codex, Antigravity and All Authorized AI Coding Agents
 
 ---
@@ -29,11 +29,12 @@ The project is a web-based Academy Management ERP for one academy organization w
 Primary roles:
 
 - Super Admin
+- Admin
 - Owner
 - Receptionist
 - Teacher
 
-Users may have different roles in different branches and multiple permitted roles within the same branch.
+Users may have different roles in different branches. The current frontend fails closed for same-branch multi-role combinations; the final combination policy remains TBD.
 
 The academy name, logo and theme colors are configurable.
 
@@ -135,17 +136,17 @@ Real backend permissions must be explicitly approved and enforced server-side.
 
 ## 5. Current Project Gate
 
-**Current stage:** Documentation review and reconciliation.
+**Current stage:** Frontend completed; backend preparation and contract reconciliation.
 
-Detailed draft documents have been prepared for the main ERP specifications.
+The frontend audit, workflow map, role/branch matrix, backend handoff and backend-risk review are available under `docs/`. Backend structure exists as non-executable scaffolding.
 
-Before application coding begins:
+Before backend application coding begins:
 
 1. Verify current repository state.
 2. Review the latest documentation.
 3. Resolve relevant cross-document conflicts.
-4. Confirm the minimum F00 implementation requirements.
-5. Select and approve a specific F00 ticket.
+4. Confirm the minimum backend foundation requirements and contracts.
+5. Select and approve one specific backend ticket.
 6. Record the ticket as the active authorized task.
 
 ### Current Authorization
@@ -154,7 +155,7 @@ Documentation review and related approved documentation changes only.
 
 No application coding ticket is currently confirmed as authorized in the supplied documentation.
 
-The project owner may explicitly authorize F00-001 or another sufficiently defined ticket.
+The project owner may explicitly authorize a sufficiently defined backend foundation ticket.
 
 Do not begin implementation solely because it appears in the roadmap.
 
@@ -606,8 +607,8 @@ Always stop after completing the authorized task.
 
 ---
 
-**Current Stage:** Documentation Review and Reconciliation
-**Next Planned Task:** Approve F00-001 — Existing Frontend Project Audit
-**Current Coding Authorization:** None until the project owner explicitly approves a ticket.
+**Current Stage:** Frontend complete; backend preparation and contract reconciliation.
+**Next Planned Task:** Approve one small backend foundation ticket after RBAC, data-contract and security review.
+**Current Coding Authorization:** Documentation and filesystem scaffolding completed; no backend implementation is authorized without a separate ticket.
 
 **Governing Principle:** Read → Understand → Plan → Implement Approved Scope → Test → Document → Stop.

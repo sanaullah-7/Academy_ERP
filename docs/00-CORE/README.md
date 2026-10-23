@@ -3,7 +3,7 @@
 **Document:** docs/00-CORE/README.md
 **Version:** 1.0
 **Status:** ACTIVE — Documentation Index; Specifications Under Review
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-23
 **Project:** Academy Management ERP
 **Documentation Location:** Root `docs/` Directory
 
@@ -38,11 +38,12 @@ The project is a web-based Academy Management ERP for one academy organization o
 The product includes the following primary user roles:
 
 - Super Admin.
+- Admin.
 - Owner.
 - Receptionist.
 - Teacher.
 
-A user may hold different roles across branches and multiple approved roles within the same branch.
+A user may hold different roles across branches. Same-branch multi-role combinations currently fail closed; final combination policy is TBD.
 
 The academy name, logo and primary theme colors must be configurable.
 
@@ -495,7 +496,7 @@ Their final approval and repository synchronization must be verified.
 - Verify links.
 - Reconcile overlapping or conflicting decisions.
 - Resolve minimum F00/F01 blockers.
-- Approve the first executable frontend ticket.
+- Approve the first bounded backend-foundation or integration ticket.
 
 The detailed status must be obtained from TASKS.md and PROGRESS.md rather than assumed from this README.
 
@@ -505,19 +506,17 @@ The detailed status must be obtained from TASKS.md and PROGRESS.md rather than a
 
 Key unresolved areas include:
 
-- Detailed role-permission matrix.
-- Exact admission workflow and approval rules.
-- Enrollment and batch-capacity rules.
-- Fee, discount and refund policies.
-- Teacher earnings and attendance.
-- Reporting definitions and exports.
-- Final visual tokens from the Lovable reference.
-- Student identity and branch transfer.
-- Mock/API contract details.
+- Same-branch multi-role resolution beyond the current fail-closed rule.
+- Final backend endpoint, validation and error-envelope contracts.
+- Enrollment capacity and concurrency policy.
+- Refund, reversal and verified-payment correction policy.
+- Student branch-transfer policy.
+- Payroll legacy-data migration and reconciliation policy.
+- Reporting/export retention and authorization details.
+- Production authentication, session and credential-recovery policy.
 - Production hosting and session configuration.
 - Performance and capacity targets.
 - Backup, recovery and retention requirements.
-- Exact first-release feature depth.
 
 Do not treat these as approved business decisions.
 
@@ -529,21 +528,15 @@ Unresolved requirements should not block unrelated independently approved work.
 
 ### Documentation
 
-Complete remaining review, reconcile specifications and confirm the minimum implementation baseline.
+Maintain the reconciled effective sections and author detailed API/database contracts only through separately approved documentation tickets.
 
 ### Frontend
 
-Begin F00 only after the relevant foundation ticket is approved.
-
-Complete F00 in small verified changes.
-
-Then implement the approved F01 Dashboard tickets.
-
-Continue module by module.
+The frontend is complete enough to act as backend compatibility evidence. Preserve its workflows and verify later adapter integration through focused contracts and role tests.
 
 ### Backend
 
-Plan backend implementation after the required data and security contracts are approved.
+Approve and implement one small backend foundation ticket at a time after required data and security contracts are reconciled.
 
 ### Release
 
@@ -571,6 +564,14 @@ Perform integrated testing and client acceptance before using real operational d
 - [Visual Design](../04-FRONTEND/DESIGN.md)
 - [Security](../SECURITY.md)
 - [Frontend Integration](../04-FRONTEND/FRONTEND_INTEGRATION.md)
+
+### Backend Preparation Evidence
+
+- [Frontend Source Audit](../FRONTEND_AUDIT.md)
+- [Module Workflow Map](../MODULE_WORKFLOW_MAP.md)
+- [Role, Branch and Data Matrix](../ROLE_BRANCH_DATA_MATRIX.md)
+- [Frontend to Backend Handoff](../FRONTEND_BACKEND_HANDOFF.md)
+- [Backend Gaps and Risks](../BACKEND_GAPS_AND_RISKS.md)
 
 ### Repository
 

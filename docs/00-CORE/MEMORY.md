@@ -9,6 +9,20 @@
 **Project:** Academy Management ERP
 **Maintained By:** Project Owner / Authorized Development Agent
 
+## CURRENT EFFECTIVE DECISIONS — 2026-10-23
+
+**CONFIRMED:** The frontend implementation is complete enough to act as the backend compatibility reference. Five roles exist: Super Admin, Admin, Receptionist, Owner and Teacher. Same-branch multi-role combinations currently fail closed and the final combination policy remains TBD.
+
+**CONFIRMED:** Receptionist has the implemented full Admissions and Fees workflows, without independent Finance, Expenses, Payroll, Audit, Branch, User or Settings access. This supersedes historical Receptionist denial/limited-admission entries where they conflict.
+
+**CONFIRMED:** Teacher `/my-profile` is self-only for bio, timetable, assignments, compensation, verified payment history, payslips and authorized notifications. It does not grant broad Faculty or Finance permissions.
+
+**CONFIRMED:** Teacher Payroll is an assignment/batch/subject-based running balance using the implemented Fixed/Percentage calculation. No monthly renewal, approval run, new advance, adjustment or correction flow exists. Payments reduce outstanding and reconcile with a posted expense/report history. Historical monthly/approval entries are SUPERSEDED as current policy but remain evidence.
+
+**CONFIRMED:** One academy/multiple branches; branch creation stays paused; Admin privilege ceilings stay active; Platform Admin/SaaS and new media storage are deferred. Refunds/reversals, student transfers and payroll migration are UNVERIFIED/TBD.
+
+**CONFIRMED:** Shared secure backend persistence must replace browser-local authority. Node.js/Express/MongoDB modular-monolith implementation requires separate small approved tickets.
+
 ## F00-011 — Login logo motion approved (2026-10-21)
 
 **CONFIRMED by owner:** Add restrained Three.js motion to the existing login logo, using GSAP for subtle idle float and gentle pointer tilt. Keep its white background and configured branding. Honor reduced-motion preference and keep a static image fallback when WebGL is unavailable. The owner explicitly approved adding `three` and `gsap` for this isolated ticket; no shared animation framework or other screen is authorized.
@@ -278,9 +292,11 @@ Destructive refactoring, deletion and unrelated modifications require review and
 
 ## 6. Roles and Access Decisions
 
-### DEC-017 — Four Primary Roles
+### DEC-017 — Four Primary Roles (SUPERSEDED 2026-10-23)
 
 **Status:** CONFIRMED
+
+This historical decision was superseded when the owner approved Admin as the fifth application role. The current five-role model is defined in the effective decisions at the top of this document.
 
 The application supports:
 

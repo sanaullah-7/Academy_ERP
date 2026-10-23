@@ -11,6 +11,21 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The implemented source-of-truth flows are:
+
+1. Admission → Student → Enrollment → Challan → optional Verified Payment → Fees, Finance and Reports.
+2. Faculty Assignment → Teacher Dashboard/My Profile → timetable, assigned students and academic scope.
+3. Faculty Assignment → Salary Agreement → assignment running balance → partial/full Payroll Payment → Posted Expense and Reports.
+4. Branch/User/Role change → effective permissions → navigation, direct-route, service-query and dashboard visibility refresh.
+
+Instant admission completion and demo-to-admission conversion are multi-record operations and require backend transactions. Only verified fee payments and posted expenses contribute to financial reporting. Payroll never renews itself by month; legacy period records are history only. Same-branch multi-role combination remains fail-closed/TBD, branch creation remains paused and unapproved reversal/transfer/migration workflows must not be invented.
+
+See [Module Workflow Map](../MODULE_WORKFLOW_MAP.md) for current joins and [Frontend Backend Handoff](../FRONTEND_BACKEND_HANDOFF.md) for explicitly PROPOSED integration boundaries.
+
+---
+
 ## 1. Purpose
 
 This document defines the functional system design, operational workflows, user journeys, module responsibilities, data movement, cross-module interactions, exceptional scenarios and business behavior of the Academy Management ERP.
@@ -68,9 +83,9 @@ The application is intended to connect student admission, academic management, s
 - One academy organization.
 - Multiple configurable branches.
 - Web-based application.
-- Four primary roles.
+- Five primary roles: Super Admin, Admin, Receptionist, Owner and Teacher.
 - Different roles for a user across branches.
-- Multiple permitted roles within one branch.
+- Same-branch multi-role combinations currently fail closed; final combination policy is TBD.
 - Configurable academy branding.
 - Frontend-first development.
 - Mock services before backend integration.

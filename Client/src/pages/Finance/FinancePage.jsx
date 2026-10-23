@@ -312,11 +312,11 @@ export default function FinancePage({ initialTab = 'overview' }) {
   const { can } = usePermissions()
   const canViewPayroll = can(PERMISSIONS.PAYROLL_VIEW)
 
-  const [payrollEnabled, setPayrollEnabled] = useState(false)
+  const [payrollEnabled, setPayrollEnabled] = useState(true)
   useEffect(() => {
     payrollService.getSettings({ branchId }).then(res => {
-      setPayrollEnabled(Boolean(res.enabled))
-    }).catch(() => setPayrollEnabled(false))
+      setPayrollEnabled(res.enabled !== false)
+    }).catch(() => setPayrollEnabled(true))
   }, [branchId])
 
   const activeSubTab = payrollEnabled && canViewPayroll && isPayrollTarget ? 'payroll' : 'overview'

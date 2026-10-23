@@ -12,6 +12,16 @@
 
 ---
 
+## CURRENT EFFECTIVE REQUIREMENTS — 2026-10-23
+
+The completed frontend is the behavioral compatibility reference for backend planning. The active roles are Super Admin, Admin, Receptionist, Owner and Teacher. Production APIs must independently enforce authentication, organization, active branch, permission and record ownership; frontend visibility is not security.
+
+Financial writes require exact money handling, server validation, idempotency, auditability and transactions where one action changes multiple records. Teacher Payroll is an assignment/batch/subject-based running balance with Fixed or Percentage agreements; it has no automatic monthly renewal, approval run, advance, adjustment or correction workflow. Verified fee and payroll payments must reconcile with Finance and Reports.
+
+Documentation precedence follows subject ownership: PRD for requirements, SYSTEM_DESIGN for workflows, SECURITY for access, ERD for data, ARCHITECTURE for structure and FRONTEND_INTEGRATION for service/adapter contracts. New backend work still requires one explicit approved ticket, focused tests and safe Git handling.
+
+---
+
 ## 1. Purpose
 
 This document defines the mandatory engineering standards, architectural boundaries, coding conventions, quality expectations, testing requirements, Git safety procedures and implementation restrictions for the Academy Management ERP.
