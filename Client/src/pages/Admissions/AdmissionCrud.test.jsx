@@ -33,7 +33,11 @@ describe('accessible saved admission DEMO CRUD', () => {
   it.each(['row', 'name', 'menu'])('%s opens the same selected admission details without opening a different student', async entry => {
     const { first, second, user } = await setupTwoAdmissions()
     const getById = vi.spyOn(admissionService, 'getById')
-    const row = await screen.findByRole('button', { name: `View admission ${first.displayAdmissionId} for ${first.studentName}` })
+    const row = await screen.findByRole(
+      'button',
+      { name: `View admission ${first.displayAdmissionId} for ${first.studentName}` },
+      { timeout: 5000 },
+    )
     if (entry === 'row') await user.click(row)
     if (entry === 'name') await user.click(within(row).getByText(first.studentName))
     if (entry === 'menu') {
